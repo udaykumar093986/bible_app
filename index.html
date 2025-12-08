@@ -3,88 +3,76 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Bible Reader — Final (Parallel + TTS + Jump + Single Verse)</title>
+<title>Bible Reader — Final (Search Fixed)</title>
 
-<!-- Serif for verses -->
+<!-- Verse font -->
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
-  :root{
-    --bg:#f7f9fc; --card:#ffffff; --accent:#0b66c2; --text:#1d2d35;
-    --border:#e2e8f0; --soft:#f4f8ff; --highlight:#fff3c4; --pulse:#ffda6b;
-  }
+:root{
+  --bg:#f7f9fc; --card:#ffffff; --accent:#0b66c2; --text:#1d2d35;
+  --border:#e2e8f0; --soft:#f4f8ff; --highlight:#fff3c4; --pulse:#ffda6b;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+body{background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 
-  *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,system-ui,-apple-system,"Segoe UI",Roboto,Arial}
+header{padding:14px 20px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;display:flex;justify-content:space-between;align-items:center}
+header .brand{font-size:20px;font-weight:700;color:var(--accent)}
+header .meta{font-size:13px;color:#6f7f8b}
 
-  body{ background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
+main{max-width:960px;margin:20px auto;padding:0 18px}
 
-  header{
-    padding:14px 20px;background:#fff;border-bottom:1px solid var(--border);
-    position:sticky;top:0;z-index:100;display:flex;justify-content:space-between;align-items:center;
-  }
-  header .brand{font-size:20px;font-weight:700;color:var(--accent)}
-  header .meta{font-size:13px;color:#6f7f8b}
+/* controls */
+.controls{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:14px}
+select,input{padding:12px;border-radius:10px;border:1px solid var(--border);background:#fff;font-size:14px;min-width:140px}
+button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px}
 
-  main{max-width:960px;margin:20px auto;padding:0 18px}
+/* tts */
+.tts-bar{display:flex;gap:12px;justify-content:center;margin:10px 0 18px 0}
+.tts-pill{background:var(--accent);color:#fff;padding:12px 22px;border-radius:30px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 3px 8px rgba(0,0,0,0.10);transition:0.15s}
+.tts-pill:active{transform:translateY(1px)}
+.tts-pill[aria-disabled="true"]{opacity:.6;pointer-events:none}
 
-  /* Controls row */
-  .controls{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:14px}
-  select,input{padding:12px;border-radius:10px;border:1px solid var(--border);background:#fff;font-size:14px;min-width:140px}
-  button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px}
+/* jump */
+.jump-container{background:white;border-radius:12px;border:1px solid var(--border);margin-bottom:18px;overflow:hidden}
+.jump-header{padding:14px 16px;background:var(--soft);cursor:pointer;font-weight:700;color:var(--accent);user-select:none}
+.jump-body{display:none;padding:14px;background:#fff}
+.jump-body select{min-width:140px;margin-right:8px;padding:10px;border-radius:8px;border:1px solid var(--border)}
 
-  /* TTS pill bar */
-  .tts-bar{display:flex;gap:12px;justify-content:center;margin:10px 0 18px 0}
-  .tts-pill{
-    background:var(--accent); color:#fff; padding:12px 22px; border-radius:30px;
-    font-size:14px; font-weight:600; display:flex;align-items:center;gap:8px;
-    box-shadow:0 3px 8px rgba(0,0,0,0.10); transition:0.15s;
-  }
-  .tts-pill:active{transform:translateY(1px)}
-  .tts-pill[aria-disabled="true"]{opacity:.6;pointer-events:none}
+/* reader */
+.reader{background:white;border-radius:12px;border:1px solid var(--border);padding:18px;margin-bottom:20px}
+.ref{font-size:22px;font-weight:700;color:var(--accent);margin-bottom:16px}
+.verse-block{padding:14px;background:#f8fbff;border-radius:12px;border:1px solid var(--border);margin-bottom:14px;transition:0.25s}
+.verse-num{font-size:13px;font-weight:700;color:#345;margin-bottom:6px}
+.verse-primary{font-family:"Noto Serif",serif;font-size:18px;line-height:1.75;color:#111}
+.verse-parallel{margin-top:10px;padding-left:14px;border-left:3px solid var(--accent);font-family:"Noto Serif",serif;font-size:17px;color:#2a3c55}
 
-  /* Jump menu */
-  .jump-container{background:white;border-radius:12px;border:1px solid var(--border);margin-bottom:18px;overflow:hidden}
-  .jump-header{padding:14px 16px;background:var(--soft);cursor:pointer;font-weight:700;color:var(--accent);user-select:none}
-  .jump-body{display:none;padding:14px;background:#fff}
-  .jump-body select{min-width:140px;margin-right:8px;padding:10px;border-radius:8px;border:1px solid var(--border)}
+/* active */
+.active-verse{background:#fff8d1 !important;border-color:#ffd56b !important;animation:pulseAnim 1.4s infinite ease-in-out}
+@keyframes pulseAnim{0%{box-shadow:0 0 0px var(--pulse)}50%{box-shadow:0 0 12px var(--pulse)}100%{box-shadow:0 0 0px var(--pulse)}}
 
-  /* Reader */
-  .reader{background:white;border-radius:12px;border:1px solid var(--border);padding:18px;margin-bottom:20px}
-  .ref{font-size:22px;font-weight:700;color:var(--accent);margin-bottom:16px}
+/* search */
+.search-item{padding:12px;border-radius:10px;border:1px solid var(--border);background:white;margin-bottom:10px;cursor:pointer}
+.highlight{background:var(--highlight);border-radius:4px;padding:2px}
 
-  .verse-block{padding:14px;background:#f8fbff;border-radius:12px;border:1px solid var(--border);margin-bottom:14px;transition:0.25s}
-  .verse-num{font-size:13px;font-weight:700;color:#345;margin-bottom:6px}
-  .verse-primary{font-family:"Noto Serif",serif;font-size:18px;line-height:1.75;color:#111}
-  .verse-parallel{margin-top:10px;padding-left:14px;border-left:3px solid var(--accent);font-family:"Noto Serif",serif;font-size:17px;color:#2a3c55}
+/* notice */
+.notice{position:fixed;top:70px;left:20px;right:20px;padding:12px;border-radius:10px;background:white;border:1px solid var(--border);text-align:center;display:none;z-index:200}
 
-  /* active animation */
-  .active-verse{background:#fff8d1 !important;border-color:#ffd56b !important;animation:pulseAnim 1.4s infinite ease-in-out}
-  @keyframes pulseAnim{0%{box-shadow:0 0 0px var(--pulse)}50%{box-shadow:0 0 12px var(--pulse)}100%{box-shadow:0 0 0px var(--pulse)}}
-
-  /* search */
-  .search-item{padding:12px;border-radius:10px;border:1px solid var(--border);background:white;margin-bottom:10px;cursor:pointer}
-  .highlight{background:var(--highlight);border-radius:4px;padding:2px}
-
-  /* notice */
-  .notice{position:fixed;top:70px;left:20px;right:20px;padding:12px;border-radius:10px;background:white;border:1px solid var(--border);text-align:center;display:none;z-index:200}
-
-  @media(max-width:600px){
-    .tts-pill{padding:10px 16px;font-size:13px}
-    .controls select,input{width:100%}
-    .jump-body select{width:100%;margin-bottom:8px}
-    .jump-body{display:block}
-  }
+@media(max-width:600px){
+  .tts-pill{padding:10px 16px;font-size:13px}
+  .controls select,input{width:100%}
+  .jump-body select{width:100%;margin-bottom:8px}
+  .jump-body{display:block}
+}
 </style>
 </head>
-
 <body>
 <header>
   <div class="brand">Bible Reader</div>
-  <div class="meta">Parallel • Clean UI • TTS</div>
+  <div class="meta">Parallel • Search • TTS</div>
 </header>
 
 <main>
-  <!-- Top controls -->
   <div class="controls" id="topControls">
     <select id="primarySelect" aria-label="Primary Version"><option value="">PRIMARY VERSION</option></select>
     <select id="parallelSelect" aria-label="Parallel Version"><option value="">PARALLEL VERSION</option></select>
@@ -93,7 +81,6 @@
     <button id="searchBtn" aria-label="Run search">Search</button>
   </div>
 
-  <!-- TTS pill controls -->
   <div class="tts-bar" role="toolbar" aria-label="TTS Controls">
     <button id="ttsPlay" class="tts-pill" aria-label="Play">▶ Play</button>
     <button id="ttsPause" class="tts-pill" aria-label="Pause">⏸ Pause</button>
@@ -101,7 +88,6 @@
     <button id="ttsStop" class="tts-pill" aria-label="Stop">⏹ Stop</button>
   </div>
 
-  <!-- Jump menu -->
   <div class="jump-container">
     <div class="jump-header" id="jumpToggle">▼ Jump to Book / Chapter / Verse</div>
     <div class="jump-body" id="jumpBody" aria-hidden="true">
@@ -112,13 +98,11 @@
     </div>
   </div>
 
-  <!-- Reader -->
   <div class="reader">
     <div id="currentRef" class="ref"></div>
     <div id="versesContainer"></div>
   </div>
 
-  <!-- Search results -->
   <div id="searchInfo" style="margin-bottom:6px;color:#666"></div>
   <div id="searchResults"></div>
 </main>
@@ -126,441 +110,346 @@
 <div id="notice" class="notice" role="status" aria-live="polite"></div>
 
 <script>
-/* ============================
-   FINAL inline JS
-   - TTS mode A (Primary -> Parallel)
-   - Single-verse display + TTS single-verse behavior
-   - No voice selector
-   - Uses jsDelivr CDN filenames from your repo
-============================= */
+/* Final inline JS - supports both JSON shapes.
+   If your repo JSON uses object -> chapter -> verse (like the Telugu upload),
+   this code will normalize it to a uniform shape for rendering & search.
+*/
 
 (async function(){
+  const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/";
+  const FILES = [
+    "AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json","NIV_bible.json",
+    "NKJV_bible.json","NLT_bible.json","afrikaans_bible.json","bengali_bible.json","gujarati_bible.json",
+    "hindi_bible.json","hungarian_bible.json","indonesian_bible.json","kannada_bible.json","malayalam_bible.json",
+    "marathi_bible.json","nepali_bible.json","odia_bible.json","punjabi_bible.json","sepedi_bible.json",
+    "tamil_bible.json","telugu_bible.json","xhosa_bible.json","zulu_bible.json"
+  ];
 
-/* CONFIG */
-const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/";
-const FILES = [
-  "AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json","NIV_bible.json",
-  "NKJV_bible.json","NLT_bible.json","afrikaans_bible.json","bengali_bible.json","gujarati_bible.json",
-  "hindi_bible.json","hungarian_bible.json","indonesian_bible.json","kannada_bible.json","malayalam_bible.json",
-  "marathi_bible.json","nepali_bible.json","odia_bible.json","punjabi_bible.json","sepedi_bible.json",
-  "tamil_bible.json","telugu_bible.json","xhosa_bible.json","zulu_bible.json"
-];
+  // DOM refs
+  const primarySelect = document.getElementById("primarySelect");
+  const parallelSelect = document.getElementById("parallelSelect");
+  const openBtn = document.getElementById("openBtn");
+  const searchBox = document.getElementById("searchBox");
+  const searchBtn = document.getElementById("searchBtn");
+  const ttsPlay = document.getElementById("ttsPlay");
+  const ttsPause = document.getElementById("ttsPause");
+  const ttsResume = document.getElementById("ttsResume");
+  const ttsStop = document.getElementById("ttsStop");
+  const jumpToggle = document.getElementById("jumpToggle");
+  const jumpBody = document.getElementById("jumpBody");
+  const bookSelect = document.getElementById("bookSelect");
+  const chapterSelect = document.getElementById("chapterSelect");
+  const verseSelect = document.getElementById("verseSelect");
+  const jumpGo = document.getElementById("jumpGo");
+  const currentRef = document.getElementById("currentRef");
+  const versesContainer = document.getElementById("versesContainer");
+  const searchResults = document.getElementById("searchResults");
+  const searchInfo = document.getElementById("searchInfo");
+  const notice = document.getElementById("notice");
 
-/* DOM */
-const primarySelect = document.getElementById("primarySelect");
-const parallelSelect = document.getElementById("parallelSelect");
-const openBtn = document.getElementById("openBtn");
-const searchBox = document.getElementById("searchBox");
-const searchBtn = document.getElementById("searchBtn");
-const ttsPlay = document.getElementById("ttsPlay");
-const ttsPause = document.getElementById("ttsPause");
-const ttsResume = document.getElementById("ttsResume");
-const ttsStop = document.getElementById("ttsStop");
-const jumpToggle = document.getElementById("jumpToggle");
-const jumpBody = document.getElementById("jumpBody");
-const bookSelect = document.getElementById("bookSelect");
-const chapterSelect = document.getElementById("chapterSelect");
-const verseSelect = document.getElementById("verseSelect");
-const jumpGo = document.getElementById("jumpGo");
-const currentRef = document.getElementById("currentRef");
-const versesContainer = document.getElementById("versesContainer");
-const searchResults = document.getElementById("searchResults");
-const searchInfo = document.getElementById("searchInfo");
-const notice = document.getElementById("notice");
+  const versionMap = {};
+  const bibleRawCache = {};   // raw JSON as fetched
+  const bibleNormCache = {};  // normalized shape {books: [{name,chapters: [[v,...], ...]}]}
+  const searchIndexCache = {}; // per version flattened array
 
-/* State */
-const versionMap = {};
-const bibleCache = {};   // label -> normalized data
-const searchIndex = {};  // label -> flattened index
-let current = { version: null, parallel: null, book: 0, chapter: 0, singleVerseMode: false, singleVerseIndex: null };
+  let current = { version: null, parallel: null, book: 0, chapter: 0, singleVerseMode: false, singleVerseIndex: null };
 
-/* Populate version selects (labels uppercase) */
-FILES.forEach(fn => {
-  const label = fn.replace("_bible.json","").toUpperCase();
-  versionMap[label] = fn;
-  primarySelect.appendChild(new Option(label, label));
-  parallelSelect.appendChild(new Option(label, label));
-});
+  // populate selects with uppercase labels
+  FILES.forEach(fn => {
+    const label = fn.replace("_bible.json","").toUpperCase();
+    versionMap[label] = fn;
+    primarySelect.appendChild(new Option(label,label));
+    parallelSelect.appendChild(new Option(label,label));
+  });
 
-/* helpers */
-function esc(s){ return (s===undefined || s===null) ? "" : s.toString().replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
-function showNotice(msg, ms=1600){ notice.textContent = msg; notice.style.display = "block"; setTimeout(()=> notice.style.display = "none", ms); }
+  function esc(s){ return (s===undefined || s===null) ? "" : s.toString().replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+  function showNotice(msg,ms=1500){ notice.textContent = msg; notice.style.display = "block"; setTimeout(()=> notice.style.display = "none", ms); }
 
-/* normalize JSON shape to { books: [ {name, chapters: [ [verse1,verse2...] ] } ] } */
-function normalize(json){
-  const out = { books: [] };
-  if(json && Array.isArray(json.books)){
-    out.books = json.books.map(b => ({ name: b.name || b.book || "Unknown", chapters: (b.chapters || []).map(c => Array.isArray(c)?c:Object.values(c||{})) }));
-    return out;
-  }
-  for(const bkName of Object.keys(json || {})){
-    const bookObj = json[bkName];
-    const chapters = [];
-    if(bookObj && Array.isArray(bookObj.chapters)){
-      for(const c of bookObj.chapters) chapters.push(Array.isArray(c)?c:Object.values(c||{}));
-    } else {
-      const keys = Object.keys(bookObj || {}).sort((a,b)=>Number(a)-Number(b));
-      for(const k of keys){
-        const ch = bookObj[k];
-        if(Array.isArray(ch)) chapters.push(ch);
-        else if(typeof ch === "object") chapters.push(Object.keys(ch).sort((a,b)=>Number(a)-Number(b)).map(i=>ch[i]));
-        else chapters.push([String(ch)]);
-      }
+  // Normalizer: support two shapes:
+  // 1) Standard: { books: [ {name, chapters: [ [verse,...], ... ] }, ... ] }
+  // 2) Object keyed by bookName: { "Genesis": { "1": { "1":"text", "2":"text" }, "2": {...} }, ... }
+  function normalize(json){
+    if(!json) return {books:[]};
+    // If already has books array and chapters arrays -> use as-is
+    if(json.books && Array.isArray(json.books)){
+      return { books: json.books.map(b => ({
+        name: b.name || b.book || "Unknown",
+        chapters: (b.chapters || []).map(c => Array.isArray(c) ? c : Object.values(c || {}))
+      }))};
     }
-    out.books.push({ name: bkName, chapters });
+
+    // Detect object keyed by book name and numeric chapter keys
+    const keys = Object.keys(json || {});
+    // simple check: if keys contain numeric chapter keys? We'll assume top-level keys are book names
+    const books = [];
+    for(const bookName of keys){
+      const bookObj = json[bookName];
+      if(!bookObj) continue;
+      // bookObj could be { "chapters": {...} } or directly chapters mapping
+      let chaptersArr = [];
+      if(bookObj.chapters && typeof bookObj.chapters === 'object'){
+        // chapters may be array or object
+        if(Array.isArray(bookObj.chapters)){
+          chaptersArr = bookObj.chapters.map(c => Array.isArray(c) ? c : Object.values(c || {}));
+        } else {
+          // object mapping "1": { "1":"text"... }
+          const chKeys = Object.keys(bookObj.chapters).sort((a,b)=>Number(a)-Number(b));
+          for(const ck of chKeys){
+            const ch = bookObj.chapters[ck];
+            if(Array.isArray(ch)) chaptersArr.push(ch);
+            else if(typeof ch === 'object') chaptersArr.push(Object.keys(ch).sort((a,b)=>Number(a)-Number(b)).map(vk => ch[vk]));
+            else chaptersArr.push([String(ch)]);
+          }
+        }
+      } else if(typeof bookObj === 'object'){
+        // assume bookObj has numeric keys: "1", "2", ...
+        const chKeys = Object.keys(bookObj).sort((a,b)=>Number(a)-Number(b));
+        for(const ck of chKeys){
+          const ch = bookObj[ck];
+          if(Array.isArray(ch)) chaptersArr.push(ch);
+          else if(typeof ch === 'object'){
+            // verse keys: { "1":"text", "2":"text" }
+            const verseKeys = Object.keys(ch).sort((a,b)=>Number(a)-Number(b));
+            chaptersArr.push(verseKeys.map(vk => ch[vk]));
+          } else {
+            chaptersArr.push([String(ch)]);
+          }
+        }
+      } else {
+        // fallback
+        chaptersArr = [];
+      }
+      books.push({ name: bookName, chapters: chaptersArr });
+    }
+    return { books };
   }
-  return out;
-}
 
-/* load version (cached) */
-async function loadVersion(label){
-  if(!label) throw new Error("No label");
-  if(bibleCache[label]) return bibleCache[label];
-  const url = BASE + versionMap[label];
-  const res = await fetch(url);
-  if(!res.ok) throw new Error("Failed to fetch " + url);
-  const j = await res.json();
-  const norm = normalize(j);
-  bibleCache[label] = norm;
-  buildIndex(label, norm);
-  return norm;
-}
+  // fetch and normalize
+  async function fetchAndNormalize(label){
+    if(bibleNormCache[label]) return bibleNormCache[label];
+    const url = BASE + versionMap[label];
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("Fetch failed: " + res.status);
+    const j = await res.json();
+    bibleRawCache[label] = j;
+    const norm = normalize(j);
+    bibleNormCache[label] = norm;
+    buildSearchIndex(label, norm);
+    return norm;
+  }
 
-/* build flattened index for quick search */
-function buildIndex(label, norm){
-  const idx = [];
-  norm.books.forEach((b, bi) => {
-    b.chapters.forEach((ch, ci) => {
-      ch.forEach((v, vi) => {
-        const text = (v || "").toString();
-        idx.push({ bookIndex: bi, chapterIndex: ci, verseIndex: vi, book: b.name, chapter: ci+1, verse: vi+1, text, low: text.toLowerCase() });
+  // Build flattened index: each entry has {bookIndex, chapterIndex, verseIndex, book, chapter, verse, text, low}
+  function buildSearchIndex(label, norm){
+    const idx = [];
+    norm.books.forEach((b, bi) => {
+      b.chapters.forEach((ch, ci) => {
+        ch.forEach((v, vi) => {
+          const text = (v || "").toString();
+          idx.push({ bookIndex: bi, chapterIndex: ci, verseIndex: vi, book: b.name, chapter: ci+1, verse: vi+1, text, low: text.toLowerCase() });
+        });
       });
     });
-  });
-  searchIndex[label] = idx;
-}
-
-/* render chapter (or single verse if singleVerseMode true) */
-function renderChapter(){
-  if(!current.version || !bibleCache[current.version]){ versesContainer.innerHTML = "<div style='padding:12px'>Select a version and open a chapter</div>"; currentRef.textContent = ""; return; }
-
-  const bookObj = bibleCache[current.version].books[current.book];
-  const primaryChap = bookObj.chapters[current.chapter] || [];
-
-  let parallelChap = null;
-  if(current.parallel && bibleCache[current.parallel]){
-    const pb = bibleCache[current.parallel].books[current.book];
-    parallelChap = pb ? (pb.chapters[current.chapter] || []) : null;
+    searchIndexCache[label] = idx;
   }
 
-  if(current.singleVerseMode && Number.isInteger(current.singleVerseIndex)){
-    // show only selected verse
-    const i = current.singleVerseIndex;
-    const prim = esc(primaryChap[i] || "");
-    const par = parallelChap ? esc(parallelChap[i] || "") : "";
-    currentRef.textContent = `${bookObj.name} ${current.chapter + 1}:${i + 1}`;
-    versesContainer.innerHTML = `<div class="verse-block active-verse" id="v-${i}">
-      <div class="verse-num">Verse ${i+1}</div>
-      <div class="verse-primary">${prim}</div>
-      ${ par ? `<div class="verse-parallel">${par}</div>` : "" }
-    </div>`;
-    return;
-  }
-
-  // default: full chapter
-  currentRef.textContent = `${bookObj.name} ${current.chapter + 1}` + (current.parallel ? ` — ${current.parallel}` : "");
-  let html = "";
-  for(let i=0;i<primaryChap.length;i++){
-    const prim = esc(primaryChap[i]);
-    const par = parallelChap ? esc(parallelChap[i] || "") : "";
-    html += `<div class="verse-block" id="v-${i}">
-      <div class="verse-num">Verse ${i+1}</div>
-      <div class="verse-primary">${prim}</div>
-      ${ par ? `<div class="verse-parallel">${par}</div>` : "" }
-    </div>`;
-  }
-  versesContainer.innerHTML = html || "<div style='padding:12px'>No verses</div>";
-}
-
-/* SEARCH */
-async function runSearch(){
-  const q = (searchBox.value || "").trim().toLowerCase();
-  searchResults.innerHTML = ""; searchInfo.textContent = "";
-  if(!q) return;
-  if(!current.version){ searchInfo.textContent = "Select primary version first"; return; }
-  if(!searchIndex[current.version]) await loadVersion(current.version);
-  if(current.parallel && !bibleCache[current.parallel]) await loadVersion(current.parallel);
-  const idx = searchIndex[current.version] || [];
-  const results = [];
-  const max = 200;
-  for(let i=0;i<idx.length && results.length < max;i++){
-    if(idx[i].low.includes(q)) results.push(idx[i]);
-  }
-  searchInfo.textContent = `Found ${results.length}${results.length >= max ? " (showing first "+max+")":""}`;
-  if(!results.length){ searchResults.innerHTML = "<div style='padding:8px;color:#666'>No results</div>"; return; }
-  const safe = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  const re = new RegExp(safe, "ig");
-  const frag = document.createDocumentFragment();
-  results.forEach(r=>{
-    const div = document.createElement("div");
-    div.className = "search-item";
-    const primSnippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
-    let parSnippet = "";
-    if(current.parallel && bibleCache[current.parallel]){
-      const pv = (bibleCache[current.parallel].books[r.bookIndex].chapters[r.chapterIndex][r.verseIndex] || "");
-      parSnippet = esc(pv).replace(re, m => `<span class="highlight">${m}</span>`);
+  // Render chapter or single verse
+  function renderChapter(){
+    if(!current.version || !bibleNormCache[current.version]){ versesContainer.innerHTML = "<div style='padding:12px'>Select a version and open.</div>"; currentRef.textContent = ""; return; }
+    const bookObj = bibleNormCache[current.version].books[current.book];
+    const primaryChap = bookObj.chapters[current.chapter] || [];
+    let parallelChap = null;
+    if(current.parallel && bibleNormCache[current.parallel]){
+      const pb = bibleNormCache[current.parallel].books[current.book];
+      parallelChap = pb ? (pb.chapters[current.chapter] || []) : null;
     }
-    div.innerHTML = `<strong>${esc(r.book)} ${r.chapter}:${r.verse}</strong>
-      <div style="margin-top:6px">${primSnippet}</div>
-      ${ parSnippet ? `<div style="margin-top:8px;color:#345">${parSnippet}</div>` : "" }
-      <small style="display:block;margin-top:6px;color:#666">Click to open</small>`;
-    div.onclick = async ()=>{
-      current.book = r.bookIndex; current.chapter = r.chapterIndex;
-      current.singleVerseMode = true;
-      current.singleVerseIndex = r.verseIndex;
-      await loadVersion(current.version);
-      if(current.parallel) await loadVersion(current.parallel);
-      renderChapter();
-      setTimeout(()=> {
-        const el = document.getElementById("v-" + r.verseIndex);
-        if(el){
-          el.classList.add("active-verse");
-          el.scrollIntoView({behavior:"smooth", block:"center"});
-          setTimeout(()=> el.classList.remove("active-verse"), 3000);
-        }
-      }, 200);
-    };
-    frag.appendChild(div);
-  });
-  searchResults.appendChild(frag);
-}
 
-/* Jump menu: populate books/chapters/verses when version loaded */
-function populateBooks(){
-  if(!current.version || !bibleCache[current.version]) return;
-  bookSelect.innerHTML = "<option value=''>Book</option>";
-  bibleCache[current.version].books.forEach((b, i)=> bookSelect.appendChild(new Option(b.name, i)));
-}
-function populateChapters(){
-  if(!current.version || !bibleCache[current.version]) return;
-  const chapters = bibleCache[current.version].books[current.book].chapters.length;
-  chapterSelect.innerHTML = "<option value=''>Chapter</option>";
-  for(let c=1;c<=chapters;c++) chapterSelect.appendChild(new Option(c, c-1));
-  // reset verse
-  verseSelect.innerHTML = "<option value=''>Verse</option>";
-}
-function populateVerses(){
-  if(!current.version || !bibleCache[current.version]) return;
-  const verses = bibleCache[current.version].books[current.book].chapters[current.chapter].length;
-  verseSelect.innerHTML = "<option value=''>Verse</option>";
-  for(let v=1; v<=verses; v++) verseSelect.appendChild(new Option(v, v-1));
-}
+    if(current.singleVerseMode && Number.isInteger(current.singleVerseIndex)){
+      const i = current.singleVerseIndex;
+      const prim = esc(primaryChap[i] || "");
+      const par = parallelChap ? esc(parallelChap[i] || "") : "";
+      currentRef.textContent = `${bookObj.name} ${current.chapter + 1}:${i + 1}`;
+      versesContainer.innerHTML = `<div class="verse-block active-verse" id="v-${i}">
+        <div class="verse-num">Verse ${i+1}</div>
+        <div class="verse-primary">${prim}</div>
+        ${ par ? `<div class="verse-parallel">${par}</div>` : "" }
+      </div>`;
+      return;
+    }
 
-/* When user clicks Go: if verse selected => single-verse display; else show full chapter */
-jumpGo.onclick = function(){
-  if(!current.version) return;
-  // update current.book/chapter/verse from selects if provided
-  if(bookSelect.value !== "") current.book = Number(bookSelect.value);
-  if(chapterSelect.value !== "") current.chapter = Number(chapterSelect.value);
-  const vi = (verseSelect.value !== "") ? Number(verseSelect.value) : null;
-
-  if(vi !== null){
-    // single verse mode
-    current.singleVerseMode = true;
-    current.singleVerseIndex = vi;
-  } else {
-    current.singleVerseMode = false;
-    current.singleVerseIndex = null;
+    currentRef.textContent = `${bookObj.name} ${current.chapter + 1}` + (current.parallel ? ` — ${current.parallel}` : "");
+    let html = "";
+    for(let i=0;i<primaryChap.length;i++){
+      const prim = esc(primaryChap[i]);
+      const par = parallelChap ? esc(parallelChap[i] || "") : "";
+      html += `<div class="verse-block" id="v-${i}">
+        <div class="verse-num">Verse ${i+1}</div>
+        <div class="verse-primary">${prim}</div>
+        ${ par ? `<div class="verse-parallel">${par}</div>` : "" }
+      </div>`;
+    }
+    versesContainer.innerHTML = html || "<div style='padding:12px'>No verses</div>";
   }
-  renderChapter();
-  if(vi !== null){
-    setTimeout(()=>{
-      const el = document.getElementById("v-" + vi);
-      if(el){
-        el.classList.add("active-verse");
-        el.scrollIntoView({behavior:"smooth", block:"center"});
-        setTimeout(()=> el.classList.remove("active-verse"), 3000);
+
+  // Search run
+  async function runSearch(){
+    const q = (searchBox.value || "").trim().toLowerCase();
+    searchResults.innerHTML = ""; searchInfo.textContent = "";
+    if(!q) return;
+    if(!current.version){ searchInfo.textContent = "Select primary version first"; return; }
+    if(!searchIndexCache[current.version]) await fetchAndNormalize(current.version);
+    if(current.parallel && !searchIndexCache[current.parallel]) await fetchAndNormalize(current.parallel);
+    const idx = searchIndexCache[current.version] || [];
+    const results = [];
+    const max = 200;
+    for(let i=0;i<idx.length && results.length < max;i++){
+      if(idx[i].low.includes(q)) results.push(idx[i]);
+    }
+    searchInfo.textContent = `Found ${results.length}${results.length >= max ? " (showing first "+max+")":""}`;
+    if(!results.length){ searchResults.innerHTML = "<div style='padding:8px;color:#666'>No results</div>"; return; }
+    const safe = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const re = new RegExp(safe, "ig");
+    const frag = document.createDocumentFragment();
+    results.forEach(r => {
+      const div = document.createElement("div");
+      div.className = "search-item";
+      const primarySnippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
+      let parallelSnippet = "";
+      if(current.parallel && bibleNormCache[current.parallel]){
+        const pv = (bibleNormCache[current.parallel].books[r.bookIndex].chapters[r.chapterIndex][r.verseIndex] || "");
+        parallelSnippet = esc(pv).replace(re, m => `<span class="highlight">${m}</span>`);
       }
-    }, 200);
-  }
-};
-
-/* Load default/open */
-async function openDefault(){
-  if(!current.version) { showNotice("Select primary version"); return; }
-  current.book = 0; current.chapter = 0; current.singleVerseMode = false; current.singleVerseIndex = null;
-  await loadVersion(current.version);
-  if(current.parallel) await loadVersion(current.parallel);
-  renderChapter();
-}
-
-/* TTS Queue & behavior: if singleVerseMode => speak only that verse (Primary then Parallel),
-   otherwise speak entire chapter (Primary then Parallel) */
-let ttsQueue = [];
-function buildTTSQueue(){
-  ttsQueue = [];
-  if(!current.version || !bibleCache[current.version]) return;
-  const bookObj = bibleCache[current.version].books[current.book];
-  const primary = bookObj.chapters[current.chapter] || [];
-  let parallel = null;
-  if(current.parallel && bibleCache[current.parallel]){
-    const pb = bibleCache[current.parallel].books[current.book];
-    parallel = pb ? (pb.chapters[current.chapter] || []) : null;
+      div.innerHTML = `<strong>${esc(r.book)} ${r.chapter}:${r.verse}</strong>
+        <div style="margin-top:6px">${primarySnippet}</div>
+        ${ parallelSnippet ? `<div style="margin-top:8px;color:#345">${parallelSnippet}</div>` : "" }
+        <small style="display:block;margin-top:6px;color:#666">Click to open</small>`;
+      div.onclick = async () => {
+        current.book = r.bookIndex; current.chapter = r.chapterIndex; current.singleVerseMode = true; current.singleVerseIndex = r.verseIndex;
+        await fetchAndNormalize(current.version);
+        if(current.parallel) await fetchAndNormalize(current.parallel);
+        renderChapter();
+        setTimeout(()=> {
+          const el = document.getElementById("v-" + r.verseIndex);
+          if(el){ el.classList.add("active-verse"); el.scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(()=> el.classList.remove("active-verse"), 3500); }
+        }, 200);
+      };
+      frag.appendChild(div);
+    });
+    searchResults.appendChild(frag);
   }
 
-  if(current.singleVerseMode && Number.isInteger(current.singleVerseIndex)){
-    const i = current.singleVerseIndex;
-    const pText = (primary[i] || "").toString().trim();
-    if(pText) ttsQueue.push({type:"speak", text:pText, index:i});
-    if(parallel){
-      const par = (parallel[i] || "").toString().trim();
-      if(par) ttsQueue.push({type:"speak", text:par, index:i});
+  // Build TTS queue depending on mode
+  let ttsQueue = [];
+  function buildTTSQueue(){
+    ttsQueue = [];
+    if(!current.version || !bibleNormCache[current.version]) return;
+    const bookObj = bibleNormCache[current.version].books[current.book];
+    const primary = bookObj.chapters[current.chapter] || [];
+    let parallel = null;
+    if(current.parallel && bibleNormCache[current.parallel]) parallel = bibleNormCache[current.parallel].books[current.book].chapters[current.chapter] || [];
+    if(current.singleVerseMode && Number.isInteger(current.singleVerseIndex)){
+      const i = current.singleVerseIndex;
+      const ptext = (primary[i] || "").toString().trim();
+      if(ptext) ttsQueue.push({type:"speak", text:ptext, index:i});
+      if(parallel){
+        const par = (parallel[i] || "").toString().trim();
+        if(par) ttsQueue.push({type:"speak", text:par, index:i});
+      }
+      return;
     }
-    return;
+    for(let i=0;i<primary.length;i++){
+      const ptext = (primary[i] || "").toString().trim();
+      if(ptext) ttsQueue.push({type:"speak", text:ptext, index:i});
+      if(parallel){
+        const par = (parallel[i] || "").toString().trim();
+        if(par) ttsQueue.push({type:"speak", text:par, index:i});
+      }
+      ttsQueue.push({type:"pause", ms:220});
+    }
   }
 
-  // otherwise full chapter
-  for(let i=0;i<primary.length;i++){
-    const pText = (primary[i] || "").toString().trim();
-    if(pText) ttsQueue.push({type:"speak", text:pText, index:i});
-    if(parallel){
-      const parText = (parallel[i] || "").toString().trim();
-      if(parText) ttsQueue.push({type:"speak", text:parText, index:i});
-    }
-    ttsQueue.push({type:"pause", ms:220});
+  function highlightVerse(i){
+    document.querySelectorAll(".active-verse").forEach(el => el.classList.remove("active-verse"));
+    const el = document.getElementById("v-" + i);
+    if(el){ el.classList.add("active-verse"); el.scrollIntoView({behavior:"smooth", block:"center"}); }
   }
-}
 
-function speakNext(){
-  if(ttsQueue.length === 0) return;
-  const item = ttsQueue.shift();
-  if(item.type === "pause"){ setTimeout(speakNext, item.ms); return; }
-  if(item.type === "speak"){
-    // highlight + scroll
-    highlightVerse(item.index);
-    const utt = new SpeechSynthesisUtterance(item.text);
-    utt.rate = 1.0;
-    utt.onend = () => setTimeout(speakNext, 120);
-    utt.onerror = () => setTimeout(speakNext, 200);
-    speechSynthesis.speak(utt);
-  } else setTimeout(speakNext, 80);
-}
-function highlightVerse(i){
-  document.querySelectorAll(".active-verse").forEach(el=>el.classList.remove("active-verse"));
-  const el = document.getElementById("v-" + i);
-  if(el){ el.classList.add("active-verse"); el.scrollIntoView({behavior:"smooth", block:"center"}); }
-}
+  function speakNext(){
+    if(ttsQueue.length === 0) return;
+    const item = ttsQueue.shift();
+    if(item.type === "pause"){ setTimeout(speakNext, item.ms); return; }
+    if(item.type === "speak"){
+      highlightVerse(item.index);
+      const utt = new SpeechSynthesisUtterance(item.text);
+      utt.rate = 1.0;
+      utt.onend = () => setTimeout(speakNext, 120);
+      utt.onerror = () => setTimeout(speakNext, 180);
+      speechSynthesis.speak(utt);
+    } else setTimeout(speakNext, 60);
+  }
 
-/* TTS button handlers */
-ttsPlay.onclick = async function(){
-  if(!current.version){ showNotice("Open a chapter first"); return; }
-  try{
-    await loadVersion(current.version);
-    if(current.parallel) await loadVersion(current.parallel);
-  } catch(e){ showNotice("Failed to load versions for TTS"); return; }
-  speechSynthesis.cancel();
-  buildTTSQueue();
-  speakNext();
-};
-ttsPause.onclick = function(){ if('speechSynthesis' in window) speechSynthesis.pause(); };
-ttsResume.onclick = function(){ if('speechSynthesis' in window) speechSynthesis.resume(); };
-ttsStop.onclick = function(){ if('speechSynthesis' in window){ speechSynthesis.cancel(); ttsQueue = []; } };
+  // event handlers
+  ttsPlay.onclick = async function(){
+    if(!current.version){ showNotice("Open a chapter first"); return; }
+    try{ await fetchAndNormalize(current.version); if(current.parallel) await fetchAndNormalize(current.parallel); } catch(e){ showNotice("Failed to load for TTS"); return; }
+    speechSynthesis.cancel();
+    buildTTSQueue();
+    speakNext();
+  };
+  ttsPause.onclick = ()=> { if('speechSynthesis' in window) speechSynthesis.pause(); };
+  ttsResume.onclick = ()=> { if('speechSynthesis' in window) speechSynthesis.resume(); };
+  ttsStop.onclick = ()=> { if('speechSynthesis' in window){ speechSynthesis.cancel(); ttsQueue = []; } };
 
-/* Jump toggle */
-jumpToggle.onclick = function(){
-  const show = jumpBody.style.display === "block";
-  jumpBody.style.display = show ? "none" : "block";
-  jumpBody.setAttribute("aria-hidden", show ? "true" : "false");
-};
+  jumpToggle.onclick = function(){ const show = jumpBody.style.display === "block"; jumpBody.style.display = show ? "none" : "block"; jumpBody.setAttribute("aria-hidden", show ? "true" : "false"); };
 
-/* UI wiring */
-primarySelect.onchange = async function(){
-  const label = this.value;
-  if(!label) return;
-  current.version = label; current.singleVerseMode = false; current.singleVerseIndex = null;
-  try{ await loadVersion(label); showNotice(label + " loaded", 900); } catch(e){ showNotice("Load failed"); return; }
-  // populate book select
-  populateBooks();
-  // reset chapter/verse selects
-  chapterSelect.innerHTML = "<option value=''>Chapter</option>";
-  verseSelect.innerHTML = "<option value=''>Verse</option>";
-};
-parallelSelect.onchange = async function(){
-  const lbl = this.value || null;
-  current.parallel = lbl;
-  if(lbl){ try{ await loadVersion(lbl); showNotice(lbl + " loaded (parallel)", 700); } catch(e){} }
-};
+  primarySelect.onchange = async function(){
+    const label = this.value;
+    if(!label) return;
+    current.version = label; current.singleVerseMode = false; current.singleVerseIndex = null; current.book = 0; current.chapter = 0;
+    try{ await fetchAndNormalize(label); showNotice(label + " loaded", 900); } catch(e){ showNotice("Load failed"); return; }
+    // populate book select
+    bookSelect.innerHTML = "<option value=''>Book</option>";
+    bibleNormCache[label].books.forEach((b,i) => bookSelect.appendChild(new Option(b.name, i)));
+    chapterSelect.innerHTML = "<option value=''>Chapter</option>";
+    verseSelect.innerHTML = "<option value=''>Verse</option>";
+  };
 
-openBtn.onclick = openDefault;
-searchBtn.onclick = runSearch;
-searchBox.onkeydown = function(e){ if(e.key === "Enter") runSearch(); };
+  parallelSelect.onchange = async function(){ const lbl = this.value || null; current.parallel = lbl; if(lbl) try{ await fetchAndNormalize(lbl); showNotice(lbl + " loaded (parallel)", 700); } catch(e){} };
 
-/* loadVersion/populate helpers reused here */
-async function loadVersion(label){
-  if(!label) throw new Error("No label");
-  if(bibleCache[label]) return bibleCache[label];
-  const url = BASE + versionMap[label];
-  const res = await fetch(url);
-  if(!res.ok) throw new Error("Fetch failed");
-  const j = await res.json();
-  const norm = normalize(j);
-  bibleCache[label] = norm;
-  buildIndex(label, norm);
-  return norm;
-}
+  openBtn.onclick = async function(){ if(!current.version){ showNotice("Select primary version"); return; } current.book = 0; current.chapter = 0; current.singleVerseMode = false; current.singleVerseIndex = null; await fetchAndNormalize(current.version); if(current.parallel) await fetchAndNormalize(current.parallel); renderChapter(); };
 
-function populateBooks(){
-  if(!current.version || !bibleCache[current.version]) return;
-  bookSelect.innerHTML = "<option value=''>Book</option>";
-  bibleCache[current.version].books.forEach((b, i) => bookSelect.appendChild(new Option(b.name, i)));
-  // set current book select to current.book
-  bookSelect.value = current.book;
-  populateChapters();
-}
-function populateChapters(){
-  if(!current.version || !bibleCache[current.version]) return;
-  const count = bibleCache[current.version].books[current.book].chapters.length;
-  chapterSelect.innerHTML = "<option value=''>Chapter</option>";
-  for(let i=1;i<=count;i++) chapterSelect.appendChild(new Option(i, i-1));
-  chapterSelect.value = current.chapter;
-  populateVerses();
-}
-function populateVerses(){
-  if(!current.version || !bibleCache[current.version]) return;
-  const verses = bibleCache[current.version].books[current.book].chapters[current.chapter].length;
-  verseSelect.innerHTML = "<option value=''>Verse</option>";
-  for(let v=1; v<=verses; v++) verseSelect.appendChild(new Option(v, v-1));
-}
+  searchBtn.onclick = runSearch;
+  searchBox.onkeydown = e => { if(e.key === "Enter") runSearch(); };
 
-/* when book/chapter selects change */
-bookSelect.onchange = function(){ current.book = Number(this.value || 0); current.chapter = 0; populateChapters(); };
-chapterSelect.onchange = function(){ current.chapter = Number(this.value || 0); populateVerses(); verseSelect.value = ""; };
+  bookSelect.onchange = function(){ current.book = Number(this.value || 0); current.chapter = 0; // populate chapters
+    if(!current.version) return; const chapters = bibleNormCache[current.version].books[current.book].chapters.length; chapterSelect.innerHTML = "<option value=''>Chapter</option>"; for(let c=1;c<=chapters;c++) chapterSelect.appendChild(new Option(c, c-1)); verseSelect.innerHTML = "<option value=''>Verse</option>";
+  };
+  chapterSelect.onchange = function(){ current.chapter = Number(this.value || 0); // populate verses
+    if(!current.version) return; const verses = bibleNormCache[current.version].books[current.book].chapters[current.chapter].length; verseSelect.innerHTML = "<option value=''>Verse</option>"; for(let v=1; v<=verses; v++) verseSelect.appendChild(new Option(v, v-1)); };
 
-/* Expose openResult for search items */
-window.openResult = async function(bi, ci, vi){
-  if(!current.version){ showNotice("Select a primary version first"); return; }
-  current.book = bi; current.chapter = ci; current.singleVerseMode = true; current.singleVerseIndex = vi;
-  await loadVersion(current.version);
-  if(current.parallel) await loadVersion(current.parallel);
-  renderChapter();
-  setTimeout(()=>{
-    const el = document.getElementById("v-" + vi);
-    if(el){
-      el.classList.add("active-verse");
-      el.scrollIntoView({behavior:"smooth", block:"center"});
-      setTimeout(()=> el.classList.remove("active-verse"), 3000);
-    }
-  }, 200);
-};
+  jumpGo.onclick = function(){
+    if(!current.version) return;
+    if(bookSelect.value !== "") current.book = Number(bookSelect.value);
+    if(chapterSelect.value !== "") current.chapter = Number(chapterSelect.value);
+    const vi = (verseSelect.value !== "") ? Number(verseSelect.value) : null;
+    if(vi !== null){ current.singleVerseMode = true; current.singleVerseIndex = vi; } else { current.singleVerseMode = false; current.singleVerseIndex = null; }
+    renderChapter();
+    if(vi !== null){ setTimeout(()=>{ const el = document.getElementById("v-" + vi); if(el){ el.classList.add("active-verse"); el.scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(()=> el.classList.remove("active-verse"), 3000); } }, 200); }
+  };
 
-/* Accessibility: keyboard support for TTS pills */
-[ttsPlay, ttsPause, ttsResume, ttsStop].forEach(b => b.addEventListener('keyup', e => { if(e.key === 'Enter' || e.key === ' ') b.click(); }));
+  // expose openResult for search items
+  window.openResult = async function(bi, ci, vi){
+    if(!current.version){ showNotice("Select primary version first"); return; }
+    current.book = bi; current.chapter = ci; current.singleVerseMode = true; current.singleVerseIndex = vi;
+    await fetchAndNormalize(current.version);
+    if(current.parallel) await fetchAndNormalize(current.parallel);
+    renderChapter();
+    setTimeout(()=>{ const el = document.getElementById("v-" + vi); if(el){ el.classList.add("active-verse"); el.scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(()=> el.classList.remove("active-verse"), 3000); } }, 200);
+  };
 
-/* initial placeholder text */
-versesContainer.innerHTML = "<div style='padding:12px'>Select PRIMARY version and click Open (optionally choose PARALLEL). Use Search, Jump or TTS to navigate.</div>";
+  // initial placeholder
+  versesContainer.innerHTML = "<div style='padding:12px'>Select PRIMARY version and click Open (optionally choose PARALLEL). Use Search, Jump or TTS to navigate.</div>";
 
 })(); // IIFE end
 </script>
-
 </body>
 </html>
