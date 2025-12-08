@@ -3,13 +3,15 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Bible Reader — Fast Minimal</title>
-
+<title>Bible Reader — Parallel (Mixed Block) + Search</title>
 <style>
-  :root{--bg:#fff;--card:#fff;--muted:#233;--accent:#0b66c2;--border:#e9eef6}
+  :root{
+    --bg:#ffffff; --card:#fff; --muted:#223; --accent:#0b66c2; --border:#e9eef6;
+    --soft:#f6fbff; --highlight:#fff2b8;
+  }
   *{box-sizing:border-box}
-  body{margin:0;font-family:Inter,system-ui,Arial; background:var(--bg);color:var(--muted);-webkit-font-smoothing:antialiased}
-  .top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:10}
+  body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--muted);-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:20}
   .brand{font-weight:700;color:var(--accent)}
   main{max-width:980px;margin:14px auto;padding:0 14px}
   .controls{display:flex;gap:8px;align-items:center;margin-bottom:12px}
@@ -17,51 +19,66 @@
   button{padding:10px 12px;border-radius:10px;border:0;background:var(--accent);color:#fff;cursor:pointer}
   .reader{background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border);min-height:220px}
   .ref{font-weight:700;color:var(--accent);margin-bottom:10px}
-  .verse{padding:10px;border-radius:10px;margin-bottom:8px;background:#f8fbff;border:1px solid var(--border)}
-  .verse .num{font-weight:700;color:#567;text-transform:uppercase;font-size:12px;margin-bottom:6px}
+  .verse-block{padding:10px;border-radius:10px;margin-bottom:10px;background:var(--soft);border:1px solid var(--border)}
+  .verse-num{font-weight:700;color:#456;font-size:13px;margin-bottom:6px}
+  .verse-primary{font-size:16px;line-height:1.6}
+  .verse-parallel{margin-top:8px;padding-left:12px;border-left:3px solid var(--accent);color:#27445a;font-size:15px}
+  .search-container{margin-top:14px}
   .search-results{margin-top:8px}
   .search-item{padding:10px;border-radius:10px;background:#fff;border:1px solid var(--border);margin-bottom:8px;cursor:pointer}
   .search-item small{color:#556;display:block;margin-top:6px}
-  @media(max-width:640px){ .controls{flex-direction:column;align-items:stretch} button{width:100%} select,input{width:100%} }
+  .highlight{background:var(--highlight);border-radius:6px;padding:2px 4px}
+  .notice{position:fixed;left:12px;right:12px;top:72px;padding:10px;border-radius:8px;text-align:center;z-index:999;display:none}
+  @media(max-width:640px){
+    .controls{flex-direction:column;align-items:stretch}
+    button{width:100%}
+    select,input{width:100%}
+  }
 </style>
 </head>
 <body>
 
-<header class="top">
-  <div class="brand">Bible Reader (Fast)</div>
-  <div style="font-size:13px;color:#5a6">Option C — Ultra-fast</div>
+<header>
+  <div class="brand">Bible Reader — Parallel (Mixed Block)</div>
+  <div style="font-size:13px;color:#5a6">Fast • Parallel • Search</div>
 </header>
 
 <main>
   <div class="controls" role="toolbar" aria-label="controls">
-    <select id="versionSelect" aria-label="Version">
-      <option value="">Select version</option>
+    <select id="primarySelect" aria-label="Primary version">
+      <option value="">Primary version</option>
     </select>
 
-    <button id="openRead">Open default</button>
+    <select id="parallelSelect" aria-label="Parallel version">
+      <option value="">Parallel (optional)</option>
+    </select>
 
-    <input id="searchBox" placeholder="Search (select version first)" aria-label="Search" />
+    <button id="openBtn">Open default</button>
+
+    <input id="searchBox" placeholder="Search (select primary version first)" aria-label="Search" />
     <button id="searchBtn">Search</button>
   </div>
 
   <section>
     <div class="reader" id="reader">
-      <div id="currentRef" class="ref">Select a version → Open a chapter</div>
+      <div id="currentRef" class="ref">Select versions → Open a chapter</div>
       <div id="versesContainer"></div>
     </div>
 
-    <div id="searchContainer" style="margin-top:14px">
-      <div id="searchInfo" style="color:#556;font-size:13px;margin-bottom:8px"></div>
+    <div class="search-container">
+      <div id="searchInfo" style="color:#556;font-size:13px;margin:8px 0"></div>
       <div id="searchResults" class="search-results"></div>
     </div>
   </section>
 </main>
 
+<div id="notice" class="notice"></div>
+
 <script>
 (async function(){
 
-/* -------- CONFIG (matches your repo filenames) -------- */
-const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/"; // root of your repo
+/* ========== CONFIG (filenames exactly from your repo) ========== */
+const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/";
 const FILES = [
   "AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json","NIV_bible.json",
   "NKJV_bible.json","NLT_bible.json","afrikaans_bible.json","bengali_bible.json","gujarati_bible.json",
@@ -70,40 +87,43 @@ const FILES = [
   "tamil_bible.json","telugu_bible.json","xhosa_bible.json","zulu_bible.json"
 ];
 
-/* ---- state/cache ---- */
+/* ========== State & cache ========== */
 const versionMap = {};      // label -> filename
-const bibleCache = {};      // label -> normalized data (books, chapters)
-const searchIndex = {};     // label -> flattened [{book, chapter, verse, textLower, text}]
-let current = { version: null, bookIndex: 0, chapterIndex: 0 };
+const bibleCache = {};      // label -> normalized data
+const searchIndex = {};     // label -> flattened search array
+let current = { version:null, bookIndex:0, chapterIndex:0, parallelVersion:null };
 
-/* ---- dom ---- */
-const versionSelect = document.getElementById('versionSelect');
-const openRead = document.getElementById('openRead');
+/* ========== DOM ========== */
+const primarySelect = document.getElementById('primarySelect');
+const parallelSelect = document.getElementById('parallelSelect');
+const openBtn = document.getElementById('openBtn');
 const searchBox = document.getElementById('searchBox');
 const searchBtn = document.getElementById('searchBtn');
-const reader = document.getElementById('reader');
 const versesContainer = document.getElementById('versesContainer');
 const currentRef = document.getElementById('currentRef');
 const searchResults = document.getElementById('searchResults');
 const searchInfo = document.getElementById('searchInfo');
+const noticeEl = document.getElementById('notice');
 
-/* ---- populate version selector ---- */
+/* ========== Utilities ========== */
 function buildLabel(fn){
-  // produce readable label from filename: KJV_bible.json -> KJV
   return fn.replace(/_bible\.json$/i,'').replace(/\.json$/i,'');
 }
+function escapeHtml(s){ return (s||'').toString().replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function showNotice(msg,ms=1500){ noticeEl.textContent = msg; noticeEl.style.display='block'; if(ms>0) setTimeout(()=>noticeEl.style.display='none', ms); }
+function hideNotice(){ noticeEl.style.display='none'; }
+
+/* ========== Populate selects ========== */
 FILES.forEach(fn=>{
   const label = buildLabel(fn);
   versionMap[label] = fn;
-  const opt = document.createElement('option');
-  opt.value = label; opt.textContent = label;
-  versionSelect.appendChild(opt);
+  const opt1 = document.createElement('option'); opt1.value = label; opt1.textContent = label;
+  const opt2 = document.createElement('option'); opt2.value = label; opt2.textContent = label;
+  primarySelect.appendChild(opt1);
+  parallelSelect.appendChild(opt2);
 });
 
-/* ---- helpers ---- */
-function escapeHtml(s){ return (s||'').toString().replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-
-/* normalize shapes (similar to your original) */
+/* ========== Normalize incoming JSON into consistent shape ========== */
 function normalize(data){
   const out={books:[]};
   if(Array.isArray(data.books)){
@@ -132,45 +152,38 @@ function normalize(data){
   return out;
 }
 
-/* ---- load version JSON and build small search index ---- */
+/* ========== Load version and build index ========== */
 async function loadVersion(label){
-  if(!label) throw new Error("No label");
+  if(!label) throw new Error('No label');
   if(bibleCache[label]) return bibleCache[label];
   const filename = versionMap[label];
   const url = BASE + filename;
   try{
-    showTempNotice('Loading ' + label + ' …');
-    const res = await fetch(url);
-    if(!res.ok) throw new Error('Failed to fetch ' + url);
-    const j = await res.json();
+    showNotice('Loading ' + label + ' …', 1200);
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('Fetch failed: ' + r.status);
+    const j = await r.json();
     const norm = normalize(j);
     bibleCache[label] = norm;
-    buildIndexForVersion(label, norm);
-    hideTempNotice();
+    buildIndex(label, norm);
+    showNotice(label + ' ready', 900);
     return norm;
   }catch(err){
-    hideTempNotice();
-    showTempNotice('Load failed: ' + (err.message||err), 3000);
+    showNotice('Failed to load ' + label, 2500);
     throw err;
   }
 }
 
-/* build flattened index for faster searching */
-function buildIndexForVersion(label, norm){
+function buildIndex(label, norm){
   const idx = [];
   norm.books.forEach((b,bi)=>{
     b.chapters.forEach((ch,ci)=>{
       ch.forEach((v,vi)=>{
         const text = (v||'').toString();
         idx.push({
-          bookIndex: bi,
-          chapterIndex: ci,
-          verseIndex: vi,
-          book: b.name,
-          chapter: ci+1,
-          verse: vi+1,
-          text,
-          textLower: text.toLowerCase()
+          bookIndex:bi, chapterIndex:ci, verseIndex:vi,
+          book: b.name, chapter: ci+1, verse: vi+1,
+          text, textLower: text.toLowerCase()
         });
       });
     });
@@ -178,119 +191,148 @@ function buildIndexForVersion(label, norm){
   searchIndex[label] = idx;
 }
 
-/* ---- render a chapter ---- */
+/* ========== Render chapter with parallel (mixed block) ========== */
 function renderChapter(){
   const v = current.version;
-  if(!v || !bibleCache[v]){ versesContainer.innerHTML = '<div style="padding:12px">Select a version and open a chapter</div>'; currentRef.textContent='—'; return; }
+  if(!v || !bibleCache[v]){ versesContainer.innerHTML = '<div style="padding:12px">Select primary version and open a chapter</div>'; currentRef.textContent='—'; return; }
   const book = bibleCache[v].books[current.bookIndex];
   const chap = book.chapters[current.chapterIndex] || [];
-  currentRef.textContent = `${book.name} ${current.chapterIndex + 1}`;
+  currentRef.textContent = `${book.name} ${current.chapterIndex + 1}` + (current.parallelVersion ? ` — parallel: ${current.parallelVersion}` : '');
+  // if parallel selected and loaded, get parallel chapter array
+  let pChap = null;
+  if(current.parallelVersion && bibleCache[current.parallelVersion]){
+    const pb = bibleCache[current.parallelVersion].books[current.bookIndex];
+    pChap = pb ? (pb.chapters[current.chapterIndex] || []) : null;
+  }
+
   let html = '';
   for(let i=0;i<chap.length;i++){
-    html += `<div class="verse"><div class="num">Verse ${i+1}</div><div>${escapeHtml(chap[i])}</div></div>`;
+    const primaryText = chap[i] || '';
+    const parallelText = pChap ? (pChap[i] || '') : '';
+    html += `<div class="verse-block" id="verse-${i}">
+               <div class="verse-num">Verse ${i+1}</div>
+               <div class="verse-primary">${escapeHtml(primaryText)}</div>
+               ${ parallelText ? `<div class="verse-parallel">${escapeHtml(parallelText)}</div>` : '' }
+             </div>`;
   }
-  versesContainer.innerHTML = html || '<div style="padding:12px">No verses found</div>';
-  window.scrollTo({top:0,behavior:'smooth'});
+  versesContainer.innerHTML = html || '<div style="padding:12px">No verses in this chapter</div>';
+  // remove previous highlights
+  document.querySelectorAll('.verse-block').forEach(el=>el.style.outline='none');
+  // scroll to top
+  window.scrollTo({top:document.getElementById('reader').offsetTop, behavior:'smooth'});
 }
 
-/* ---- simple UI helpers ---- */
-let tempNoticeEl = null;
-function showTempNotice(msg,ms=0){
-  if(!tempNoticeEl){
-    tempNoticeEl = document.createElement('div');
-    tempNoticeEl.style.position='fixed';
-    tempNoticeEl.style.left='10px';
-    tempNoticeEl.style.right='10px';
-    tempNoticeEl.style.top='72px';
-    tempNoticeEl.style.padding='10px';
-    tempNoticeEl.style.borderRadius='8px';
-    tempNoticeEl.style.textAlign='center';
-    tempNoticeEl.style.zIndex='999';
-    tempNoticeEl.style.background = '#fff8';
-    tempNoticeEl.style.border='1px solid #eee';
-    document.body.appendChild(tempNoticeEl);
-  }
-  tempNoticeEl.textContent = msg;
-  tempNoticeEl.style.display = '';
-  if(ms>0) setTimeout(()=>tempNoticeEl.style.display='none', ms);
-}
-function hideTempNotice(){ if(tempNoticeEl) tempNoticeEl.style.display='none'; }
-
-/* ---- search (uses prebuilt index) ---- */
-async function runSearch(query){
-  query = (query||'').trim().toLowerCase();
+/* ========== Search (primary version) with parallel display in results ========== */
+async function runSearch(q){
+  q = (q||'').trim().toLowerCase();
   searchResults.innerHTML = ''; searchInfo.textContent = '';
-  if(!query) return;
+  if(!q) return;
   if(!current.version){
-    searchInfo.textContent = 'Please select a version first';
+    searchInfo.textContent = 'Please select a primary version first';
     return;
   }
-  // ensure version loaded
-  if(!searchIndex[current.version]) {
-    await loadVersion(current.version);
+  // ensure primary version loaded
+  if(!searchIndex[current.version]) await loadVersion(current.version);
+  // ensure parallel loaded if selected (so we can show parallel snippet)
+  if(current.parallelVersion && !bibleCache[current.parallelVersion]) {
+    // load in background but we can await to have parallel in results
+    try{ await loadVersion(current.parallelVersion); } catch(e){ /* ignore */ }
   }
+
   const idx = searchIndex[current.version];
-  if(!idx) { searchInfo.textContent = 'No index available'; return; }
+  if(!idx){ searchInfo.textContent = 'No index available'; return; }
 
+  const max = 200;
   const results = [];
-  // use simple substring search on pre-lowercased values; gather up to maxResults
-  const maxResults = 150;
-  for(let i=0;i<idx.length && results.length < maxResults;i++){
-    if(idx[i].textLower.includes(query)) results.push(idx[i]);
+  for(let i=0;i<idx.length && results.length < max;i++){
+    if(idx[i].textLower.includes(q)) results.push(idx[i]);
   }
 
-  searchInfo.textContent = `Found ${results.length}${results.length>=maxResults ? ' (showing first '+maxResults+')':''}`;
+  searchInfo.textContent = `Found ${results.length}${results.length>=max ? ' (showing first '+max+')':''}`;
   if(!results.length){ searchResults.innerHTML = '<div style="padding:8px;color:#666">No results</div>'; return; }
 
-  // render
   const frag = document.createDocumentFragment();
   results.forEach(r=>{
     const div = document.createElement('div');
     div.className = 'search-item';
+    // show primary snippet and parallel snippet if available
+    let primarySnippet = r.text.length > 260 ? r.text.slice(0,260) + '…' : r.text;
+    // highlight query in snippet (simple)
+    const safeQ = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const re = new RegExp(safeQ,'ig');
+    primarySnippet = escapeHtml(primarySnippet).replace(re, m => `<span class="highlight">${m}</span>`);
+
+    // get parallel text for the same location if available
+    let parallelSnippet = '';
+    if(current.parallelVersion && bibleCache[current.parallelVersion]){
+      const pb = bibleCache[current.parallelVersion];
+      const pbook = pb.books[r.bookIndex];
+      if(pbook){
+        const pch = pbook.chapters[r.chapterIndex] || [];
+        const pv = pch[r.verseIndex] || '';
+        if(pv) parallelSnippet = escapeHtml(pv.replace(re, m => `<span class="highlight">${m}</span>`));
+      }
+    }
+
     div.innerHTML = `<strong>${escapeHtml(r.book)} ${r.chapter}:${r.verse}</strong>
-                     <div style="margin-top:6px">${escapeHtml(r.text.length>280 ? r.text.slice(0,280)+'…': r.text)}</div>
+                     <div style="margin-top:6px">${primarySnippet}</div>
+                     ${ parallelSnippet ? `<div style="margin-top:8px;color:#405">${parallelSnippet}</div>` : '' }
                      <small>Click to open chapter</small>`;
     div.onclick = async ()=>{
       // open the chapter containing this result
       current.bookIndex = r.bookIndex;
       current.chapterIndex = r.chapterIndex;
-      // ensure data loaded (already is)
+      // ensure data loaded
+      await loadVersion(current.version);
+      if(current.parallelVersion) await loadVersion(current.parallelVersion);
       renderChapter();
-      window.scrollTo({top: document.getElementById('reader').offsetTop, behavior:'smooth'});
+      // highlight the verse
+      setTimeout(()=> {
+        const el = document.getElementById('verse-' + r.verseIndex);
+        if(el){
+          el.style.outline = '3px solid #ffd94d';
+          el.scrollIntoView({behavior:'smooth', block:'center'});
+          setTimeout(()=>el.style.outline='none', 3000);
+        }
+      },200);
     };
     frag.appendChild(div);
   });
   searchResults.appendChild(frag);
 }
 
-/* ---- UI events ---- */
-versionSelect.onchange = async function(){
-  const label = versionSelect.value;
+/* ========== UI wiring ========== */
+primarySelect.onchange = async function(){
+  const label = primarySelect.value;
   if(!label) return;
   current.version = label;
-  // quick auto-load meta + index (async)
-  try{ await loadVersion(label); showTempNotice(label + ' ready', 800); } catch(e){ console.error(e); }
+  // preload version and index (async)
+  try{ await loadVersion(label); } catch(e){ console.error(e); }
 };
 
-openRead.onclick = async function(){
-  if(!current.version){
-    showTempNotice('Please select a version first',1500);
-    return;
+parallelSelect.onchange = async function(){
+  const label = parallelSelect.value || null;
+  current.parallelVersion = label;
+  if(label){
+    try{ await loadVersion(label); } catch(e){ console.error(e); }
   }
-  // open book 0, chapter 0 by default
+};
+
+openBtn.onclick = async function(){
+  if(!current.version){ showNotice('Select a primary version first',1500); return; }
+  // open first book, first chapter by default
   current.bookIndex = 0; current.chapterIndex = 0;
   await loadVersion(current.version);
+  if(current.parallelVersion) await loadVersion(current.parallelVersion);
   renderChapter();
 };
 
 searchBtn.onclick = function(){ runSearch(searchBox.value); };
-searchBox.onkeydown = function(e){ if(e.key === 'Enter'){ runSearch(searchBox.value); } };
+searchBox.onkeydown = function(e){ if(e.key === 'Enter') runSearch(searchBox.value); };
 
-/* ---- initialize: set small default and keep UI minimal ---- */
+/* ========== Init small placeholder ========== */
 (function init(){
-  // choose a default version if you want, or leave blank
-  // versionSelect.value = 'KJV'; current.version = 'KJV';
-  versesContainer.innerHTML = '<div style="padding:12px">Select a version from the dropdown and click "Open default" or Search</div>';
+  versesContainer.innerHTML = '<div style="padding:12px">Select primary and (optional) parallel versions, then click "Open default" or search.</div>';
 })();
 
 })();
