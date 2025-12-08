@@ -3,415 +3,107 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Bible Reader</title>
-
-<link rel="preload" as="image" href="icons/bible.jpg">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<title>Bible Reader — Fast Minimal</title>
 
 <style>
-/* ============================
-   Theme
-   ============================ */
-:root{
-  --bg:#f5f7fb; --card:#fff; --muted:#2b3440; --accent:#0b66c2;
-  --border:#e6edf6; --soft:#f1f6fb;
-}
-:root.dark{
-  --bg:#07121a; --card:#0f1720; --muted:#dbeeff; --accent:#7fb7ff;
-  --border:#0f2740; --soft:#06121a;
-}
-*{box-sizing:border-box}
-body{
-  margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-  background:var(--bg); color:var(--muted); -webkit-font-smoothing:antialiased;
-}
-
-/* Topbar */
-.topbar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 14px;background:var(--card);border-bottom:1px solid var(--border);
-  position:sticky;top:0;z-index:220;
-}
-.left,.right{display:flex;align-items:center;gap:12px}
-.brand{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--accent);font-size:18px}
-.bible-icon{width:40px;height:40px;object-fit:contain;border-radius:6px}
-.icon-btn{border:0;background:transparent;padding:6px;font-size:18px;cursor:pointer;color:var(--muted)}
-
-/* Tabs */
-.tabs{display:flex;justify-content:center;background:var(--card);border-bottom:1px solid var(--border)}
-.tab-btn{padding:12px 20px;border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:16px}
-.tab-btn.active{color:var(--accent);font-weight:700;border-bottom:3px solid var(--accent)}
-
-/* Toolbar - desktop: auto-fit grid */
-.toolbar{padding:10px 8px;background:var(--bg);border-bottom:1px solid var(--border)}
-.toolbar-inner{
-  max-width:1200px;margin:0 auto;display:grid;gap:10px;
-  grid-template-columns: repeat(auto-fit,minmax(140px,1fr));
-  align-items:center;
-}
-
-/* Controls block aligned right */
-.controls{justify-self:end;display:flex;gap:8px;align-items:center;white-space:nowrap}
-
-/* Scrollable toolbar fallback for small screens */
-.toolbar-scroll{
-  display:none;
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch;
-  padding:8px 12px;
-}
-.toolbar-scroll .inner{
-  display:inline-flex;gap:10px;align-items:center;
-}
-
-/* Form elements */
-.compact-select{padding:9px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:14px}
-.open-picker{padding:9px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);cursor:pointer}
-
-/* TTS buttons */
-.tts-btn{width:34px;height:34px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px}
-.tts-btn.stop{background:#ff5f5f}
-
-/* Reader */
-.reader-container{max-width:980px;margin:16px auto;padding:0 14px}
-.reader-card{background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border)}
-.chapter-ref{text-align:center;color:var(--accent);font-size:20px;font-weight:700;margin-bottom:10px}
-
-.parallel-labels{display:none;justify-content:space-between;margin-bottom:10px}
-.parallel-label{font-weight:700;color:var(--accent);font-size:13px}
-
-.verses{max-height:68vh;overflow:auto;padding-bottom:48px}
-.verse-block{background:var(--soft);padding:12px;border-radius:12px;margin-bottom:12px;border:1px solid var(--border)}
-.verse-number{font-size:13px;font-weight:700;margin-bottom:8px;color:#6a7a8e}
-.verse-primary{font-size:18px;line-height:1.75;font-family:"Noto Serif",serif}
-.verse-parallel{margin-top:8px;padding-left:12px;border-left:3px solid var(--accent);font-size:16px;color:#2b435b}
-
-/* Picker panel centered bottom */
-.picker-panel{
-  position:fixed;left:50%;transform:translateX(-50%) translateY(110%);
-  bottom:0;width:min(920px,calc(100% - 32px));height:340px;background:var(--card);
-  border-radius:16px 16px 0 0;border:1px solid var(--border);box-shadow:0 -8px 30px rgba(0,0,0,.08);
-  transition:transform .28s ease;z-index:350;
-}
-.picker-panel.show{transform:translateX(-50%) translateY(0)}
-.picker-top{display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid var(--border);font-weight:700}
-.handle{width:44px;height:6px;border-radius:8px;background:var(--soft);margin-right:12px}
-.picker-body{padding:14px;display:flex;flex-direction:column;gap:12px}
-.large-select{padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--card)}
-
-/* Search area */
-#searchSection{max-width:980px;margin:16px auto;padding:0 14px;display:none}
-.search-box{padding:12px;border-radius:12px;border:1px solid var(--border);width:100%;margin-bottom:12px;background:var(--card)}
-.search-result{padding:12px;border-radius:10px;border:1px solid var(--border);margin-bottom:8px;background:var(--card);cursor:pointer}
-.search-result:hover{background:var(--soft)}
-
-/* Notice */
-.notice{position:fixed;left:16px;right:16px;top:80px;padding:10px;border-radius:8px;text-align:center;z-index:420}
-.hidden{display:none}
-
-/* Responsive rules */
-@media(max-width:900px){
-  .toolbar-inner{ grid-template-columns: repeat(auto-fit,minmax(120px,1fr)); }
-  .controls{justify-self:end}
-}
-@media(max-width:640px){
-  /* hide desktop grid and show scrollable toolbar */
-  .toolbar-inner{ display:none }
-  .toolbar-scroll{ display:block; background:var(--bg); border-bottom:1px solid var(--border) }
-  .picker-panel{ width:calc(100% - 20px) }
-  .verse-primary{ font-size:17px }
-  .verse-parallel{ font-size:15px }
-}
-@media(max-width:420px){
-  .tts-btn{ width:32px;height:32px;font-size:13px }
-  .compact-select{ padding:8px 10px; font-size:13px }
-  .open-picker{ padding:8px 10px }
-}
+  :root{--bg:#fff;--card:#fff;--muted:#233;--accent:#0b66c2;--border:#e9eef6}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Arial; background:var(--bg);color:var(--muted);-webkit-font-smoothing:antialiased}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:10}
+  .brand{font-weight:700;color:var(--accent)}
+  main{max-width:980px;margin:14px auto;padding:0 14px}
+  .controls{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+  select,input{padding:10px;border-radius:10px;border:1px solid var(--border);background:#fff}
+  button{padding:10px 12px;border-radius:10px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+  .reader{background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border);min-height:220px}
+  .ref{font-weight:700;color:var(--accent);margin-bottom:10px}
+  .verse{padding:10px;border-radius:10px;margin-bottom:8px;background:#f8fbff;border:1px solid var(--border)}
+  .verse .num{font-weight:700;color:#567;text-transform:uppercase;font-size:12px;margin-bottom:6px}
+  .search-results{margin-top:8px}
+  .search-item{padding:10px;border-radius:10px;background:#fff;border:1px solid var(--border);margin-bottom:8px;cursor:pointer}
+  .search-item small{color:#556;display:block;margin-top:6px}
+  @media(max-width:640px){ .controls{flex-direction:column;align-items:stretch} button{width:100%} select,input{width:100%} }
 </style>
 </head>
 <body>
 
-<!-- Topbar -->
-<header class="topbar" role="banner">
-  <div class="left">
-    <img src="icons/bible.jpg" class="bible-icon" alt="Bible icon">
-    <div class="brand">Bible</div>
-  </div>
-  <div class="right">
-    <button id="themeToggle" class="icon-btn" title="Toggle theme">🌙</button>
-  </div>
+<header class="top">
+  <div class="brand">Bible Reader (Fast)</div>
+  <div style="font-size:13px;color:#5a6">Option C — Ultra-fast</div>
 </header>
 
-<!-- Tabs -->
-<div class="tabs" role="tablist" aria-label="Main tabs">
-  <button id="tabRead" class="tab-btn active" role="tab">Read</button>
-  <button id="tabSearch" class="tab-btn" role="tab">Search</button>
-</div>
-
-<!-- Toolbar (desktop grid) -->
-<div class="toolbar" aria-hidden="false">
-  <div class="toolbar-inner" role="toolbar" aria-label="Version controls">
-    <select id="versionCompact" class="compact-select" aria-label="Primary version">
-      <option value="">Version</option>
+<main>
+  <div class="controls" role="toolbar" aria-label="controls">
+    <select id="versionSelect" aria-label="Version">
+      <option value="">Select version</option>
     </select>
 
-    <select id="parallelVersion" class="compact-select" aria-label="Parallel version">
-      <option value="">Parallel</option>
-    </select>
+    <button id="openRead">Open default</button>
 
-    <button id="openPicker" class="open-picker" aria-label="Select book">📚 Book</button>
+    <input id="searchBox" placeholder="Search (select version first)" aria-label="Search" />
+    <button id="searchBtn">Search</button>
+  </div>
 
-    <!-- filler cells for grid to keep layout symmetric (optional) -->
-    <div></div>
-    <div></div>
-
-    <!-- Controls area -->
-    <div class="controls" aria-label="Text to speech controls">
-      <button id="ttsPlay" class="tts-btn" title="Play">▶</button>
-      <button id="ttsPause" class="tts-btn" title="Pause">⏸</button>
-      <button id="ttsResume" class="tts-btn" title="Resume">⏵</button>
-      <button id="ttsStop" class="tts-btn stop" title="Stop">⏹</button>
+  <section>
+    <div class="reader" id="reader">
+      <div id="currentRef" class="ref">Select a version → Open a chapter</div>
+      <div id="versesContainer"></div>
     </div>
-  </div>
 
-  <!-- Toolbar scrollable fallback (mobile) -->
-  <div class="toolbar-scroll" aria-hidden="true">
-    <div class="inner">
-      <select id="versionCompact_m" class="compact-select" aria-label="Primary version mobile">
-        <option value="">Version</option>
-      </select>
-
-      <select id="parallelVersion_m" class="compact-select" aria-label="Parallel version mobile">
-        <option value="">Parallel</option>
-      </select>
-
-      <button id="openPicker_m" class="open-picker" aria-label="Select book mobile">📚</button>
-
-      <div style="width:8px"></div>
-      <button id="ttsPlay_m" class="tts-btn" title="Play">▶</button>
-      <button id="ttsPause_m" class="tts-btn" title="Pause">⏸</button>
-      <button id="ttsResume_m" class="tts-btn" title="Resume">⏵</button>
-      <button id="ttsStop_m" class="tts-btn stop" title="Stop">⏹</button>
+    <div id="searchContainer" style="margin-top:14px">
+      <div id="searchInfo" style="color:#556;font-size:13px;margin-bottom:8px"></div>
+      <div id="searchResults" class="search-results"></div>
     </div>
-  </div>
-</div>
-
-<!-- Read Section -->
-<section id="readSection">
-  <main class="reader-container">
-    <article class="reader-card" aria-live="polite">
-      <h2 id="currentRef" class="chapter-ref">—</h2>
-
-      <div id="parallelLabels" class="parallel-labels" aria-hidden="true">
-        <div id="labelPrimary" class="parallel-label"></div>
-        <div id="labelParallel" class="parallel-label"></div>
-      </div>
-
-      <div id="verses" class="verses" tabindex="0"></div>
-    </article>
-  </main>
-</section>
-
-<!-- Search Section -->
-<section id="searchSection" style="display:none">
-  <div style="max-width:980px;margin:16px auto;padding:0 14px;">
-    <input id="searchInput" class="search-box" placeholder="Search text (select a version first)">
-    <div id="searchResults"></div>
-  </div>
-</section>
-
-<!-- Book Picker -->
-<div id="pickerPanel" class="picker-panel" aria-hidden="true">
-  <div class="picker-top">
-    <div style="display:flex;align-items:center"><div class="handle" aria-hidden="true"></div><div>Select Book & Chapter</div></div>
-    <button id="closePicker" class="icon-btn" aria-label="Close picker">✖</button>
-  </div>
-  <div class="picker-body">
-    <select id="bookSelect" class="large-select" aria-label="Book"><option>Loading...</option></select>
-    <select id="chapterSelect" class="large-select" aria-label="Chapter"></select>
-    <div style="display:flex;justify-content:flex-end">
-      <button id="gotoBtn" class="open-picker">Go</button>
-    </div>
-  </div>
-</div>
-
-<div id="notice" class="notice hidden"></div>
+  </section>
+</main>
 
 <script>
-(function(){
+(async function(){
 
-/* Candidate files */
-const FILES=[
-  "KJV_bible.json","NIV_bible.json","NLT_bible.json","NKJV_bible.json","ESV_bible.json",
-  "tamil_bible.json","telugu_bible.json","hindi_bible.json","malayalam_bible.json",
-  "kannada_bible.json","marathi_bible.json","gujarati_bible.json","bengali_bible.json",
-  "punjabi_bible.json","odia_bible.json","nepali_bible.json","afrikaans_bible.json"
+/* -------- CONFIG (matches your repo filenames) -------- */
+const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/"; // root of your repo
+const FILES = [
+  "AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json","NIV_bible.json",
+  "NKJV_bible.json","NLT_bible.json","afrikaans_bible.json","bengali_bible.json","gujarati_bible.json",
+  "hindi_bible.json","hungarian_bible.json","indonesian_bible.json","kannada_bible.json","malayalam_bible.json",
+  "marathi_bible.json","nepali_bible.json","odia_bible.json","punjabi_bible.json","sepedi_bible.json",
+  "tamil_bible.json","telugu_bible.json","xhosa_bible.json","zulu_bible.json"
 ];
 
-let versionsList=[];
-const bibleCache={};
-let current={version:null,bookIndex:0,chapterIndex:0};
-let parallel={version:null};
+/* ---- state/cache ---- */
+const versionMap = {};      // label -> filename
+const bibleCache = {};      // label -> normalized data (books, chapters)
+const searchIndex = {};     // label -> flattened [{book, chapter, verse, textLower, text}]
+let current = { version: null, bookIndex: 0, chapterIndex: 0 };
 
-/* DOM references */
-const versionCompact=document.getElementById('versionCompact');
-const parallelVersion=document.getElementById('parallelVersion');
-const openPicker=document.getElementById('openPicker');
-const pickerPanel=document.getElementById('pickerPanel');
-const closePicker=document.getElementById('closePicker');
-const bookSelect=document.getElementById('bookSelect');
-const chapterSelect=document.getElementById('chapterSelect');
-const gotoBtn=document.getElementById('gotoBtn');
+/* ---- dom ---- */
+const versionSelect = document.getElementById('versionSelect');
+const openRead = document.getElementById('openRead');
+const searchBox = document.getElementById('searchBox');
+const searchBtn = document.getElementById('searchBtn');
+const reader = document.getElementById('reader');
+const versesContainer = document.getElementById('versesContainer');
+const currentRef = document.getElementById('currentRef');
+const searchResults = document.getElementById('searchResults');
+const searchInfo = document.getElementById('searchInfo');
 
-const versesEl=document.getElementById('verses');
-const currentRef=document.getElementById('currentRef');
-const labelPrimary=document.getElementById('labelPrimary');
-const labelParallel=document.getElementById('labelParallel');
-const parallelLabels=document.getElementById('parallelLabels');
-
-const ttsPlay=document.getElementById('ttsPlay');
-const ttsPause=document.getElementById('ttsPause');
-const ttsResume=document.getElementById('ttsResume');
-const ttsStop=document.getElementById('ttsStop');
-
-const tabRead=document.getElementById('tabRead');
-const tabSearch=document.getElementById('tabSearch');
-const readSection=document.getElementById('readSection');
-const searchSection=document.getElementById('searchSection');
-const searchInput=document.getElementById('searchInput');
-const searchResults=document.getElementById('searchResults');
-
-const themeToggle=document.getElementById('themeToggle');
-
-/* mobile toolbar elements (duplicate for scrollable toolbar) */
-const m_version = document.getElementById('versionCompact_m');
-const m_parallel = document.getElementById('parallelVersion_m');
-const m_openPicker = document.getElementById('openPicker_m');
-const m_ttsPlay = document.getElementById('ttsPlay_m');
-const m_ttsPause = document.getElementById('ttsPause_m');
-const m_ttsResume = document.getElementById('ttsResume_m');
-const m_ttsStop = document.getElementById('ttsStop_m');
-
-document.addEventListener('DOMContentLoaded', init);
-
-async function init(){
-  await discoverVersions();
-  populateSelectors();
-  wireUI();
-  restoreTheme();
-  // ensure mobile toolbar mirrors desktop selects
-  mirrorMobileControls();
+/* ---- populate version selector ---- */
+function buildLabel(fn){
+  // produce readable label from filename: KJV_bible.json -> KJV
+  return fn.replace(/_bible\.json$/i,'').replace(/\.json$/i,'');
 }
+FILES.forEach(fn=>{
+  const label = buildLabel(fn);
+  versionMap[label] = fn;
+  const opt = document.createElement('option');
+  opt.value = label; opt.textContent = label;
+  versionSelect.appendChild(opt);
+});
 
-/* discover which JSON files exist */
-async function discoverVersions(){
-  versionsList=[];
-  for(const f of FILES){
-    const url='versions/'+f;
-    try{
-      // try HEAD
-      let ok=false;
-      try{ const r=await fetch(url,{method:'HEAD'}); ok=r.ok; } catch(e){ const r2=await fetch(url); ok=r2.ok; }
-      if(ok){
-        const label=f.replace(/_bible|\.json/gi,'').replace(/[-_]/g,' ').toUpperCase();
-        versionsList.push({label,path:url});
-      }
-    }catch(e){}
-  }
-}
+/* ---- helpers ---- */
+function escapeHtml(s){ return (s||'').toString().replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
-/* populate selects (both desktop & mobile) */
-function populateSelectors(){
-  versionCompact.innerHTML='<option value="">Version</option>';
-  parallelVersion.innerHTML='<option value="">Parallel</option>';
-  if(m_version) { m_version.innerHTML = '<option value="">Version</option>'; }
-  if(m_parallel) { m_parallel.innerHTML = '<option value="">Parallel</option>'; }
-  versionsList.forEach(v=>{
-    versionCompact.appendChild(new Option(v.label,v.label));
-    parallelVersion.appendChild(new Option(v.label,v.label));
-    if(m_version) m_version.appendChild(new Option(v.label,v.label));
-    if(m_parallel) m_parallel.appendChild(new Option(v.label,v.label));
-  });
-}
-
-/* wire UI events */
-function wireUI(){
-  versionCompact.onchange = async ()=>{
-    const label = versionCompact.value; if(!label) return;
-    current.version = label; labelPrimary.textContent = label;
-    await loadVersion(label); populateBooks(); openPickerClick();
-    if(m_version) m_version.value = label;
-  };
-  if(m_version) m_version.onchange = ()=> { versionCompact.value = m_version.value; versionCompact.onchange(); };
-
-  parallelVersion.onchange = async ()=>{
-    parallel.version = parallelVersion.value || null;
-    if(parallel.version){ labelParallel.textContent = parallel.version; parallelLabels.style.display='flex'; await loadVersion(parallel.version); }
-    else { parallelLabels.style.display='none'; }
-    renderChapter();
-    if(m_parallel) m_parallel.value = parallel.version || '';
-  };
-  if(m_parallel) m_parallel.onchange = ()=> { parallelVersion.value = m_parallel.value; parallelVersion.onchange(); };
-
-  openPicker.onclick = openPickerClick;
-  if(m_openPicker) m_openPicker.onclick = openPickerClick;
-  closePicker.onclick = ()=> { pickerPanel.classList.remove('show'); pickerPanel.setAttribute('aria-hidden','true'); };
-
-  bookSelect.onchange = ()=> populateChaptersForBook(Number(bookSelect.value));
-  gotoBtn.onclick = ()=> { current.bookIndex = Number(bookSelect.value); current.chapterIndex = Number(chapterSelect.value); pickerPanel.classList.remove('show'); renderChapter(); };
-
-  // tabs
-  tabRead.onclick = ()=> switchTab('read');
-  tabSearch.onclick = ()=> switchTab('search');
-
-  // search
-  searchInput.oninput = debounce(runSearch,200);
-
-  // tts (desktop)
-  ttsPlay.onclick = startTTS;
-  ttsPause.onclick = ()=> speechSynthesis.pause();
-  ttsResume.onclick = ()=> speechSynthesis.resume();
-  ttsStop.onclick = ()=> stopTTS();
-
-  // tts (mobile)
-  if(m_ttsPlay) m_ttsPlay.onclick = ()=> { ttsPlay.click(); };
-  if(m_ttsPause) m_ttsPause.onclick = ()=> { ttsPause.click(); };
-  if(m_ttsResume) m_ttsResume.onclick = ()=> { ttsResume.click(); };
-  if(m_ttsStop) m_ttsStop.onclick = ()=> { ttsStop.click(); };
-
-  // theme
-  themeToggle.onclick = ()=> { const on=document.documentElement.classList.toggle('dark'); if(on) localStorage.setItem('darkMode','1'); else localStorage.removeItem('darkMode'); };
-
-  // keyboard space toggle
-  document.addEventListener('keydown', e=>{
-    if(e.code === 'Space' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){
-      e.preventDefault();
-      if(speechSynthesis.paused) speechSynthesis.resume();
-      else if(speechSynthesis.speaking) speechSynthesis.pause();
-      else startTTS();
-    }
-  });
-}
-
-/* open picker helper */
-function openPickerClick(){
-  pickerPanel.classList.add('show'); pickerPanel.setAttribute('aria-hidden','false');
-}
-
-/* load & cache JSON */
-async function loadVersion(label){
-  if(bibleCache[label]) return;
-  const entry = versionsList.find(v=>v.label===label);
-  if(!entry) return;
-  try{
-    const r = await fetch(entry.path);
-    const j = await r.json();
-    bibleCache[label] = normalize(j);
-  }catch(e){ showNotice('Failed to load ' + label,2000); }
-}
-
-/* normalize shapes */
+/* normalize shapes (similar to your original) */
 function normalize(data){
   const out={books:[]};
   if(Array.isArray(data.books)){
@@ -440,110 +132,166 @@ function normalize(data){
   return out;
 }
 
-/* populate book/chapter */
-function populateBooks(){
-  const data=bibleCache[current.version];
-  if(!data) return;
-  bookSelect.innerHTML=''; data.books.forEach((b,i)=>bookSelect.appendChild(new Option(b.name,i)));
-  populateChaptersForBook(0);
-}
-function populateChaptersForBook(bookIndex){
-  const chs = bibleCache[current.version].books[bookIndex].chapters;
-  chapterSelect.innerHTML=''; for(let i=0;i<chs.length;i++) chapterSelect.appendChild(new Option(String(i+1), i));
-  chapterSelect.value=0; current.bookIndex=bookIndex; current.chapterIndex=0;
-}
-
-/* render chapter (with parallel if selected) */
-function renderChapter(){
-  if(!current.version){ versesEl.innerHTML='<div style="padding:12px">Select a version</div>'; return; }
-  const book = bibleCache[current.version].books[current.bookIndex];
-  const chapterArr = book?.chapters?.[current.chapterIndex] || [];
-  currentRef.textContent = `${book?.name || ''} ${current.chapterIndex + 1}`;
-
-  let pArr = null;
-  if(parallel.version && bibleCache[parallel.version]){
-    const pb = bibleCache[parallel.version].books[current.bookIndex];
-    pArr = pb?.chapters?.[current.chapterIndex] || [];
+/* ---- load version JSON and build small search index ---- */
+async function loadVersion(label){
+  if(!label) throw new Error("No label");
+  if(bibleCache[label]) return bibleCache[label];
+  const filename = versionMap[label];
+  const url = BASE + filename;
+  try{
+    showTempNotice('Loading ' + label + ' …');
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('Failed to fetch ' + url);
+    const j = await res.json();
+    const norm = normalize(j);
+    bibleCache[label] = norm;
+    buildIndexForVersion(label, norm);
+    hideTempNotice();
+    return norm;
+  }catch(err){
+    hideTempNotice();
+    showTempNotice('Load failed: ' + (err.message||err), 3000);
+    throw err;
   }
-
-  const max = Math.max(chapterArr.length, pArr ? pArr.length : 0);
-  let html = '';
-  for(let i=0;i<max;i++){
-    const a = chapterArr[i] || '';
-    const b = pArr ? (pArr[i] || '') : '';
-    html += `<div class="verse-block"><div class="verse-number">Verse ${i+1}</div><div class="verse-primary">${escapeHtml(a)}</div>${parallel.version ? `<div class="verse-parallel">${escapeHtml(b)}</div>` : ''}</div>`;
-  }
-  versesEl.innerHTML = html; versesEl.scrollTop = 0;
 }
 
-/* escape */
-function escapeHtml(s){ return (s||'').toString().replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-
-/* SEARCH */
-function runSearch(){
-  const q = (searchInput.value || '').trim().toLowerCase();
-  if(!q){ searchResults.innerHTML=''; return; }
-  if(!current.version){ searchResults.innerHTML='<div>Please select a version first</div>'; return; }
-  const data = bibleCache[current.version];
-  if(!data){ searchResults.innerHTML='<div>Version not loaded</div>'; return; }
-
-  let out = '';
-  data.books.forEach((bk,bi)=>{
-    bk.chapters.forEach((ch,ci)=>{
+/* build flattened index for faster searching */
+function buildIndexForVersion(label, norm){
+  const idx = [];
+  norm.books.forEach((b,bi)=>{
+    b.chapters.forEach((ch,ci)=>{
       ch.forEach((v,vi)=>{
-        if(String(v).toLowerCase().includes(q)){
-          out += `<div class="search-result" onclick="openSearchResult(${bi},${ci})"><strong>${bk.name} ${ci+1}:${vi+1}</strong><div>${escapeHtml(v)}</div></div>`;
-        }
+        const text = (v||'').toString();
+        idx.push({
+          bookIndex: bi,
+          chapterIndex: ci,
+          verseIndex: vi,
+          book: b.name,
+          chapter: ci+1,
+          verse: vi+1,
+          text,
+          textLower: text.toLowerCase()
+        });
       });
     });
   });
-  searchResults.innerHTML = out || '<div>No results</div>';
-}
-window.openSearchResult = function(book,chapter){ current.bookIndex=book; current.chapterIndex=chapter; switchTab('read'); renderChapter(); }
-
-/* TTS primary only */
-let ttsQueue = [];
-function startTTS(){
-  stopTTS();
-  const nodes = Array.from(document.querySelectorAll('.verse-primary'));
-  ttsQueue = nodes.map(n => n.textContent.trim()).filter(Boolean);
-  speakNext();
-}
-function speakNext(){
-  if(!ttsQueue.length) return;
-  if(!('speechSynthesis' in window)){ showNotice('TTS not supported'); return; }
-  const text = ttsQueue.shift();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.rate = 1.0; utt.onend = ()=> setTimeout(speakNext, 120);
-  utt.onerror = ()=> setTimeout(speakNext, 150);
-  speechSynthesis.speak(utt);
-}
-function stopTTS(){ if('speechSynthesis' in window) speechSynthesis.cancel(); ttsQueue = []; }
-
-/* Tabs */
-function switchTab(t){
-  if(t==='read'){ tabRead.classList.add('active'); tabSearch.classList.remove('active'); readSection.style.display=''; searchSection.style.display='none'; }
-  else { tabSearch.classList.add('active'); tabRead.classList.remove('active'); readSection.style.display='none'; searchSection.style.display=''; }
+  searchIndex[label] = idx;
 }
 
-/* theme */
-function restoreTheme(){ if(localStorage.getItem('darkMode')) document.documentElement.classList.add('dark'); }
-
-/* debounce */
-function debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
-
-/* small helpers */
-function showNotice(msg,ms=1600){ const n=document.getElementById('notice'); n.textContent=msg; n.classList.remove('hidden'); setTimeout(()=>n.classList.add('hidden'), ms); }
-
-/* mirror mobile toolbar controls (values only) */
-function mirrorMobileControls(){
-  if(!m_version || !m_parallel) return;
-  m_version.onchange = ()=>{ versionCompact.value = m_version.value; versionCompact.onchange(); };
-  m_parallel.onchange = ()=>{ parallelVersion.value = m_parallel.value; parallelVersion.onchange(); };
+/* ---- render a chapter ---- */
+function renderChapter(){
+  const v = current.version;
+  if(!v || !bibleCache[v]){ versesContainer.innerHTML = '<div style="padding:12px">Select a version and open a chapter</div>'; currentRef.textContent='—'; return; }
+  const book = bibleCache[v].books[current.bookIndex];
+  const chap = book.chapters[current.chapterIndex] || [];
+  currentRef.textContent = `${book.name} ${current.chapterIndex + 1}`;
+  let html = '';
+  for(let i=0;i<chap.length;i++){
+    html += `<div class="verse"><div class="num">Verse ${i+1}</div><div>${escapeHtml(chap[i])}</div></div>`;
+  }
+  versesContainer.innerHTML = html || '<div style="padding:12px">No verses found</div>';
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
-/* expose openSearchResult for onclick usage */
-window.openSearchResult = window.openSearchResult || function(book,chapter){ current.bookIndex=book; current.chapterIndex=chapter; switchTab('read'); renderChapter(); };
+/* ---- simple UI helpers ---- */
+let tempNoticeEl = null;
+function showTempNotice(msg,ms=0){
+  if(!tempNoticeEl){
+    tempNoticeEl = document.createElement('div');
+    tempNoticeEl.style.position='fixed';
+    tempNoticeEl.style.left='10px';
+    tempNoticeEl.style.right='10px';
+    tempNoticeEl.style.top='72px';
+    tempNoticeEl.style.padding='10px';
+    tempNoticeEl.style.borderRadius='8px';
+    tempNoticeEl.style.textAlign='center';
+    tempNoticeEl.style.zIndex='999';
+    tempNoticeEl.style.background = '#fff8';
+    tempNoticeEl.style.border='1px solid #eee';
+    document.body.appendChild(tempNoticeEl);
+  }
+  tempNoticeEl.textContent = msg;
+  tempNoticeEl.style.display = '';
+  if(ms>0) setTimeout(()=>tempNoticeEl.style.display='none', ms);
+}
+function hideTempNotice(){ if(tempNoticeEl) tempNoticeEl.style.display='none'; }
+
+/* ---- search (uses prebuilt index) ---- */
+async function runSearch(query){
+  query = (query||'').trim().toLowerCase();
+  searchResults.innerHTML = ''; searchInfo.textContent = '';
+  if(!query) return;
+  if(!current.version){
+    searchInfo.textContent = 'Please select a version first';
+    return;
+  }
+  // ensure version loaded
+  if(!searchIndex[current.version]) {
+    await loadVersion(current.version);
+  }
+  const idx = searchIndex[current.version];
+  if(!idx) { searchInfo.textContent = 'No index available'; return; }
+
+  const results = [];
+  // use simple substring search on pre-lowercased values; gather up to maxResults
+  const maxResults = 150;
+  for(let i=0;i<idx.length && results.length < maxResults;i++){
+    if(idx[i].textLower.includes(query)) results.push(idx[i]);
+  }
+
+  searchInfo.textContent = `Found ${results.length}${results.length>=maxResults ? ' (showing first '+maxResults+')':''}`;
+  if(!results.length){ searchResults.innerHTML = '<div style="padding:8px;color:#666">No results</div>'; return; }
+
+  // render
+  const frag = document.createDocumentFragment();
+  results.forEach(r=>{
+    const div = document.createElement('div');
+    div.className = 'search-item';
+    div.innerHTML = `<strong>${escapeHtml(r.book)} ${r.chapter}:${r.verse}</strong>
+                     <div style="margin-top:6px">${escapeHtml(r.text.length>280 ? r.text.slice(0,280)+'…': r.text)}</div>
+                     <small>Click to open chapter</small>`;
+    div.onclick = async ()=>{
+      // open the chapter containing this result
+      current.bookIndex = r.bookIndex;
+      current.chapterIndex = r.chapterIndex;
+      // ensure data loaded (already is)
+      renderChapter();
+      window.scrollTo({top: document.getElementById('reader').offsetTop, behavior:'smooth'});
+    };
+    frag.appendChild(div);
+  });
+  searchResults.appendChild(frag);
+}
+
+/* ---- UI events ---- */
+versionSelect.onchange = async function(){
+  const label = versionSelect.value;
+  if(!label) return;
+  current.version = label;
+  // quick auto-load meta + index (async)
+  try{ await loadVersion(label); showTempNotice(label + ' ready', 800); } catch(e){ console.error(e); }
+};
+
+openRead.onclick = async function(){
+  if(!current.version){
+    showTempNotice('Please select a version first',1500);
+    return;
+  }
+  // open book 0, chapter 0 by default
+  current.bookIndex = 0; current.chapterIndex = 0;
+  await loadVersion(current.version);
+  renderChapter();
+};
+
+searchBtn.onclick = function(){ runSearch(searchBox.value); };
+searchBox.onkeydown = function(e){ if(e.key === 'Enter'){ runSearch(searchBox.value); } };
+
+/* ---- initialize: set small default and keep UI minimal ---- */
+(function init(){
+  // choose a default version if you want, or leave blank
+  // versionSelect.value = 'KJV'; current.version = 'KJV';
+  versesContainer.innerHTML = '<div style="padding:12px">Select a version from the dropdown and click "Open default" or Search</div>';
+})();
 
 })();
 </script>
