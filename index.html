@@ -452,11 +452,11 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
   versesContainer.innerHTML = "<div style='padding:12px'>Select PRIMARY version and click Open (optionally choose PARALLEL). Use Search, Jump or TTS to navigate.</div>";
 
 })(); // IIFE end
-</script>
-if ("serviceWorker" in navigator) {
+  if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/service-worker.js")
     .then(()=>console.log("SW registered"))
     .catch(e=>console.warn("SW failed", e));
 }
+</script>
 </body>
 </html>
