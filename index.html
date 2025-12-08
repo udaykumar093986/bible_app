@@ -4,6 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Bible Reader — Final (Search Fixed)</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0b66c2">
 
 <!-- Verse font -->
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
@@ -451,5 +453,10 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
 
 })(); // IIFE end
 </script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/service-worker.js")
+    .then(()=>console.log("SW registered"))
+    .catch(e=>console.warn("SW failed", e));
+}
 </body>
 </html>
