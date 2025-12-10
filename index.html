@@ -3,180 +3,192 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Bible Reader — SPA (HOME / READ / SEARCH / PARALLEL)</title>
+<title>Bible Reader</title>
 
-<!-- Font Awesome (free) -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
-<!-- Serif font for verses -->
+<!-- Serif for verses -->
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
 :root{
-  --bg:#f7f9fc; --card:#fff; --accent:#0b66c2; --muted:#6f7f8b;
+  --bg:#f7f9fc; --card:#ffffff; --accent:#0b66c2; --muted:#6f7f8b;
   --border:#e6eef6; --soft:#f4f8ff; --highlight:#fff8d1;
+  --maxwidth:1100px;
+  --radius:12px;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:#152a33;-webkit-font-smoothing:antialiased}
+html,body{height:100%}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:#102027;-webkit-font-smoothing:antialiased}
 
-/* header */
+/* Header (YouVersion-like top tabs) */
 .header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 18px;background:var(--card);border-bottom:1px solid var(--border);
-  position:sticky;top:0;z-index:120;
+  position:sticky;top:0;z-index:140;
+  background:var(--card);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:14px 18px;
 }
-.brand{font-weight:800;color:var(--accent);font-size:20px}
-.tabbar{display:flex;gap:6px;align-items:center}
-.tab{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer;font-weight:700}
-.tab.active{background:#eaf6ff;color:var(--accent);box-shadow:0 1px 4px rgba(11,102,194,0.10)}
+.brand{font-weight:800;color:var(--accent);font-size:20px;display:flex;align-items:center;gap:10px}
+.tabbar{display:flex;gap:8px;align-items:center}
+.tab{display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:10px;color:var(--muted);font-weight:700;cursor:pointer}
+.tab i{font-size:14px}
+.tab.active{background:#eaf6ff;color:var(--accent);box-shadow:0 1px 4px rgba(11,102,194,0.08)}
 
-/* layout */
-.app{max-width:1100px;margin:18px auto;padding:0 18px}
-.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:16px 0}
-select,input,button{font-size:14px}
-select,input{padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--card)}
-button{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:white;cursor:pointer}
-
-/* jump / home card */
-.home-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;max-width:720px;margin-left:auto;margin-right:auto}
-.home-row{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-.home-row select, .home-row input{flex:1;min-width:120px}
-.home-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
-
-/* panes (tab content) */
-.pane{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;min-height:120px;display:none;opacity:0;transform:translateY(6px);transition:all .20s ease}
+/* Layout */
+.container{max-width:var(--maxwidth);margin:20px auto;padding:0 18px}
+.pane{display:none;opacity:0;transform:translateY(6px);transition:all .18s ease}
 .pane.show{display:block;opacity:1;transform:translateY(0)}
 
-/* reader */
-.reader-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
-.select{padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--card)}
-.ref{font-size:22px;font-weight:700;color:var(--accent);margin-bottom:12px}
-.verse-block{background:#fff;padding:14px;border-radius:10px;border:1px solid var(--border);margin-bottom:12px}
-.verse-num{font-weight:700;color:#345;margin-bottom:6px;font-size:13px}
-.verse-primary{font-family:"Noto Serif",serif;font-size:18px;line-height:1.7;color:#111}
+/* Card / controls */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;box-shadow:0 6px 18px rgba(11,102,194,0.02)}
+.controls-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.select, input[type="text"]{padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--card);font-size:14px}
+button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:#fff;cursor:pointer;font-weight:700}
+.small-btn{padding:8px 10px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer;font-weight:700}
+
+/* HOME large centered card layout A */
+.home-wrapper{display:flex;justify-content:center}
+.home-card{width:100%;max-width:760px;border-radius:16px;padding:20px}
+.home-title{font-size:18px;font-weight:800;color:#0a4f86;margin-bottom:12px}
+.home-row{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.home-row label{min-width:90px;color:#334; font-weight:700}
+.home-row .select{flex:1;min-width:140px}
+
+/* Reader */
+.reader-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.reader-ref{font-size:22px;font-weight:800;color:var(--accent);margin:8px 0}
+.verse-block{background:#fff;border-radius:12px;border:1px solid var(--border);padding:14px;margin-bottom:12px}
+.verse-num{font-weight:800;color:#355;margin-bottom:8px;font-size:13px}
+.verse-text{font-family:"Noto Serif",serif;font-size:18px;line-height:1.75;color:#111}
 .verse-parallel{margin-top:10px;padding-left:14px;border-left:3px solid var(--accent);font-family:"Noto Serif",serif;font-size:17px;color:#2a3c55}
 .active-verse{background:var(--highlight);border-color:#dccb6e}
 
-/* search */
+/* Search results */
 .search-item{padding:12px;border-radius:10px;border:1px solid var(--border);background:#fff;margin-bottom:10px;cursor:pointer}
 .highlight{background:#fff3c4;padding:2px;border-radius:4px}
 
-/* parallel vertical layout */
-.parallel-verse{padding:12px;border-radius:8px;border:1px solid var(--border);margin-bottom:10px;background:#fff}
+/* Parallel specific */
+.parallel-controls{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.parallel-container .parallel-pair{margin-bottom:14px}
+.parallel-verse{background:#fff;border-radius:10px;border:1px solid var(--border);padding:12px;margin-bottom:10px}
 
-/* nav */
-.nav-row{display:flex;gap:10px;align-items:center;margin:10px 0}
-.small{padding:6px 10px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+/* Nav row small buttons */
+.nav-row{display:flex;gap:10px;align-items:center;margin:8px 0}
+.note{margin-left:auto;color:#666;font-size:13px}
 
-/* notice */
-.notice{position:fixed;left:20px;right:20px;top:80px;background:var(--card);border:1px solid var(--border);padding:12px;border-radius:10px;text-align:center;display:none;z-index:400;color:#222}
+/* Notice */
+.notice{position:fixed;left:20px;right:20px;top:84px;background:var(--card);border:1px solid var(--border);padding:12px;border-radius:10px;text-align:center;display:none;z-index:500;color:#222}
 
 /* responsive */
-@media(max-width:720px){
-  .home-row{flex-direction:column}
-  .controls select,input{width:100%}
-  .tab{padding:8px 10px}
+@media (max-width:800px){
+  .home-row label{min-width:70px}
+  .home-card{padding:16px}
+  .reader-ref{font-size:18px}
 }
 </style>
 </head>
 <body>
-
 <header class="header">
-  <div class="brand">Bible Reader</div>
+  <div class="brand"><i class="fa-solid fa-book-open"></i> Bible Reader</div>
   <nav class="tabbar" role="navigation" aria-label="Top tabs">
-    <div class="tab" data-tab="home" id="tab-home"><i class="fa-solid fa-house"></i><span>HOME</span></div>
-    <div class="tab" data-tab="read" id="tab-read"><i class="fa-solid fa-book"></i><span>READ</span></div>
-    <div class="tab" data-tab="search" id="tab-search"><i class="fa-solid fa-magnifying-glass"></i><span>SEARCH</span></div>
-    <div class="tab" data-tab="parallel" id="tab-parallel"><i class="fa-solid fa-columns"></i><span>PARALLEL</span></div>
+    <div class="tab active" id="tab-home" data-tab="home"><i class="fa-solid fa-house"></i><span>HOME</span></div>
+    <div class="tab" id="tab-read" data-tab="read"><i class="fa-solid fa-book"></i><span>READ</span></div>
+    <div class="tab" id="tab-search" data-tab="search"><i class="fa-solid fa-magnifying-glass"></i><span>SEARCH</span></div>
+    <div class="tab" id="tab-parallel" data-tab="parallel"><i class="fa-solid fa-columns"></i><span>PARALLEL</span></div>
   </nav>
 </header>
 
-<main class="app" id="app">
-  <!-- top controls are minimal; HOME card will contain version selection and jump -->
-  <div style="height:12px"></div>
-
-  <!-- HOME card (card-style center) -->
+<main class="container" id="app">
+  <!-- HOME pane -->
   <section id="pane-home" class="pane show" role="region" aria-label="Home">
-    <div class="home-card">
-      <div style="font-weight:800;font-size:18px;margin-bottom:8px">Open a passage</div>
-      <div class="home-row">
-        <label style="min-width:80px;align-self:center">Version</label>
-        <select id="homeVersionSelect"><option value="">Select version</option></select>
-      </div>
+    <div class="home-wrapper">
+      <div class="card home-card">
+        <div class="home-title">Open a passage</div>
 
-      <div class="home-row">
-        <label style="min-width:80px;align-self:center">Passage</label>
-        <select id="homeBookSelect"><option value="">Book</option></select>
-        <select id="homeChapterSelect"><option value="">Chapter</option></select>
-        <select id="homeVerseSelect"><option value="">Verse</option></select>
-      </div>
+        <!-- Version row -->
+        <div class="home-row">
+          <label for="homeVersion">Version</label>
+          <select id="homeVersion" class="select"><option value="">Select version</option></select>
+        </div>
 
-      <div class="home-row">
-        <div style="min-width:80px"></div>
-        <input id="homeRangeInput" placeholder="Optional range (e.g. 7-8)" style="flex:1" />
-      </div>
+        <!-- Passage selectors row -->
+        <div class="home-row">
+          <label for="homeBook">Passage</label>
+          <select id="homeBook" class="select"><option value="">Book</option></select>
+          <select id="homeChapter" class="select"><option value="">Chapter</option></select>
+          <select id="homeVerse" class="select"><option value="">Verse</option></select>
+        </div>
 
-      <div class="home-actions">
-        <button id="homeOpenBtn">OPEN</button>
+        <!-- Range + open -->
+        <div class="home-row" style="align-items:center">
+          <div style="min-width:90px"></div>
+          <input id="homeRange" class="select" placeholder="Optional range (e.g. 7-8)" style="flex:1;min-width:160px" />
+          <div style="width:8px"></div>
+          <button id="homeOpen" class="btn">OPEN</button>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- READ pane (clean reader) -->
+  <!-- READ pane -->
   <section id="pane-read" class="pane" role="region" aria-label="Read">
-    <div class="reader-top">
-      <!-- NO selectors here per your request - only TTS and navigation -->
-      <button id="readTtsPlay" class="small">▶ Play</button>
-      <button id="readTtsPause" class="small">⏸ Pause</button>
-      <button id="readTtsResume" class="small">⏯ Resume</button>
-      <button id="readTtsStop" class="small">⏹ Stop</button>
+    <div class="card">
+      <div class="reader-top">
+        <!-- TTS & small read-only controls only -->
+        <button id="play" class="small-btn">▶ Play</button>
+        <button id="pause" class="small-btn">⏸ Pause</button>
+        <button id="resume" class="small-btn">⏯ Resume</button>
+        <button id="stop" class="small-btn">⏹ Stop</button>
 
-      <div style="flex:1"></div>
-      <div style="color:#666;font-size:13px">Swipe / Drag / Arrow keys</div>
+        <div style="flex:1"></div>
+        <div class="note">Swipe / Drag / Arrow keys to change chapter</div>
+      </div>
+
+      <div class="nav-row" id="readNav" style="display:none">
+        <button id="prevVerse" class="small-btn">◀ Prev Verse</button>
+        <button id="nextVerse" class="small-btn">Next Verse ▶</button>
+        <button id="prevChapter" class="small-btn">◀ Prev Chapter</button>
+        <button id="nextChapter" class="small-btn">Next Chapter ▶</button>
+      </div>
+
+      <div id="readRef" class="reader-ref"></div>
+      <div id="readVerses" tabindex="0"></div>
     </div>
-
-    <div class="nav-row" id="readNav" style="display:none">
-      <button id="readPrevVerse" class="small">◀ Prev Verse</button>
-      <button id="readNextVerse" class="small">Next Verse ▶</button>
-      <button id="readPrevChapter" class="small">◀ Prev Chapter</button>
-      <button id="readNextChapter" class="small">Next Chapter ▶</button>
-    </div>
-
-    <div id="readRef" class="ref"></div>
-    <div id="readVerses" tabindex="0"></div>
   </section>
 
   <!-- SEARCH pane -->
   <section id="pane-search" class="pane" role="region" aria-label="Search">
-    <div style="margin-bottom:8px">
-      <input id="searchInput" placeholder="Search in current version…" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border)" />
+    <div class="card">
+      <div style="margin-bottom:10px">
+        <input id="searchBox" placeholder="Search current version (press Enter)…" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border)" />
+      </div>
+      <div id="searchInfo" style="margin-bottom:8px;color:#666"></div>
+      <div id="searchResults"></div>
     </div>
-    <div id="searchInfo" style="margin-bottom:8px;color:#666"></div>
-    <div id="searchResults"></div>
   </section>
 
   <!-- PARALLEL pane -->
   <section id="pane-parallel" class="pane" role="region" aria-label="Parallel">
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
-      <select id="parallelA"><option value="">Version A</option></select>
-      <select id="parallelB"><option value="">Version B</option></select>
-      <div style="flex:1"></div>
-      <button id="parallelRefresh" class="small">OPEN</button>
-    </div>
-    <div id="parallelContainer"></div>
-  </section>
+    <div class="card">
+      <div class="parallel-controls">
+        <select id="parallelA" class="select"><option value="">Version A</option></select>
+        <select id="parallelB" class="select"><option value="">Version B</option></select>
+        <div style="flex:1"></div>
+        <button id="parallelOpen" class="btn">OPEN</button>
+      </div>
 
+      <div id="parallelContainer" class="parallel-container"></div>
+    </div>
+  </section>
 </main>
 
 <div id="notice" class="notice" role="status" aria-live="polite"></div>
 
 <script>
-/* Final SPA JS implementing HOME → READ → SEARCH → PARALLEL
-   - Home: choose version + book/chapter/verse/range -> OPEN -> READ
-   - Read: clean reader (TTS + navigation only)
-   - Search: searches the version selected in HOME; clicking a result opens READ
-   - Parallel: two dropdowns only; displays verses vertically aligned; uses READ location
-   - Option A: READ uses the version chosen in HOME
+/* Single-file SPA JS
+   - Option A behaviour: HOME selection determines active version for READ/SEARCH/PARALLEL
+   - Unified UI: HOME card + READ + PARALLEL consistent styles
+   - PARALLEL: no version labels inside verse blocks
 */
 
 (async function(){
@@ -184,277 +196,286 @@ button{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);co
   const FILES = [
 "AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json",
 "NIV_bible.json","NKJV_bible.json","NLT_bible.json","afrikaans_bible.json",
-"bengali_bible.json","gujarati_bible.json","hindi_bible.json",
-"hungarian_bible.json","indonesian_bible.json","kannada_bible.json",
-"malayalam_bible.json","marathi_bible.json","nepali_bible.json",
-"odia_bible.json","punjabi_bible.json","sepedi_bible.json",
+"bengali_bible.json","gujarati_bible.json","hindi_bible.json","hungarian_bible.json",
+"indonesian_bible.json","kannada_bible.json","malayalam_bible.json","marathi_bible.json",
+"nepali_bible.json","odia_bible.json","punjabi_bible.json","sepedi_bible.json",
 "tamil_bible.json","telugu_bible.json","xhosa_bible.json","zulu_bible.json"
   ];
 
-  // DOM references
-  const tabs = { home: document.getElementById('tab-home'), read: document.getElementById('tab-read'), search: document.getElementById('tab-search'), parallel: document.getElementById('tab-parallel') };
-  const panes = { home: document.getElementById('pane-home'), read: document.getElementById('pane-read'), search: document.getElementById('pane-search'), parallel: document.getElementById('pane-parallel') };
+  // DOM refs
+  const tabs = {
+    home: document.getElementById('tab-home'),
+    read: document.getElementById('tab-read'),
+    search: document.getElementById('tab-search'),
+    parallel: document.getElementById('tab-parallel')
+  };
+  const panes = {
+    home: document.getElementById('pane-home'),
+    read: document.getElementById('pane-read'),
+    search: document.getElementById('pane-search'),
+    parallel: document.getElementById('pane-parallel')
+  };
 
-  // HOME elements
-  const homeVersionSelect = document.getElementById('homeVersionSelect');
-  const homeBookSelect = document.getElementById('homeBookSelect');
-  const homeChapterSelect = document.getElementById('homeChapterSelect');
-  const homeVerseSelect = document.getElementById('homeVerseSelect');
-  const homeRangeInput = document.getElementById('homeRangeInput');
-  const homeOpenBtn = document.getElementById('homeOpenBtn');
+  // HOME
+  const homeVersion = document.getElementById('homeVersion');
+  const homeBook = document.getElementById('homeBook');
+  const homeChapter = document.getElementById('homeChapter');
+  const homeVerse = document.getElementById('homeVerse');
+  const homeRange = document.getElementById('homeRange');
+  const homeOpen = document.getElementById('homeOpen');
 
-  // READ elements
+  // READ
   const readRef = document.getElementById('readRef');
   const readVerses = document.getElementById('readVerses');
   const readNav = document.getElementById('readNav');
-  const readPrevVerse = document.getElementById('readPrevVerse');
-  const readNextVerse = document.getElementById('readNextVerse');
-  const readPrevChapter = document.getElementById('readPrevChapter');
-  const readNextChapter = document.getElementById('readNextChapter');
-  const readTtsPlay = document.getElementById('readTtsPlay');
-  const readTtsPause = document.getElementById('readTtsPause');
-  const readTtsResume = document.getElementById('readTtsResume');
-  const readTtsStop = document.getElementById('readTtsStop');
+  const prevVerseBtn = document.getElementById('prevVerse');
+  const nextVerseBtn = document.getElementById('nextVerse');
+  const prevChapterBtn = document.getElementById('prevChapter');
+  const nextChapterBtn = document.getElementById('nextChapter');
+  const playBtn = document.getElementById('play');
+  const pauseBtn = document.getElementById('pause');
+  const resumeBtn = document.getElementById('resume');
+  const stopBtn = document.getElementById('stop');
 
-  // SEARCH elements
-  const searchInput = document.getElementById('searchInput');
+  // SEARCH
+  const searchBox = document.getElementById('searchBox');
   const searchInfo = document.getElementById('searchInfo');
   const searchResults = document.getElementById('searchResults');
 
-  // PARALLEL elements
+  // PARALLEL
   const parallelA = document.getElementById('parallelA');
   const parallelB = document.getElementById('parallelB');
-  const parallelRefresh = document.getElementById('parallelRefresh');
+  const parallelOpen = document.getElementById('parallelOpen');
   const parallelContainer = document.getElementById('parallelContainer');
 
   const notice = document.getElementById('notice');
 
-  function showNotice(msg,ms=1300){ notice.textContent = msg; notice.style.display='block'; setTimeout(()=> notice.style.display='none', ms); }
-  function esc(s){ return (s===undefined||s===null)?'':String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+  // caches & state
+  const rawCache = {};
+  const normCache = {};
+  const searchIndexCache = {};
+  const state = {
+    version: null,        // active version (set from HOME)
+    bookIndex: 0,
+    chapterIndex: 0,
+    verseKey: null,       // "7" or "7-8" etc.
+    view: 'home',
+    parallelB: null       // second version for parallel
+  };
+
+  // utilities
+  function showNotice(msg, ms=1400){ notice.textContent = msg; notice.style.display='block'; setTimeout(()=> notice.style.display='none', ms); }
+  function esc(s){ return (s===undefined || s===null) ? '' : String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
   function sortKeys(keys){ return keys.sort((a,b)=> (parseInt(String(a).split('-')[0])||0) - (parseInt(String(b).split('-')[0])||0)); }
 
-  // json normalizer: supports books array or object keyed by book
+  // normalize JSON shapes (array-of-books or object keyed by book)
   function normalize(json){
     if(!json) return {books:[]};
     if(json.books && Array.isArray(json.books)){
-      return { books: json.books.map(b => ({
+      return { books: json.books.map(b=>({
         name: b.name || b.book || "Unknown",
         chapters: (b.chapters || []).map(ch=>{
           if(Array.isArray(ch)) return ch.map((t,i)=>({key:String(i+1), text:t}));
-          if(typeof ch === 'object'){ const vk = sortKeys(Object.keys(ch||{})); return vk.map(k=>({key:k, text: ch[k]})); }
+          if(typeof ch === 'object'){ const keys = sortKeys(Object.keys(ch||{})); return keys.map(k=>({key:k, text: ch[k]})); }
           return [];
         })
       }))};
     }
-    const books = [];
+    const books=[];
     for(const bk of Object.keys(json||{})){
       const bookObj = json[bk];
       if(!bookObj || typeof bookObj !== 'object') continue;
-      const chKeys = Object.keys(bookObj).sort((a,b)=>Number(a)-Number(b));
-      const chapters = [];
-      for(const ck of chKeys){
-        const ch = bookObj[ck];
+      const ck = Object.keys(bookObj).sort((a,b)=>Number(a)-Number(b));
+      const chapters=[];
+      for(const k of ck){
+        const ch = bookObj[k];
         if(!ch || typeof ch !== 'object'){ chapters.push([]); continue; }
         const vkeys = sortKeys(Object.keys(ch||{}));
-        chapters.push(vkeys.map(k=>({key:k, text: ch[k]})));
+        chapters.push(vkeys.map(vk=>({key: vk, text: ch[vk]})));
       }
-      books.push({ name: bk, chapters });
+      books.push({name: bk, chapters});
     }
     return { books };
   }
 
-  // caches + state
-  const rawCache = {};
-  const normCache = {};
-  const searchCache = {};
-  const state = {
-    // Option A: version selected in HOME becomes the active version used by READ/SEARCH/PARALLEL
-    version: null,
-    // parallel 'B' version used in parallel pane (user chooses)
-    parallelBVersion: null,
-    bookIndex: 0,
-    chapterIndex: 0,
-    verseKey: null, // e.g. "7" or "7-8"
-    view: 'home'
-  };
-
-  // Fill version dropdowns (display uppercase labels but keep value as filename)
-  FILES.forEach(f => {
-    const label = f.replace("_bible.json","").replace(".json","").toUpperCase();
-    homeVersionSelect.appendChild(new Option(label, f));
-    parallelA.appendChild(new Option(label, f));
-    parallelB.appendChild(new Option(label, f));
-  });
-
-  // fetch + normalize
-  async function fetchAndNorm(file){
-    if(!file) throw new Error("No file");
-    if(normCache[file]) return normCache[file];
-    const res = await fetch(BASE + file);
-    if(!res.ok) throw new Error("Fetch failed: " + res.status + " for " + file);
+  // fetch & cache
+  async function fetchAndNormalize(fname){
+    if(!fname) throw new Error("No file");
+    if(normCache[fname]) return normCache[fname];
+    const res = await fetch(BASE + fname);
+    if(!res.ok) throw new Error("Fetch failed: " + res.status);
     const j = await res.json();
-    rawCache[file] = j;
+    rawCache[fname] = j;
     const n = normalize(j);
-    normCache[file] = n;
-    buildSearchIndex(file, n);
+    normCache[fname] = n;
+    buildSearchIndex(fname, n);
     return n;
   }
 
-  // search index cache
-  function buildSearchIndex(file, norm){
-    if(searchCache[file]) return searchCache[file];
-    const arr = [];
-    (norm.books || []).forEach((b, bi)=>{
-      (b.chapters || []).forEach((ch, ci)=>{
-        (ch || []).forEach((v, vi)=>{
-          const t = (v && v.text) ? v.text : "";
-          arr.push({ bookIndex: bi, chapterIndex: ci, verseIndex: vi, book: b.name, chapter: ci+1, verseKey: v.key, text: t, low: t.toLowerCase() });
+  // build search index for a version (flattened)
+  function buildSearchIndex(fname, norm){
+    if(searchIndexCache[fname]) return searchIndexCache[fname];
+    const arr=[];
+    (norm.books || []).forEach((b,bi)=>{
+      (b.chapters || []).forEach((ch,ci)=>{
+        (ch || []).forEach((v,vi)=>{
+          const t = (v && v.text) ? v.text : '';
+          arr.push({bookIndex:bi, chapterIndex:ci, verseIndex:vi, book: b.name, chapter: ci+1, verseKey: v.key, text: t, low: t.toLowerCase()});
         });
       });
     });
-    searchCache[file] = arr;
+    searchIndexCache[fname] = arr;
     return arr;
   }
 
-  // Simple SPA tab activation
-  const tabEls = { home: document.getElementById('tab-home'), read: document.getElementById('tab-read'), search: document.getElementById('tab-search'), parallel: document.getElementById('tab-parallel') };
-  function activateTab(name, pushHistory=true){
-    // show pane
+  // populate version selects
+  FILES.forEach(f => {
+    const label = f.replace("_bible.json","").replace(".json","").toUpperCase();
+    const opt1 = new Option(label, f);
+    homeVersion.appendChild(opt1);
+    const optA = new Option(label, f);
+    parallelA.appendChild(optA);
+    const optB = new Option(label, f);
+    parallelB.appendChild(optB);
+  });
+
+  // SPA / Tab activation
+  function activateTab(name, push=true){
     Object.keys(panes).forEach(k => panes[k].classList.toggle('show', k === name));
-    // active tab UI
-    Object.values(tabEls).forEach(t => t.classList.remove('active'));
-    if(tabEls[name]) tabEls[name].classList.add('active');
+    Object.values(tabs).forEach(t => t.classList.remove('active'));
+    if(tabs[name]) tabs[name].classList.add('active');
     state.view = name;
-    if(pushHistory) updateUrl();
+    if(push) updateUrl();
   }
-  Object.keys(tabEls).forEach(k => tabEls[k].addEventListener('click', ()=> {
+  Object.keys(tabs).forEach(k => tabs[k].addEventListener('click', ()=> {
     activateTab(k);
     if(k === 'read') renderRead();
     if(k === 'parallel') renderParallel();
   }));
 
-  // update URL for deep linking
-  function updateUrl(){
+  // update browser URL (deep link)
+  function updateUrl(replace=false){
     const p = new URLSearchParams();
     if(state.version) p.set('version', state.version);
-    if(state.parallelBVersion) p.set('parallelB', state.parallelBVersion);
     p.set('bookIndex', String(state.bookIndex));
     p.set('chapter', String(state.chapterIndex + 1));
     if(state.verseKey) p.set('verse', state.verseKey);
+    if(state.parallelB) p.set('parallelB', state.parallelB);
     p.set('view', state.view || 'home');
-    history.replaceState({...state}, '', '?' + p.toString());
+    const url = location.pathname + '?' + p.toString();
+    if(replace) history.replaceState({...state}, '', url); else history.pushState({...state}, '', url);
   }
 
-  // parse URL into state (on load/back)
+  // read initial URL into state
   function readUrlIntoState(){
     const p = new URLSearchParams(location.search);
-    const ver = p.get('version'); if(ver) state.version = ver;
-    const pb = p.get('parallelB'); if(pb) state.parallelBVersion = pb;
+    const v = p.get('version'); if(v) state.version = v;
     state.bookIndex = Number(p.get('bookIndex') || state.bookIndex || 0);
     state.chapterIndex = Number(p.get('chapter') ? Number(p.get('chapter')) - 1 : (state.chapterIndex || 0));
     state.verseKey = p.get('verse') || state.verseKey || null;
+    const pb = p.get('parallelB'); if(pb) state.parallelB = pb;
     state.view = p.get('view') || state.view || 'home';
   }
   readUrlIntoState();
 
-  // Populate HOME book/chapter/verse dropdowns for selected version
-  async function populateHomePassageDropdowns(file){
-    if(!file) return;
+  // populate home book dropdown once a version chosen
+  async function populateHomeBooks(fname){
+    if(!fname) return;
     try{
-      const norm = await fetchAndNorm(file);
-      // populate book
-      homeBookSelect.innerHTML = "<option value=''>Book</option>";
-      norm.books.forEach((b,i)=> homeBookSelect.appendChild(new Option(b.name, i)));
-      // clear chapter/verse
-      homeChapterSelect.innerHTML = "<option value=''>Chapter</option>";
-      homeVerseSelect.innerHTML = "<option value=''>Verse</option>";
+      const n = await fetchAndNormalize(fname);
+      homeBook.innerHTML = "<option value=''>Book</option>";
+      n.books.forEach((b,i)=> homeBook.appendChild(new Option(b.name, i)));
+      homeChapter.innerHTML = "<option value=''>Chapter</option>";
+      homeVerse.innerHTML = "<option value=''>Verse</option>";
     }catch(e){ showNotice('Failed to load version'); }
   }
 
-  // When book selected -> populate chapters
-  homeBookSelect.addEventListener('change', async function(){
+  // book -> chapters
+  homeBook.addEventListener('change', async function(){
     const bi = Number(this.value || 0);
     if(!state.version) return;
-    const norm = await fetchAndNorm(state.version);
-    const chCount = (norm.books[bi] && norm.books[bi].chapters) ? norm.books[bi].chapters.length : 0;
-    homeChapterSelect.innerHTML = "<option value=''>Chapter</option>";
-    for(let i=1;i<=chCount;i++) homeChapterSelect.appendChild(new Option(i, i-1));
-    homeVerseSelect.innerHTML = "<option value=''>Verse</option>";
+    const n = await fetchAndNormalize(state.version);
+    const ccount = (n.books[bi] && n.books[bi].chapters) ? n.books[bi].chapters.length : 0;
+    homeChapter.innerHTML = "<option value=''>Chapter</option>";
+    for(let i=1;i<=ccount;i++) homeChapter.appendChild(new Option(i, i-1));
+    homeVerse.innerHTML = "<option value=''>Verse</option>";
   });
 
-  // chapter -> populate verses
-  homeChapterSelect.addEventListener('change', async function(){
-    const bi = Number(homeBookSelect.value || 0);
+  // chapter -> verses
+  homeChapter.addEventListener('change', async function(){
+    const bi = Number(homeBook.value || 0);
     const ci = Number(this.value || 0);
     if(!state.version) return;
-    const norm = await fetchAndNorm(state.version);
-    const verses = (norm.books[bi] && norm.books[bi].chapters[ci]) ? norm.books[bi].chapters[ci].length : 0;
-    homeVerseSelect.innerHTML = "<option value=''>Verse</option>";
-    for(let v=1; v<=verses; v++) homeVerseSelect.appendChild(new Option(v, v-1));
+    const n = await fetchAndNormalize(state.version);
+    const vcount = (n.books[bi] && n.books[bi].chapters[ci]) ? n.books[bi].chapters[ci].length : 0;
+    homeVerse.innerHTML = "<option value=''>Verse</option>";
+    for(let v=1; v<=vcount; v++) homeVerse.appendChild(new Option(v, v-1));
   });
 
-  // HOME version select change
-  homeVersionSelect.addEventListener('change', async function(){
-    const file = this.value;
-    if(!file) return;
-    state.version = file; // Option A: version from HOME becomes active for READ/SEARCH/PARALLEL
-    await populateHomePassageDropdowns(file);
+  // HOME version selected
+  homeVersion.addEventListener('change', async function(){
+    const f = this.value;
+    if(!f) return;
+    state.version = f; // Option A: this becomes active
+    parallelA.value = f; // reflect in parallel A
+    await populateHomeBooks(f);
     showNotice(this.options[this.selectedIndex].text + ' loaded');
+    updateUrl(true);
   });
 
-  // OPEN button: load selection into READ and switch to READ tab
-  homeOpenBtn.addEventListener('click', async function(){
+  // OPEN button: set state & switch to READ
+  homeOpen.addEventListener('click', async function(){
     if(!state.version){ showNotice('Select a version'); return; }
-    const bi = homeBookSelect.value !== '' ? Number(homeBookSelect.value) : 0;
-    const ci = homeChapterSelect.value !== '' ? Number(homeChapterSelect.value) : 0;
-    const viIndex = homeVerseSelect.value !== '' ? Number(homeVerseSelect.value) : null;
-    const range = (homeRangeInput.value || '').trim();
+    const bi = homeBook.value !== '' ? Number(homeBook.value) : 0;
+    const ci = homeChapter.value !== '' ? Number(homeChapter.value) : 0;
+    const viDropdown = homeVerse.value !== '' ? Number(homeVerse.value) : null;
+    const rng = (homeRange.value || '').trim();
     state.bookIndex = bi;
     state.chapterIndex = ci;
-    if(range) state.verseKey = range;
-    else if(viIndex !== null) state.verseKey = String(viIndex + 1);
+    if(rng) state.verseKey = rng;
+    else if(viDropdown !== null) state.verseKey = String(viDropdown + 1);
     else state.verseKey = null;
-    // ensure version loaded
-    try{ await fetchAndNorm(state.version); }catch(e){ showNotice('Failed to load version'); return; }
-    // switch to read
+    try{ await fetchAndNormalize(state.version); }catch(e){ showNotice('Failed to load version'); return; }
     activateTab('read');
     renderRead();
   });
 
-  // READ rendering (clean)
+  // READ render (clean)
   function renderRead(){
-    if(!state.version){ readRef.textContent = 'No version selected'; readVerses.innerHTML = ''; return; }
+    if(!state.version){ readRef.textContent = 'No version selected'; readVerses.innerHTML=''; return; }
     const n = normCache[state.version];
-    if(!n){ readRef.textContent= 'Loading...'; readVerses.innerHTML=''; return; }
+    if(!n){ readRef.textContent = 'Loading...'; readVerses.innerHTML=''; return; }
+    // clamp book/chapter
+    if(state.bookIndex < 0) state.bookIndex = 0;
+    if(state.bookIndex >= n.books.length) state.bookIndex = 0;
     const book = n.books[state.bookIndex];
-    if(!book){ readRef.textContent = 'Missing book'; readVerses.innerHTML = ''; return; }
-    // clamp chapter
+    if(!book){ readRef.textContent = 'No book'; readVerses.innerHTML=''; return; }
     if(state.chapterIndex < 0) state.chapterIndex = 0;
     if(state.chapterIndex >= book.chapters.length) state.chapterIndex = 0;
     const chap = book.chapters[state.chapterIndex] || [];
     readRef.textContent = `${book.name} ${state.chapterIndex + 1}`;
     readVerses.innerHTML = '';
 
-    // if verseKey -> exact/range/numeric
+    // verseKey -> single or range or numeric
     if(state.verseKey){
-      // exact key like "7-8"
+      // exact key match
       const exact = chap.findIndex(v => v.key === state.verseKey);
-      if(exact !== -1){ renderSingleVerse(exact); showReadNav(true, exact); return; }
-      // range like 7-8
+      if(exact !== -1){ renderOneVerse(state.version, exact); showReadNav(true, exact); return; }
+      // range like "7-8"
       const m = state.verseKey.match(/^(\d+)\s*-\s*(\d+)$/);
       if(m){
-        const s = Math.max(1, Number(m[1])) -1;
-        const e = Math.max(1, Number(m[2])) -1;
+        const s = Math.max(1, Number(m[1])) - 1;
+        const e = Math.max(1, Number(m[2])) - 1;
         const start = Math.max(0, Math.min(s, chap.length-1));
         const end = Math.max(start, Math.min(e, chap.length-1));
-        renderCombinedRange(start, end, chap);
+        renderRange(state.version, start, end);
         showReadNav(true, start);
         return;
       }
-      // numeric fallback
+      // numeric
       if(/^\d+$/.test(state.verseKey)){
         const idx = Math.max(0, Math.min(Number(state.verseKey) - 1, chap.length-1));
-        renderSingleVerse(idx); showReadNav(true, idx); return;
+        renderOneVerse(state.version, idx); showReadNav(true, idx); return;
       }
       readVerses.innerHTML = '<div style="padding:12px;color:#666">Verse not found</div>'; showReadNav(false); return;
     }
@@ -465,149 +486,136 @@ button{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);co
       const block = document.createElement('div');
       block.className = 'verse-block';
       block.innerHTML = `<div class="verse-num">Verse ${v.key}</div>
-        <div class="verse-primary">${esc(v.text)}</div>`;
+                         <div class="verse-text">${esc(v.text)}</div>`;
       readVerses.appendChild(block);
     }
     showReadNav(false);
   }
 
-  function renderSingleVerse(idx){
-    const n = normCache[state.version];
-    const chap = n.books[state.bookIndex].chapters[state.chapterIndex];
-    const v = chap[idx];
-    readVerses.innerHTML = `<div class="verse-block active-verse">
-      <div class="verse-num">Verse ${v.key}</div>
-      <div class="verse-primary">${esc(v.text)}</div>
-    </div>`;
+  function renderOneVerse(fname, idx){
+    const n = normCache[fname];
+    const ch = n.books[state.bookIndex].chapters[state.chapterIndex];
+    const v = ch[idx];
+    readVerses.innerHTML = `<div class="verse-block active-verse"><div class="verse-num">Verse ${v.key}</div><div class="verse-text">${esc(v.text)}</div></div>`;
+  }
+  function renderRange(fname, s, e){
+    const n = normCache[fname];
+    const ch = n.books[state.bookIndex].chapters[state.chapterIndex];
+    const comb = ch.slice(s, e+1).map(x => x.text).join(' ');
+    readVerses.innerHTML = `<div class="verse-block active-verse"><div class="verse-num">Verses ${ch[s].key}${s!==e?('-'+ch[e].key):''}</div><div class="verse-text">${esc(comb)}</div></div>`;
   }
 
-  function renderCombinedRange(s,e, chap){
-    const prim = chap.slice(s,e+1).map(x=>x.text).join(' ');
-    readVerses.innerHTML = `<div class="verse-block active-verse">
-      <div class="verse-num">Verses ${chap[s].key}${s!==e?('-'+chap[e].key):''}</div>
-      <div class="verse-primary">${esc(prim)}</div>
-    </div>`;
-  }
-
-  // Read nav display + current verse index
-  let currentReadVerseIndex = null;
+  // nav visibility and current verse index for verse navigation
+  let currentVerseIndex = null;
   function showReadNav(show, idx=null){
     readNav.style.display = show ? 'flex' : 'none';
-    currentReadVerseIndex = (typeof idx === 'number') ? idx : null;
+    currentVerseIndex = (typeof idx === 'number') ? idx : null;
   }
 
-  // Prev/next handlers
-  readPrevVerse.onclick = ()=>{
-    if(currentReadVerseIndex === null) return;
-    if(currentReadVerseIndex > 0){
-      const n = normCache[state.version];
-      state.verseKey = n.books[state.bookIndex].chapters[state.chapterIndex][currentReadVerseIndex - 1].key;
-      renderRead(); updateUrl();
+  // prev/next verse handling
+  prevVerseBtn.addEventListener('click', ()=> {
+    if(currentVerseIndex === null) return;
+    if(currentVerseIndex > 0){
+      const n = normCache[state.version]; state.verseKey = n.books[state.bookIndex].chapters[state.chapterIndex][currentVerseIndex - 1].key; renderRead(); updateUrl();
     } else {
       if(state.chapterIndex > 0){
-        state.chapterIndex--; const ch = normCache[state.version].books[state.bookIndex].chapters[state.chapterIndex];
-        state.verseKey = ch[ch.length-1].key; renderRead(); updateUrl();
+        state.chapterIndex--; const ch = normCache[state.version].books[state.bookIndex].chapters[state.chapterIndex]; state.verseKey = ch[ch.length-1].key; renderRead(); updateUrl();
       }
     }
-  };
-  readNextVerse.onclick = ()=>{
-    if(currentReadVerseIndex === null) return;
-    const n = normCache[state.version];
-    const ch = n.books[state.bookIndex].chapters[state.chapterIndex];
-    if(currentReadVerseIndex < ch.length -1){
-      state.verseKey = ch[currentReadVerseIndex + 1].key; renderRead(); updateUrl();
+  });
+  nextVerseBtn.addEventListener('click', ()=> {
+    if(currentVerseIndex === null) return;
+    const n = normCache[state.version]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex];
+    if(currentVerseIndex < ch.length -1){
+      state.verseKey = ch[currentVerseIndex + 1].key; renderRead(); updateUrl();
     } else {
-      if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){
-        state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl();
-      }
-    }
-  };
-  readPrevChapter.onclick = ()=> { if(state.chapterIndex > 0){ state.chapterIndex--; state.verseKey = null; renderRead(); updateUrl(); } };
-  readNextChapter.onclick = ()=> { const n = normCache[state.version]; if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); } };
-
-  // Keyboard and swipe for chapter navigation
-  let touchStartX = 0;
-  document.addEventListener('touchstart', e=> touchStartX = e.changedTouches[0].clientX);
-  document.addEventListener('touchend', e=>{
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    if(Math.abs(dx) < 60) return;
-    const n = normCache[state.version];
-    if(dx < 0){
       if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); }
-    } else {
-      if(state.chapterIndex > 0){ state.chapterIndex--; state.verseKey = null; renderRead(); updateUrl(); }
     }
   });
 
-  // mouse drag on readVerses for desktop
+  prevChapterBtn.addEventListener('click', ()=> { if(state.chapterIndex > 0){ state.chapterIndex--; state.verseKey = null; renderRead(); updateUrl(); }});
+  nextChapterBtn.addEventListener('click', ()=> { const n = normCache[state.version]; if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); }});
+
+  // swiping & desktop drag for chapters
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].clientX);
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if(Math.abs(dx) < 60) return;
+    const n = normCache[state.version];
+    if(dx < 0){ if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); } }
+    else { if(state.chapterIndex > 0){ state.chapterIndex--; state.verseKey = null; renderRead(); updateUrl(); } }
+  });
+
+  // desktop drag
   let mouseDown=false, startX=0, curX=0;
-  readVerses.addEventListener('mousedown', e=>{ mouseDown=true; startX = e.clientX; });
-  document.addEventListener('mousemove', e=>{ if(!mouseDown) return; curX = e.clientX; });
-  document.addEventListener('mouseup', e=>{ if(!mouseDown) return; mouseDown=false; const dx = (curX || e.clientX) - startX; if(Math.abs(dx) > 100){ const n = normCache[state.version]; if(dx < 0){ if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); } } else { if(state.chapterIndex > 0){ state.chapterIndex--; state.verseKey = null; renderRead(); updateUrl(); } } } startX=curX=0; });
+  readVerses.addEventListener('mousedown', e => { mouseDown=true; startX = e.clientX; });
+  document.addEventListener('mousemove', e => { if(!mouseDown) return; curX = e.clientX; });
+  document.addEventListener('mouseup', e => {
+    if(!mouseDown) return; mouseDown=false;
+    const dx = (curX || e.clientX) - startX;
+    if(Math.abs(dx) > 100){
+      const n = normCache[state.version];
+      if(dx < 0){ if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); } }
+      else { if(state.chapterIndex > 0){ state.chapterIndex--; state.verseKey = null; renderRead(); updateUrl(); } }
+    }
+    startX = curX = 0;
+  });
 
   document.addEventListener('keydown', e=>{
     if(e.key === 'ArrowRight'){ const n = normCache[state.version]; if(n && state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); } }
     if(e.key === 'ArrowLeft'){ if(state.chapterIndex > 0){ state.chapterIndex--; state.verseKey = null; renderRead(); updateUrl(); } }
   });
 
-  // TTS: Primary only (since READ uses version from HOME)
+  // TTS simple queue (primary only)
   let ttsQueue = [];
-  function buildTTSQueue(){
+  function buildTTS(){
     ttsQueue = [];
+    if(!state.version) return;
     const n = normCache[state.version];
     if(!n) return;
     const ch = n.books[state.bookIndex].chapters[state.chapterIndex] || [];
     if(state.verseKey){
-      const idx = ch.findIndex(v=>v.key === state.verseKey);
-      if(idx !== -1){ ttsQueue.push({text: ch[idx].text, idx}); return; }
+      const exact = ch.findIndex(v => v.key === state.verseKey);
+      if(exact !== -1){ ttsQueue.push({text: ch[exact].text, idx: exact}); return; }
       const m = state.verseKey.match(/^(\d+)\s*-\s*(\d+)$/);
-      if(m){
-        const s = Number(m[1]) - 1; const e = Number(m[2]) - 1;
-        for(let i=Math.max(0,s); i<=Math.min(e, ch.length-1); i++) ttsQueue.push({text: ch[i].text, idx: i});
-        return;
-      }
-      if(/^\d+$/.test(state.verseKey)){
-        const idx = Number(state.verseKey) -1; ttsQueue.push({text: ch[idx].text, idx}); return;
-      }
+      if(m){ const s = Number(m[1]) - 1, e = Number(m[2]) - 1; for(let i=Math.max(0,s); i<=Math.min(e, ch.length-1); i++) ttsQueue.push({text: ch[i].text, idx:i}); return; }
+      if(/^\d+$/.test(state.verseKey)){ const idx = Number(state.verseKey) - 1; ttsQueue.push({text: ch[idx].text, idx}); return; }
       return;
     }
     for(let i=0;i<ch.length;i++) ttsQueue.push({text: ch[i].text, idx:i});
   }
-  function speakNext(){ if(ttsQueue.length === 0) return; const it = ttsQueue.shift(); const blocks = document.querySelectorAll('.verse-block'); blocks.forEach(b=>b.classList.remove('active-verse')); if(blocks[it.idx]){ blocks[it.idx].classList.add('active-verse'); blocks[it.idx].scrollIntoView({behavior:'smooth', block:'center'}); } const u=new SpeechSynthesisUtterance(String(it.text)); u.onend=()=> setTimeout(speakNext, 120); u.onerror=()=> setTimeout(speakNext, 180); speechSynthesis.speak(u); }
-  readTtsPlay.onclick = ()=> { speechSynthesis.cancel(); buildTTSQueue(); speakNext(); };
-  readTtsPause.onclick = ()=> { try{ speechSynthesis.pause(); }catch(e){} };
-  readTtsResume.onclick = ()=> { try{ speechSynthesis.resume(); }catch(e){} };
-  readTtsStop.onclick = ()=> { try{ speechSynthesis.cancel(); ttsQueue=[]; }catch(e){} };
+  function speakNext(){ if(ttsQueue.length === 0) return; const item = ttsQueue.shift(); const blocks = document.querySelectorAll('.verse-block'); blocks.forEach(b=>b.classList.remove('active-verse')); if(blocks[item.idx]){ blocks[item.idx].classList.add('active-verse'); blocks[item.idx].scrollIntoView({behavior:'smooth', block:'center'}); } const u = new SpeechSynthesisUtterance(String(item.text)); u.onend = ()=> setTimeout(speakNext, 120); u.onerror = ()=> setTimeout(speakNext, 180); speechSynthesis.speak(u); }
+  playBtn.addEventListener('click', ()=> { speechSynthesis.cancel(); buildTTS(); speakNext(); });
+  pauseBtn.addEventListener('click', ()=> { try{ speechSynthesis.pause(); }catch(e){} });
+  resumeBtn.addEventListener('click', ()=> { try{ speechSynthesis.resume(); }catch(e){} });
+  stopBtn.addEventListener('click', ()=> { try{ speechSynthesis.cancel(); ttsQueue=[]; }catch(e){} });
 
-  // SEARCH: only input + results. Uses current state.version (HOME selection)
-  searchInput.addEventListener('keydown', e=> { if(e.key === 'Enter') searchBtnClick(); });
-  const searchBtn = document.createElement('button'); searchBtn.style.display='none'; // hidden, we use Enter
-  async function searchBtnClick(){
-    const q = (searchInput.value || '').trim().toLowerCase();
+  // SEARCH: uses current state.version (HOME)
+  async function doSearch(q){
     searchResults.innerHTML = ''; searchInfo.textContent = '';
     if(!q) return;
     if(!state.version){ searchInfo.textContent = 'Select a version in HOME first'; return; }
     try{
-      await fetchAndNorm(state.version);
-      const idx = buildSearchIndex(state.version, normCache[state.version]);
+      await fetchAndNormalize(state.version);
+      const idx = searchIndexCache[state.version] || buildSearchIndex(state.version, normCache[state.version]);
       const results = [];
-      for(let i=0;i<idx.length && results.length < 250;i++){
+      const max = 250;
+      for(let i=0;i<idx.length && results.length < max;i++){
         if(idx[i].low.includes(q)) results.push(idx[i]);
       }
-      searchInfo.textContent = `Found ${results.length}`;
+      searchInfo.textContent = `Found ${results.length}${results.length >= max ? ' (showing first '+max+')' : ''}`;
       if(!results.length){ searchResults.innerHTML = '<div style="padding:8px;color:#666">No results</div>'; return; }
-      const safe = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); const re = new RegExp(safe,'ig');
+      const safe = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      const re = new RegExp(safe, 'ig');
       const frag = document.createDocumentFragment();
       results.forEach(r=>{
         const div = document.createElement('div'); div.className = 'search-item';
-        const snippet = esc(r.text).replace(re, m=>`<span class="highlight">${m}</span>`);
+        const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
         div.innerHTML = `<strong>${esc(r.book)} ${r.chapter}:${r.verseKey}</strong><div style="margin-top:6px">${snippet}</div><small style="display:block;margin-top:6px;color:#666">Click to open</small>`;
-        div.onclick = async ()=> {
-          state.bookIndex = r.bookIndex;
-          state.chapterIndex = r.chapterIndex;
-          state.verseKey = r.verseKey;
-          // state.version remains the one chosen in HOME (Option A)
-          activateTab('read'); await fetchAndNorm(state.version); renderRead(); updateUrl();
+        div.onclick = async () => {
+          state.bookIndex = r.bookIndex; state.chapterIndex = r.chapterIndex; state.verseKey = r.verseKey;
+          activateTab('read'); await fetchAndNormalize(state.version); renderRead(); updateUrl();
         };
         frag.appendChild(div);
       });
@@ -615,139 +623,129 @@ button{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);co
       activateTab('search');
     }catch(e){ showNotice('Search failed'); }
   }
-  // attach search action
-  searchInput.addEventListener('keyup', e=> { if(e.key === 'Enter') searchBtnClick(); });
+  searchBox.addEventListener('keydown', e => { if(e.key === 'Enter') doSearch((searchBox.value || '').trim().toLowerCase()); });
 
-  // PARALLEL: only two dropdowns (A and B). Version A will default to selected HOME version (Option A)
-  parallelRefresh.addEventListener('click', async function(){
-    // set versions (A is HOME/state.version unless user changed)
+  // PARALLEL: create clean view (no version labels inside verse blocks)
+  parallelOpen.addEventListener('click', async function(){
     const a = parallelA.value || state.version;
-    const b = parallelB.value || state.parallelBVersion;
+    const b = parallelB.value || state.parallelB;
     if(!a || !b){ showNotice('Select both versions'); return; }
-    state.parallelBVersion = b;
-    // fetch and render parallel for current READ location
+    state.parallelB = b;
     try{
-      await fetchAndNorm(a);
-      await fetchAndNorm(b);
+      await fetchAndNormalize(a); await fetchAndNormalize(b);
       renderParallel();
       activateTab('parallel');
     }catch(e){ showNotice('Failed to load versions'); }
   });
 
   async function renderParallel(){
-    const a = parallelA.value || state.version;
-    const b = parallelB.value || state.parallelBVersion;
     parallelContainer.innerHTML = '';
+    const a = parallelA.value || state.version;
+    const b = parallelB.value || state.parallelB;
     if(!a || !b){ parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Select both versions</div>'; return; }
     try{
-      const na = await fetchAndNorm(a);
-      const nb = await fetchAndNorm(b);
+      const na = await fetchAndNormalize(a);
+      const nb = await fetchAndNormalize(b);
       // clamp
       if(state.bookIndex >= na.books.length) state.bookIndex = 0;
       const bookA = na.books[state.bookIndex];
-      const bookB = nb.books[state.bookIndex] || { chapters: [] };
-      if(state.chapterIndex >= (bookA.chapters.length || 0)) state.chapterIndex = 0;
+      const bookB = nb.books[state.bookIndex] || {chapters: []};
+      if(state.chapterIndex >= bookA.chapters.length) state.chapterIndex = 0;
       const chA = bookA.chapters[state.chapterIndex] || [];
       const chB = (bookB.chapters && bookB.chapters[state.chapterIndex]) ? bookB.chapters[state.chapterIndex] : [];
-      // If READ shows a single verse or range, show only those verses; else full chapter
+      // If READ shows verse or range -> show only that set
       if(state.verseKey){
-        // exact key match?
         const exactIdx = chA.findIndex(v=>v.key === state.verseKey);
         if(exactIdx !== -1){
-          const vA = chA[exactIdx]; const vB = chB.find(x=>x.key === vA.key) || {};
+          const va = chA[exactIdx]; const vb = chB.find(x=>x.key === va.key) || {};
           const wrapper = document.createElement('div');
-          wrapper.innerHTML = `<div class="parallel-verse"><strong>Verse ${vA.key} — ${a.replace('_bible.json','').toUpperCase()}</strong><div>${esc(vA.text)}</div></div>
-                               <div class="parallel-verse"><strong>Verse ${vB.key || vA.key} — ${b.replace('_bible.json','').toUpperCase()}</strong><div>${esc(vB.text || '')}</div></div>`;
+          wrapper.className = 'parallel-pair';
+          wrapper.innerHTML = `<div class="parallel-verse"><div class="verse-num">Verse ${va.key}</div><div class="verse-text">${esc(va.text)}</div></div>
+                               <div class="parallel-verse"><div class="verse-num">Verse ${vb.key || va.key}</div><div class="verse-text">${esc(vb.text || '')}</div></div>`;
           parallelContainer.appendChild(wrapper);
           return;
         }
         const m = state.verseKey.match(/^(\d+)\s*-\s*(\d+)$/);
         if(m){
-          const s = Number(m[1])-1; const e = Number(m[2])-1;
-          const start = Math.max(0, Math.min(s, chA.length-1));
-          const end = Math.max(start, Math.min(e, chA.length-1));
+          const s = Number(m[1]) - 1, e = Number(m[2]) - 1;
+          const start = Math.max(0, Math.min(s, chA.length-1)), end = Math.max(start, Math.min(e, chA.length-1));
           for(let i=start;i<=end;i++){
             const va = chA[i]; const vb = chB.find(x=>x.key === va.key) || {};
-            const pair = document.createElement('div');
-            pair.innerHTML = `<div class="parallel-verse"><strong>${va.key} — ${a.replace('_bible.json','').toUpperCase()}</strong><div>${esc(va.text)}</div></div>
-                              <div class="parallel-verse"><strong>${vb.key || va.key} — ${b.replace('_bible.json','').toUpperCase()}</strong><div>${esc(vb.text || '')}</div></div>`;
+            const pair = document.createElement('div'); pair.className = 'parallel-pair';
+            pair.innerHTML = `<div class="parallel-verse"><div class="verse-num">Verse ${va.key}</div><div class="verse-text">${esc(va.text)}</div></div>
+                              <div class="parallel-verse"><div class="verse-num">Verse ${vb.key || va.key}</div><div class="verse-text">${esc(vb.text || '')}</div></div>`;
             parallelContainer.appendChild(pair);
           }
           return;
         }
         if(/^\d+$/.test(state.verseKey)){
-          const idx = Number(state.verseKey) -1;
+          const idx = Number(state.verseKey) - 1;
           if(idx >= 0 && idx < chA.length){
             const va = chA[idx]; const vb = chB.find(x=>x.key === va.key) || {};
-            parallelContainer.innerHTML = `<div class="parallel-verse"><strong>${va.key} — ${a.replace('_bible.json','').toUpperCase()}</strong><div>${esc(va.text)}</div></div>
-                                           <div class="parallel-verse"><strong>${vb.key || va.key} — ${b.replace('_bible.json','').toUpperCase()}</strong><div>${esc(vb.text || '')}</div></div>`;
+            parallelContainer.innerHTML = `<div class="parallel-verse"><div class="verse-num">Verse ${va.key}</div><div class="verse-text">${esc(va.text)}</div></div>
+                                           <div class="parallel-verse"><div class="verse-num">Verse ${vb.key || va.key}</div><div class="verse-text">${esc(vb.text || '')}</div></div>`;
             return;
           }
         }
         parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Verse not found</div>';
         return;
       }
-      // full chapter: list verses one after another: A then B for each verse
+      // full chapter: for each verse index, show A then B
       for(let i=0;i<Math.max(chA.length, chB.length); i++){
         const va = chA[i]; const vb = chB[i];
         const pair = document.createElement('div');
-        pair.innerHTML = `<div class="parallel-verse"><strong>${va ? va.key : (vb? vb.key : i+1)} — ${a.replace('_bible.json','').toUpperCase()}</strong><div>${esc(va ? va.text : '')}</div></div>
-                          <div class="parallel-verse"><strong>${vb ? vb.key : (va? va.key : i+1)} — ${b.replace('_bible.json','').toUpperCase()}</strong><div>${esc(vb ? vb.text : '')}</div></div>`;
+        pair.className = 'parallel-pair';
+        pair.innerHTML = `<div class="parallel-verse"><div class="verse-num">Verse ${va ? va.key : (vb ? vb.key : i+1)}</div><div class="verse-text">${esc(va ? va.text : '')}</div></div>
+                          <div class="parallel-verse"><div class="verse-num">Verse ${vb ? vb.key : (va ? va.key : i+1)}</div><div class="verse-text">${esc(vb ? vb.text : '')}</div></div>`;
         parallelContainer.appendChild(pair);
       }
-    }catch(e){ parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Load failed</div>'; }
+    }catch(e){
+      parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Load failed</div>';
+    }
   }
 
-  // On initial load: if state.version from URL, set home dropdown and populate books
+  // On initial load: set HOME version from URL if present
   if(state.version){
-    homeVersionSelect.value = state.version;
-    await populateHomePassageDropdowns(state.version);
-    // set book/chapter/verse selects if present in URL
-    homeBookSelect.value = state.bookIndex || '';
-    homeChapterSelect.value = state.chapterIndex || '';
-    if(state.verseKey && /^\d+$/.test(state.verseKey)) homeVerseSelect.value = String(Number(state.verseKey) - 1);
+    homeVersion.value = state.version;
+    parallelA.value = state.version;
+    try{ await fetchAndNormalize(state.version); await populateHomeBooks(state.version); }catch(e){}
+    // pre-select book/chapter/verse if they exist
+    if(homeBook.options.length > 1) homeBook.value = state.bookIndex;
+    if(homeChapter.options.length > 1) homeChapter.value = state.chapterIndex;
+    if(state.verseKey && /^\d+$/.test(state.verseKey) && homeVerse.options.length > 1) homeVerse.value = String(Number(state.verseKey) - 1);
+    // switch to requested view if present
+    activateTab(state.view || 'home', false);
+    if(state.view === 'read'){ renderRead(); }
+    if(state.view === 'parallel'){ renderParallel(); }
+  } else {
+    // default tab
+    activateTab('home', false);
   }
 
-  // Allow clicking tab to show pane
-  // default view: if state.view read -> show read else home
-  activateTab(state.view || 'home', false);
-  if(state.view === 'read'){ if(state.version) await fetchAndNorm(state.version); renderRead(); }
-  if(state.view === 'parallel') renderParallel();
-
-  // URL popstate handler
-  window.addEventListener('popstate', async ()=> {
-    readUrl(); if(state.version) await fetchAndNorm(state.version); renderRead(); if(state.view) activateTab(state.view, false); renderParallel();
+  // popstate (back/forward)
+  window.addEventListener('popstate', async e => {
+    readUrlIntoState();
+    if(state.version) { await fetchAndNormalize(state.version); await populateHomeBooks(state.version); }
+    if(state.view) activateTab(state.view, false);
+    if(state.view === 'read') renderRead();
+    if(state.view === 'parallel') renderParallel();
   });
 
-  function readUrl(){
-    const p = new URLSearchParams(location.search);
-    const ver = p.get('version'); if(ver) state.version = ver;
-    const pb = p.get('parallelB'); if(pb) state.parallelBVersion = pb;
-    state.bookIndex = Number(p.get('bookIndex') || 0);
-    state.chapterIndex = Number(p.get('chapter') ? Number(p.get('chapter')) - 1 : 0);
-    state.verseKey = p.get('verse') || null;
-    state.view = p.get('view') || state.view;
-  }
-
-  // helper to set HOME version programmatically (also reflect in parallelA)
-  function setHomeVersion(v){
+  // helper to set HOME version (programmatic)
+  async function setHomeVersion(v){
     state.version = v;
-    homeVersionSelect.value = v;
+    homeVersion.value = v;
     parallelA.value = v;
-    // preload
-    fetchAndNorm(v).then(()=> populateHomePassageDropdowns(v)).catch(()=>{});
-    updateUrl();
+    try{ await fetchAndNormalize(v); await populateHomeBooks(v); }catch(e){}
+    updateUrl(true);
   }
+  window.setHomeVersion = setHomeVersion;
 
-  // ensure parallelA initial matches state.version
-  parallelA.addEventListener('change', ()=> { /* user may override */ });
-  parallelB.addEventListener('change', ()=> { /* user may override */ });
+  // initial render if read requested
+  if(state.view === 'read' && state.version){ renderRead(); }
+  if(state.view === 'parallel' && state.version){ renderParallel(); }
 
-  // convenience: clicking the HOME tab focuses on version select
-  tabs.home.addEventListener('click', ()=> homeVersionSelect.focus());
-
-  // small utility: show notice if no version selected when trying to search/open
-  // expose updateUrl for internal use
+  // expose updateUrl
   window._spa = { state, setHomeVersion };
 
 })();
