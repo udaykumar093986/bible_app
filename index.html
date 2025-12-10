@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Bible Reader — SPA (Patched)</title>
+<title>Bible Reader — SPA (Final)</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -178,27 +178,20 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
   function sortKeys(keys){ return keys.sort((a,b)=> (parseInt(String(a).split('-')[0])||0) - (parseInt(String(b).split('-')[0])||0)); }
 
   // ---------------------------
-  // RESET STATE / CLEAR CACHE
+  // RESET STATE / CLEAR CACHE (preserve state.version & state.parallelB)
   // ---------------------------
   function resetState(){
-    // reset state object but preserve view to be set by activateTab
-    state = { version: null, bookIndex: 0, chapterIndex: 0, verseKey: null, view: 'home', parallelB: null };
-
-    // clear caches
+    // clear caches but preserve currently selected versions so OPEN works
     rawCache = {}; normCache = {}; searchIndexCache = {};
-
-    // clear UI selections but keep version options present
-    document.querySelectorAll("select").forEach(s => { try{ s.selectedIndex = 0; }catch(e){} });
-    document.querySelectorAll("input").forEach(i => { try{ i.value = ''; }catch(e){} });
-
+    // clear UI fields except version selectors (we keep their options)
+    // reset book/chapter/verse dropdowns
+    [homeBook, homeChapter, homeVerse, parallelBook, parallelChapter, parallelVerse].forEach(el=>{ if(el) el.innerHTML = "<option value=''>"+(el===homeBook||el===parallelBook ? "Book" : el===homeChapter||el===parallelChapter ? "Chapter" : "Verse")+"</option>"; });
     // clear content areas
-    if(document.getElementById('readRef')) document.getElementById('readRef').textContent = '';
-    if(document.getElementById('readVerses')) document.getElementById('readVerses').innerHTML = '';
-    if(document.getElementById('searchResults')) document.getElementById('searchResults').innerHTML = '';
-    if(document.getElementById('parallelContainer')) document.getElementById('parallelContainer').innerHTML = '';
-
-    // small UX feedback
-    console.log("Reset: cleared state and caches");
+    if(readRef) readRef.textContent='';
+    if(readVerses) readVerses.innerHTML='';
+    if(searchResults) searchResults.innerHTML='';
+    if(parallelContainer) parallelContainer.innerHTML='';
+    console.log("resetState: caches cleared, UI reset (preserved selected versions)");
   }
 
   function normalize(json){
@@ -246,21 +239,18 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
   // populate version selects labels uppercase and strip suffix
   FILES.forEach(f=>{ const label = f.replace("_bible.json","").replace(".json","").toUpperCase(); homeVersion.appendChild(new Option(label,f)); parallelA.appendChild(new Option(label,f)); parallelB.appendChild(new Option(label,f)); });
 
-  // SPA nav with reset on switch
+  // SPA nav with reset on switch (preserve selected versions)
   function activateTab(name, push=true){
-    // clear all state when switching tabs (as requested)
+    // clear caches/UI but preserve selected versions
     resetState();
-    // set view after reset
     state.view = name;
     Object.keys(panes).forEach(k => panes[k].classList.toggle('show', k === name));
     Object.values(tabs).forEach(t => t.classList.remove('active'));
     if(tabs[name]) tabs[name].classList.add('active');
     if(push) updateUrl();
-    // when switching to specific panes, re-populate minimal things if needed
-    if(name === 'home' && state.version) { populateHomeBooks(state.version).catch(()=>{}); }
-    if(name === 'parallel') { renderParallelPreview(); }
+    if(name === 'parallel') renderParallelPreview();
   }
-  Object.keys(tabs).forEach(k => tabs[k].addEventListener('click', ()=> { activateTab(k); if(k==='read') renderRead(); if(k==='parallel') renderParallelPreview(); }));
+  Object.keys(tabs).forEach(k => tabs[k].addEventListener('click', ()=> { activateTab(k); if(k==='read') renderRead(); }));
 
   function updateUrl(replace=false){
     const p = new URLSearchParams();
@@ -297,9 +287,25 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
 
   homeVersion.addEventListener('change', async function(){ const f = this.value; if(!f) return; state.version = f; parallelA.value = f; await populateHomeBooks(f); showNotice(this.options[this.selectedIndex].text + ' loaded'); updateUrl(true); });
 
-  homeOpen.addEventListener('click', async function(){ if(!state.version){ showNotice('Select a version'); return; } const bi = homeBook.value !== '' ? Number(homeBook.value) : 0; const ci = homeChapter.value !== '' ? Number(homeChapter.value) : 0; const viDropdown = homeVerse.value !== '' ? Number(homeVerse.value) : null; const rng = (homeRange.value || '').trim(); state.bookIndex = bi; state.chapterIndex = ci; if(rng) state.verseKey = rng; else if(viDropdown !== null) state.verseKey = String(viDropdown + 1); else state.verseKey = null; try{ await fetchAndNormalize(state.version); }catch(e){ showNotice('Failed to load version'); return; } activateTab('read'); renderRead(); });
+  // HOME OPEN -> set state and show READ (SPA switch, no page reload)
+  homeOpen.addEventListener('click', async function(){
+    if(!state.version){ showNotice('Select a version'); return; }
+    const bi = homeBook.value !== '' ? Number(homeBook.value) : 0;
+    const ci = homeChapter.value !== '' ? Number(homeChapter.value) : 0;
+    const viDropdown = homeVerse.value !== '' ? Number(homeVerse.value) : null;
+    const rng = (homeRange.value || '').trim();
+    state.bookIndex = bi;
+    state.chapterIndex = ci;
+    if(rng) state.verseKey = rng;
+    else if(viDropdown !== null) state.verseKey = String(viDropdown + 1);
+    else state.verseKey = null;
+    try{ await fetchAndNormalize(state.version); }catch(e){ showNotice('Failed to load version'); return; }
+    activateTab('read');
+    renderRead();
+    updateUrl();
+  });
 
-  // RENDER READ (unchanged logic; will show empty if resetState cleared things)
+  // RENDER READ
   function renderRead(){
     if(!state.version){ readRef.textContent = 'No version selected'; readVerses.innerHTML=''; return; }
     const n = normCache[state.version];
@@ -398,7 +404,7 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
 
   // PARALLEL controls population (based on parallelA)
   parallelA.addEventListener('change', async function(){
-    const f = this.value || state.version; if(!f) return; state.version = f; parallelA.value = f; await fetchAndNormalize(f); parallelBook.innerHTML = "<option value=''>Book</option>"; const n = normCache[f]; n.books.forEach((b,i)=> parallelBook.appendChild(new Option(b.name,i))); parallelChapter.innerHTML = "<option value=''>Chapter</option>"; parallelVerse.innerHTML = "<option value=''>Verse</option>"; showNotice(this.options[this.selectedIndex].text + ' loaded (A)'); });
+    const f = this.value || state.version; if(!f) return; state.version = f; parallelA.value = f; await populateHomeBooks(f); parallelBook.innerHTML = "<option value=''>Book</option>"; const n = normCache[f]; n.books.forEach((b,i)=> parallelBook.appendChild(new Option(b.name,i))); parallelChapter.innerHTML = "<option value=''>Chapter</option>"; parallelVerse.innerHTML = "<option value=''>Verse</option>"; showNotice(this.options[this.selectedIndex].text + ' loaded (A)'); });
 
   parallelBook.addEventListener('change', async function(){ const bi = Number(this.value || 0); const f = parallelA.value || state.version; if(!f) return; const n = await fetchAndNormalize(f); const ccount = (n.books[bi] && n.books[bi].chapters) ? n.books[bi].chapters.length : 0; parallelChapter.innerHTML = "<option value=''>Chapter</option>"; for(let i=1;i<=ccount;i++) parallelChapter.appendChild(new Option(i, i-1)); parallelVerse.innerHTML = "<option value=''>Verse</option>"; });
 
@@ -409,7 +415,7 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
 
   function renderParallelPreview(){ parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Choose two versions and a passage. Click OPEN to view combined passage in READ.</div>'; }
 
-  // initial load from URL
+  // initial load from URL or default
   if(state.version){ homeVersion.value = state.version; parallelA.value = state.version; try{ await fetchAndNormalize(state.version); await populateHomeBooks(state.version); }catch(e){} activateTab(state.view || 'home', false); if(state.view==='read') renderRead(); if(state.view==='parallel') renderParallelPreview(); } else { activateTab('home', false); }
 
   window.addEventListener('popstate', async e=>{ readUrlIntoState(); if(state.version){ await fetchAndNormalize(state.version); await populateHomeBooks(state.version); } if(state.view) activateTab(state.view, false); if(state.view==='read') renderRead(); if(state.view==='parallel') renderParallelPreview(); });
