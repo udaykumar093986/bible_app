@@ -3,118 +3,78 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Bible Reader — SPA (Updated)</title>
+<title>Bible Reader — SPA (Final)</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#f7f9fc; --card:#ffffff; --accent:#0b66c2; --muted:#6f7f8b;
-  --border:#e6eef6; --soft:#f4f8ff; --highlight:#fff8d1;
-  --maxwidth:1100px;
-  --radius:12px;
+  --border:#e6eef6; --soft:#f4f8ff; --highlight:#fff8d1; --radius:12px; --maxwidth:1100px;
 }
 *{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:#102027;-webkit-font-smoothing:antialiased}
-
-/* Header (Top tabs) */
-.header{
-  position:sticky;top:0;z-index:140;
-  background:var(--card);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;padding:14px 18px;
-}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:#102027}
+.header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:14px 18px;z-index:140}
 .brand{font-weight:800;color:var(--accent);font-size:20px;display:flex;align-items:center;gap:10px}
 .tabbar{display:flex;gap:8px;align-items:center}
-.tab{display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:10px;color:var(--muted);font-weight:700;cursor:pointer}
-.tab i{font-size:14px}
+.tab{display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:10px;color:var(--muted);font-weight:700;cursor:pointer}
 .tab.active{background:#eaf6ff;color:var(--accent);box-shadow:0 1px 4px rgba(11,102,194,0.08)}
-
-/* Layout */
 .container{max-width:var(--maxwidth);margin:20px auto;padding:0 18px}
 .pane{display:none;opacity:0;transform:translateY(6px);transition:all .18s ease}
 .pane.show{display:block;opacity:1;transform:translateY(0)}
-
-/* Card / controls */
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;box-shadow:0 6px 18px rgba(11,102,194,0.02)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
 .controls-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.select, input[type="text"]{padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--card);font-size:14px}
+.select,input[type="text"]{padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--card);font-size:14px}
 button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:#fff;cursor:pointer;font-weight:700}
 .small-btn{padding:8px 10px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer;font-weight:700}
-
-/* HOME large centered card layout */
 .home-wrapper{display:flex;justify-content:center}
 .home-card{width:100%;max-width:760px;border-radius:16px;padding:20px}
 .home-title{font-size:18px;font-weight:800;color:#0a4f86;margin-bottom:12px}
 .home-row{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
 .home-row label{min-width:90px;color:#334; font-weight:700}
-.home-row .select{flex:1;min-width:140px}
-
-/* Reader */
 .reader-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
 .reader-ref{font-size:22px;font-weight:800;color:var(--accent);margin:8px 0}
 .verse-block{background:#fff;border-radius:12px;border:1px solid var(--border);padding:14px;margin-bottom:12px}
 .verse-num{font-weight:800;color:#355;margin-bottom:8px;font-size:13px}
 .verse-text{font-family:"Noto Serif",serif;font-size:18px;line-height:1.75;color:#111;margin-bottom:8px}
+.verse-label{font-weight:700;color:#0b66c2;margin-top:6px;margin-bottom:6px}
 .verse-secondary{font-family:"Noto Serif",serif;font-size:17px;line-height:1.6;color:#2a3c55;margin-top:6px;padding-left:6px;border-left:3px solid #eef6fc}
-.active-verse{background:var(--highlight);border-color:#dccb6e}
-
-/* Search results */
 .search-item{padding:12px;border-radius:10px;border:1px solid var(--border);background:#fff;margin-bottom:10px;cursor:pointer}
 .highlight{background:#fff3c4;padding:2px;border-radius:4px}
-
-/* Parallel specifics */
 .parallel-controls{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;justify-content:center}
 .parallel-container{max-width:820px;margin:0 auto}
-
-/* Nav row small buttons */
 .nav-row{display:flex;gap:10px;align-items:center;margin:8px 0}
 .note{margin-left:auto;color:#666;font-size:13px}
-
-/* Notice */
 .notice{position:fixed;left:20px;right:20px;top:84px;background:var(--card);border:1px solid var(--border);padding:12px;border-radius:10px;text-align:center;display:none;z-index:500;color:#222}
-
-/* responsive */
-@media (max-width:800px){
-  .home-row label{min-width:70px}
-  .home-card{padding:16px}
-  .reader-ref{font-size:18px}
-  .parallel-controls{flex-direction:column;align-items:stretch}
-}
+@media (max-width:800px){.home-row label{min-width:70px}.home-card{padding:16px}.reader-ref{font-size:18px}.parallel-controls{flex-direction:column;align-items:stretch}} 
 </style>
 </head>
 <body>
 <header class="header">
   <div class="brand"><i class="fa-solid fa-book-open"></i> Bible Reader</div>
   <nav class="tabbar" role="navigation" aria-label="Top tabs">
-    <div class="tab active" id="tab-home" data-tab="home"><i class="fa-solid fa-house"></i><span>HOME</span></div>
-    <div class="tab" id="tab-read" data-tab="read"><i class="fa-solid fa-book"></i><span>READ</span></div>
-    <div class="tab" id="tab-search" data-tab="search"><i class="fa-solid fa-magnifying-glass"></i><span>SEARCH</span></div>
-    <div class="tab" id="tab-parallel" data-tab="parallel"><i class="fa-solid fa-clone"></i><span>PARALLEL</span></div>
+    <div class="tab active" id="tab-home" data-tab="home"><i class="fa-solid fa-house"></i> HOME</div>
+    <div class="tab" id="tab-read" data-tab="read"><i class="fa-solid fa-book"></i> READ</div>
+    <div class="tab" id="tab-search" data-tab="search"><i class="fa-solid fa-magnifying-glass"></i> SEARCH</div>
+    <div class="tab" id="tab-parallel" data-tab="parallel"><i class="fa-solid fa-clone"></i> PARALLEL</div>
   </nav>
 </header>
 
 <main class="container" id="app">
-  <!-- HOME pane -->
-  <section id="pane-home" class="pane show" role="region" aria-label="Home">
+  <!-- HOME -->
+  <section id="pane-home" class="pane show" aria-label="Home">
     <div class="home-wrapper">
       <div class="card home-card">
         <div class="home-title">Open a passage</div>
-
-        <!-- Version row -->
         <div class="home-row">
           <label for="homeVersion">Version</label>
           <select id="homeVersion" class="select"><option value="">SELECT VERSION</option></select>
         </div>
-
-        <!-- Passage selectors row -->
         <div class="home-row">
           <label for="homeBook">Passage</label>
           <select id="homeBook" class="select"><option value="">Book</option></select>
           <select id="homeChapter" class="select"><option value="">Chapter</option></select>
           <select id="homeVerse" class="select"><option value="">Verse</option></select>
         </div>
-
-        <!-- Range + open -->
         <div class="home-row" style="align-items:center">
           <div style="min-width:90px"></div>
           <input id="homeRange" class="select" placeholder="Optional range (e.g. 7-8)" style="flex:1;min-width:160px" />
@@ -125,16 +85,14 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     </div>
   </section>
 
-  <!-- READ pane -->
-  <section id="pane-read" class="pane" role="region" aria-label="Read">
+  <!-- READ -->
+  <section id="pane-read" class="pane" aria-label="Read">
     <div class="card">
       <div class="reader-top">
-        <!-- TTS & small read-only controls only -->
         <button id="play" class="small-btn">▶ Play</button>
         <button id="pause" class="small-btn">⏸ Pause</button>
         <button id="resume" class="small-btn">⏯ Resume</button>
         <button id="stop" class="small-btn">⏹ Stop</button>
-
         <div style="flex:1"></div>
         <div class="note">Swipe / Drag / Arrow keys to change chapter</div>
       </div>
@@ -151,8 +109,8 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     </div>
   </section>
 
-  <!-- SEARCH pane -->
-  <section id="pane-search" class="pane" role="region" aria-label="Search">
+  <!-- SEARCH -->
+  <section id="pane-search" class="pane" aria-label="Search">
     <div class="card">
       <div style="margin-bottom:10px">
         <input id="searchBox" placeholder="Search current version (press Enter)…" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border)" />
@@ -162,8 +120,8 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     </div>
   </section>
 
-  <!-- PARALLEL pane -->
-  <section id="pane-parallel" class="pane" role="region" aria-label="Parallel">
+  <!-- PARALLEL -->
+  <section id="pane-parallel" class="pane" aria-label="Parallel">
     <div class="card">
       <div class="home-title" style="margin-bottom:10px">Parallel — compare two versions</div>
       <div class="parallel-controls card" style="padding:14px;max-width:820px;margin:0 auto 12px auto">
@@ -172,17 +130,15 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
           <select id="parallelA" class="select"><option value="">Version A</option></select>
           <select id="parallelB" class="select"><option value="">Version B</option></select>
         </div>
-
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <label style="min-width:120px;font-weight:700;color:#334">Choose passage</label>
           <select id="parallelBook" class="select"><option value="">Book</option></select>
           <select id="parallelChapter" class="select"><option value="">Chapter</option></select>
           <select id="parallelVerse" class="select"><option value="">Verse</option></select>
           <div style="flex:1"></div>
-          <button id="parallelOpen" class="btn">OPEN (go to READ)</button>
+          <button id="parallelOpen" class="btn">OPEN (view in READ)</button>
         </div>
       </div>
-
       <div id="parallelContainer" class="parallel-container" style="max-width:820px;margin:0 auto"></div>
     </div>
   </section>
@@ -191,78 +147,33 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
 <div id="notice" class="notice" role="status" aria-live="polite"></div>
 
 <script>
-/* SPA with fixes:
- - Parallel controls populate books/chapters/verses correctly.
- - Parallel tab NEVER renders verses inline; OPEN switches to READ and shows stacked combined boxes.
- - Home selecting single version will not show parallel unless parallelB is set.
- - Combined stacked verse box in READ when parallel mode active (Option A chosen).
-*/
-
 (async function(){
   const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/";
   const FILES = [
-"AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json","NIV_bible.json",
-"NKJV_bible.json","NLT_bible.json","afrikaans_bible.json","bengali_bible.json","gujarati_bible.json",
-"hindi_bible.json","hungarian_bible.json","indonesian_bible.json","kannada_bible.json","malayalam_bible.json",
-"marathi_bible.json","nepali_bible.json","odia_bible.json","punjabi_bible.json","sepedi_bible.json",
-"tamil_bible.json","telugu_bible.json","xhosa_bible.json","zulu_bible.json"
+"AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json","NIV_bible.json","NKJV_bible.json","NLT_bible.json",
+"afrikaans_bible.json","bengali_bible.json","gujarati_bible.json","hindi_bible.json","hungarian_bible.json","indonesian_bible.json",
+"kannada_bible.json","malayalam_bible.json","marathi_bible.json","nepali_bible.json","odia_bible.json","punjabi_bible.json",
+"sepedi_bible.json","tamil_bible.json","telugu_bible.json","xhosa_bible.json","zulu_bible.json"
   ];
 
   // DOM refs
-  const tabs = {
-    home: document.getElementById('tab-home'),
-    read: document.getElementById('tab-read'),
-    search: document.getElementById('tab-search'),
-    parallel: document.getElementById('tab-parallel')
-  };
-  const panes = {
-    home: document.getElementById('pane-home'),
-    read: document.getElementById('pane-read'),
-    search: document.getElementById('pane-search'),
-    parallel: document.getElementById('pane-parallel')
-  };
-
+  const tabs = { home: document.getElementById('tab-home'), read: document.getElementById('tab-read'), search: document.getElementById('tab-search'), parallel: document.getElementById('tab-parallel') };
+  const panes = { home: document.getElementById('pane-home'), read: document.getElementById('pane-read'), search: document.getElementById('pane-search'), parallel: document.getElementById('pane-parallel') };
   const homeVersion = document.getElementById('homeVersion');
-  const homeBook = document.getElementById('homeBook');
-  const homeChapter = document.getElementById('homeChapter');
-  const homeVerse = document.getElementById('homeVerse');
-  const homeRange = document.getElementById('homeRange');
-  const homeOpen = document.getElementById('homeOpen');
-
-  const readRef = document.getElementById('readRef');
-  const readVerses = document.getElementById('readVerses');
-  const readNav = document.getElementById('readNav');
-  const prevVerseBtn = document.getElementById('prevVerse');
-  const nextVerseBtn = document.getElementById('nextVerse');
-  const prevChapterBtn = document.getElementById('prevChapter');
-  const nextChapterBtn = document.getElementById('nextChapter');
-  const playBtn = document.getElementById('play');
-  const pauseBtn = document.getElementById('pause');
-  const resumeBtn = document.getElementById('resume');
-  const stopBtn = document.getElementById('stop');
-
-  const searchBox = document.getElementById('searchBox');
-  const searchInfo = document.getElementById('searchInfo');
-  const searchResults = document.getElementById('searchResults');
-
-  const parallelA = document.getElementById('parallelA');
-  const parallelB = document.getElementById('parallelB');
-  const parallelBook = document.getElementById('parallelBook');
-  const parallelChapter = document.getElementById('parallelChapter');
-  const parallelVerse = document.getElementById('parallelVerse');
-  const parallelOpen = document.getElementById('parallelOpen');
-  const parallelContainer = document.getElementById('parallelContainer');
-
+  const homeBook = document.getElementById('homeBook'); const homeChapter = document.getElementById('homeChapter'); const homeVerse = document.getElementById('homeVerse');
+  const homeRange = document.getElementById('homeRange'); const homeOpen = document.getElementById('homeOpen');
+  const readRef = document.getElementById('readRef'); const readVerses = document.getElementById('readVerses'); const readNav = document.getElementById('readNav');
+  const prevVerseBtn = document.getElementById('prevVerse'); const nextVerseBtn = document.getElementById('nextVerse'); const prevChapterBtn = document.getElementById('prevChapter'); const nextChapterBtn = document.getElementById('nextChapter');
+  const playBtn = document.getElementById('play'); const pauseBtn = document.getElementById('pause'); const resumeBtn = document.getElementById('resume'); const stopBtn = document.getElementById('stop');
+  const searchBox = document.getElementById('searchBox'); const searchInfo = document.getElementById('searchInfo'); const searchResults = document.getElementById('searchResults');
+  const parallelA = document.getElementById('parallelA'); const parallelB = document.getElementById('parallelB'); const parallelBook = document.getElementById('parallelBook'); const parallelChapter = document.getElementById('parallelChapter'); const parallelVerse = document.getElementById('parallelVerse'); const parallelOpen = document.getElementById('parallelOpen'); const parallelContainer = document.getElementById('parallelContainer');
   const notice = document.getElementById('notice');
 
-  // caches & state
-  const rawCache = {};
-  const normCache = {};
-  const searchIndexCache = {};
+  const rawCache = {}, normCache = {}, searchIndexCache = {};
   const state = { version: null, bookIndex: 0, chapterIndex: 0, verseKey: null, view: 'home', parallelB: null };
 
   function showNotice(msg, ms=1400){ notice.textContent = msg; notice.style.display='block'; setTimeout(()=> notice.style.display='none', ms); }
-  function esc(s){ return (s===undefined || s===null) ? '' : String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+  function esc(s){ return (s===undefined||s===null)?'':String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
   function sortKeys(keys){ return keys.sort((a,b)=> (parseInt(String(a).split('-')[0])||0) - (parseInt(String(b).split('-')[0])||0)); }
 
   function normalize(json){
@@ -291,7 +202,7 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     if(!fname) throw new Error("No file");
     if(normCache[fname]) return normCache[fname];
     const res = await fetch(BASE + fname);
-    if(!res.ok) throw new Error("Fetch failed: " + res.status);
+    if(!res.ok) throw new Error("Fetch failed: " + res.status + " (" + fname + ")");
     const j = await res.json();
     rawCache[fname] = j;
     const n = normalize(j);
@@ -303,26 +214,14 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
   function buildSearchIndex(fname, norm){
     if(searchIndexCache[fname]) return searchIndexCache[fname];
     const arr=[];
-    (norm.books || []).forEach((b,bi)=>{
-      (b.chapters || []).forEach((ch,ci)=>{
-        (ch || []).forEach((v,vi)=>{
-          const t = (v && v.text) ? v.text : '';
-          arr.push({bookIndex:bi, chapterIndex:ci, verseIndex:vi, book: b.name, chapter: ci+1, verseKey: v.key, text: t, low: t.toLowerCase()});
-        });
-      });
-    });
+    (norm.books||[]).forEach((b,bi)=>{ (b.chapters||[]).forEach((ch,ci)=>{ (ch||[]).forEach((v,vi)=>{ const t=(v&&v.text)?v.text:''; arr.push({bookIndex:bi,chapterIndex:ci,verseIndex:vi,book:b.name,chapter:ci+1,verseKey:v.key,text:t,low:t.toLowerCase()}); }); }); });
     searchIndexCache[fname] = arr; return arr;
   }
 
-  // populate version selects (labels uppercase without _bible suffix)
-  FILES.forEach(f => {
-    const label = f.replace("_bible.json","").replace(".json","").toUpperCase();
-    homeVersion.appendChild(new Option(label, f));
-    parallelA.appendChild(new Option(label, f));
-    parallelB.appendChild(new Option(label, f));
-  });
+  // populate selects labels uppercase and strip suffix
+  FILES.forEach(f=>{ const label = f.replace("_bible.json","").replace(".json","").toUpperCase(); homeVersion.appendChild(new Option(label,f)); parallelA.appendChild(new Option(label,f)); parallelB.appendChild(new Option(label,f)); });
 
-  // SPA navigation
+  // SPA nav
   function activateTab(name, push=true){
     Object.keys(panes).forEach(k => panes[k].classList.toggle('show', k === name));
     Object.values(tabs).forEach(t => t.classList.remove('active'));
@@ -355,173 +254,110 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
   }
   readUrlIntoState();
 
-  // populate home book list when version selected
+  // HOME population
   async function populateHomeBooks(fname){
     if(!fname) return;
-    try{ const n = await fetchAndNormalize(fname); homeBook.innerHTML = "<option value=''>Book</option>"; n.books.forEach((b,i)=> homeBook.appendChild(new Option(b.name, i))); homeChapter.innerHTML = "<option value=''>Chapter</option>"; homeVerse.innerHTML = "<option value=''>Verse</option>"; }catch(e){ showNotice('Failed to load version'); }
+    try{ const n = await fetchAndNormalize(fname); homeBook.innerHTML = "<option value=''>Book</option>"; n.books.forEach((b,i)=> homeBook.appendChild(new Option(b.name,i))); homeChapter.innerHTML = "<option value=''>Chapter</option>"; homeVerse.innerHTML = "<option value=''>Verse</option>"; }catch(e){ console.warn(e); showNotice('Failed to load version'); }
   }
 
-  homeBook.addEventListener('change', async function(){
-    const bi = Number(this.value || 0);
-    if(!state.version) return;
-    const n = await fetchAndNormalize(state.version);
-    const ccount = (n.books[bi] && n.books[bi].chapters) ? n.books[bi].chapters.length : 0;
-    homeChapter.innerHTML = "<option value=''>Chapter</option>";
-    for(let i=1;i<=ccount;i++) homeChapter.appendChild(new Option(i, i-1));
-    homeVerse.innerHTML = "<option value=''>Verse</option>";
-  });
+  homeBook.addEventListener('change', async function(){ const bi = Number(this.value || 0); if(!state.version) return; const n = await fetchAndNormalize(state.version); const ccount = (n.books[bi] && n.books[bi].chapters) ? n.books[bi].chapters.length : 0; homeChapter.innerHTML = "<option value=''>Chapter</option>"; for(let i=1;i<=ccount;i++) homeChapter.appendChild(new Option(i, i-1)); homeVerse.innerHTML = "<option value=''>Verse</option>"; });
 
-  homeChapter.addEventListener('change', async function(){
-    const bi = Number(homeBook.value || 0);
-    const ci = Number(this.value || 0);
-    if(!state.version) return;
-    const n = await fetchAndNormalize(state.version);
-    const vcount = (n.books[bi] && n.books[bi].chapters[ci]) ? n.books[bi].chapters[ci].length : 0;
-    homeVerse.innerHTML = "<option value=''>Verse</option>";
-    for(let v=1; v<=vcount; v++) homeVerse.appendChild(new Option(v, v-1));
-  });
+  homeChapter.addEventListener('change', async function(){ const bi = Number(homeBook.value || 0); const ci = Number(this.value || 0); if(!state.version) return; const n = await fetchAndNormalize(state.version); const vcount = (n.books[bi] && n.books[bi].chapters[ci]) ? n.books[bi].chapters[ci].length : 0; homeVerse.innerHTML = "<option value=''>Verse</option>"; for(let v=1; v<=vcount; v++) homeVerse.appendChild(new Option(v, v-1)); });
 
-  homeVersion.addEventListener('change', async function(){
-    const f = this.value;
-    if(!f) return;
-    state.version = f;
-    // keep parallelA in sync but do NOT auto-enable parallelB
-    parallelA.value = f;
-    await populateHomeBooks(f);
-    showNotice(this.options[this.selectedIndex].text + ' loaded');
-    updateUrl(true);
-  });
+  homeVersion.addEventListener('change', async function(){ const f = this.value; if(!f) return; state.version = f; parallelA.value = f; await populateHomeBooks(f); showNotice(this.options[this.selectedIndex].text + ' loaded'); updateUrl(true); });
 
-  homeOpen.addEventListener('click', async function(){
-    if(!state.version){ showNotice('Select a version'); return; }
-    const bi = homeBook.value !== '' ? Number(homeBook.value) : 0;
-    const ci = homeChapter.value !== '' ? Number(homeChapter.value) : 0;
-    const viDropdown = homeVerse.value !== '' ? Number(homeVerse.value) : null;
-    const rng = (homeRange.value || '').trim();
-    state.bookIndex = bi; state.chapterIndex = ci;
-    if(rng) state.verseKey = rng; else if(viDropdown !== null) state.verseKey = String(viDropdown + 1); else state.verseKey = null;
-    try{ await fetchAndNormalize(state.version); }catch(e){ showNotice('Failed to load version'); return; }
-    // ensure parallelB stays unchanged (read will render single version unless parallelB is set)
-    activateTab('read'); renderRead();
-  });
+  homeOpen.addEventListener('click', async function(){ if(!state.version){ showNotice('Select a version'); return; } const bi = homeBook.value !== '' ? Number(homeBook.value) : 0; const ci = homeChapter.value !== '' ? Number(homeChapter.value) : 0; const viDropdown = homeVerse.value !== '' ? Number(homeVerse.value) : null; const rng = (homeRange.value || '').trim(); state.bookIndex = bi; state.chapterIndex = ci; if(rng) state.verseKey = rng; else if(viDropdown !== null) state.verseKey = String(viDropdown + 1); else state.verseKey = null; try{ await fetchAndNormalize(state.version); }catch(e){ showNotice('Failed to load version'); return; } activateTab('read'); renderRead(); });
 
-  // READ render supports stacked combined verse box when state.parallelB set
+  // RENDER READ
   function renderRead(){
     if(!state.version){ readRef.textContent = 'No version selected'; readVerses.innerHTML=''; return; }
     const n = normCache[state.version];
     if(!n){ readRef.textContent = 'Loading...'; readVerses.innerHTML=''; return; }
-    if(state.bookIndex < 0) state.bookIndex = 0;
-    if(state.bookIndex >= n.books.length) state.bookIndex = 0;
+    if(state.bookIndex < 0) state.bookIndex = 0; if(state.bookIndex >= n.books.length) state.bookIndex = 0;
     const book = n.books[state.bookIndex];
     if(!book){ readRef.textContent = 'No book'; readVerses.innerHTML=''; return; }
-    if(state.chapterIndex < 0) state.chapterIndex = 0;
-    if(state.chapterIndex >= book.chapters.length) state.chapterIndex = 0;
+    if(state.chapterIndex < 0) state.chapterIndex = 0; if(state.chapterIndex >= book.chapters.length) state.chapterIndex = 0;
     const chapA = book.chapters[state.chapterIndex] || [];
     readRef.textContent = `${book.name} ${state.chapterIndex + 1}`;
     readVerses.innerHTML = '';
 
-    // If parallel mode requested (state.parallelB) then render stacked combined boxes (Option A)
+    // if parallel requested (state.parallelB) load it (if missing, attempt fetch but don't throw)
     if(state.parallelB){
-      const bfile = state.parallelB;
-      const nb = normCache[bfile];
-      if(!nb){ readVerses.innerHTML = '<div style="padding:12px;color:#666">Parallel version not loaded.</div>'; return; }
-      const bookB = nb.books[state.bookIndex] || {chapters:[]};
-      const chapB = (bookB.chapters && bookB.chapters[state.chapterIndex]) ? bookB.chapters[state.chapterIndex] : [];
-      // handle verseKey
+      const pb = state.parallelB;
+      const nb = normCache[pb];
+      if(!nb){ // try to fetch silently
+        fetchAndNormalize(pb).catch(()=>{});
+        readVerses.innerHTML = '<div style="padding:12px;color:#666">Parallel version not loaded.</div>'; return;
+      }
+      const bookB = nb.books[state.bookIndex] || {chapters:[]}; const chapB = (bookB.chapters && bookB.chapters[state.chapterIndex]) ? bookB.chapters[state.chapterIndex] : [];
+      // verseKey handling
       if(state.verseKey){
-        const exact = chapA.findIndex(v => v.key === state.verseKey);
-        if(exact !== -1){ renderCombinedVerse(exact, chapA, chapB); showReadNav(true, exact); return; }
+        const exact = chapA.findIndex(v=>v.key===state.verseKey);
+        if(exact !== -1){ renderCombinedBox(exact, chapA, chapB, state.version, pb); showReadNav(true, exact); return; }
         const m = state.verseKey.match(/^(\d+)\s*-\s*(\d+)$/);
-        if(m){ const s = Number(m[1]) -1, e = Number(m[2]) -1, start = Math.max(0,Math.min(s, chapA.length-1)), end = Math.max(start, Math.min(e, chapA.length-1)); for(let i=start;i<=end;i++) renderCombinedVerse(i, chapA, chapB); showReadNav(true, start); return; }
-        if(/^\d+$/.test(state.verseKey)){ const idx = Math.max(0, Math.min(Number(state.verseKey)-1, chapA.length-1)); renderCombinedVerse(idx, chapA, chapB); showReadNav(true, idx); return; }
+        if(m){ const s = Number(m[1]) -1, e = Number(m[2]) -1, start = Math.max(0, Math.min(s, chapA.length-1)), end = Math.max(start, Math.min(e, chapA.length-1)); for(let i=start;i<=end;i++) renderCombinedBox(i, chapA, chapB, state.version, pb); showReadNav(true, start); return; }
+        if(/^\d+$/.test(state.verseKey)){ const idx = Math.max(0, Math.min(Number(state.verseKey)-1, chapA.length-1)); renderCombinedBox(idx, chapA, chapB, state.version, pb); showReadNav(true, idx); return; }
         readVerses.innerHTML = '<div style="padding:12px;color:#666">Verse not found</div>'; showReadNav(false); return;
       }
-      // full chapter
       const maxLen = Math.max(chapA.length, chapB.length);
-      for(let i=0;i<maxLen;i++) renderCombinedVerse(i, chapA, chapB);
-      showReadNav(false);
-      return;
+      for(let i=0;i<maxLen;i++) renderCombinedBox(i, chapA, chapB, state.version, pb);
+      showReadNav(false); return;
     }
 
-    // Single version render (no parallel)
+    // Single version rendering
     if(state.verseKey){
-      const exact = chapA.findIndex(v => v.key === state.verseKey);
-      if(exact !== -1){ renderSingleVerse(state.version, exact); showReadNav(true, exact); return; }
+      const exact = chapA.findIndex(v=>v.key===state.verseKey);
+      if(exact !== -1){ renderSingleBox(state.version, exact); showReadNav(true, exact); return; }
       const m = state.verseKey.match(/^(\d+)\s*-\s*(\d+)$/);
-      if(m){ const s = Math.max(1, Number(m[1])) - 1; const e = Math.max(1, Number(m[2])) - 1; const start = Math.max(0, Math.min(s, chapA.length-1)); const end = Math.max(start, Math.min(e, chapA.length-1)); renderRange(state.version, start, end); showReadNav(true, start); return; }
-      if(/^\d+$/.test(state.verseKey)){ const idx = Math.max(0, Math.min(Number(state.verseKey)-1, chapA.length-1)); renderSingleVerse(state.version, idx); showReadNav(true, idx); return; }
+      if(m){ const s = Math.max(1, Number(m[1])) -1, e = Math.max(1, Number(m[2])) -1, start=Math.max(0,Math.min(s,chapA.length-1)), end=Math.max(start,Math.min(e,chapA.length-1)); renderRange(state.version, start, end); showReadNav(true, start); return; }
+      if(/^\d+$/.test(state.verseKey)){ const idx = Math.max(0, Math.min(Number(state.verseKey)-1, chapA.length-1)); renderSingleBox(state.version, idx); showReadNav(true, idx); return; }
       readVerses.innerHTML = '<div style="padding:12px;color:#666">Verse not found</div>'; showReadNav(false); return;
     }
-    for(let i=0;i<chapA.length;i++){
-      const v = chapA[i];
-      const block = document.createElement('div'); block.className = 'verse-block'; block.innerHTML = `<div class="verse-num">Verse ${v.key}</div><div class="verse-text">${esc(v.text)}</div>`;
-      readVerses.appendChild(block);
-    }
+
+    for(let i=0;i<chapA.length;i++){ const v = chapA[i]; const block = document.createElement('div'); block.className='verse-block'; block.innerHTML = `<div class="verse-num">Verse ${v.key}</div><div class="verse-text">${esc(v.text)}</div>`; readVerses.appendChild(block); }
     showReadNav(false);
   }
 
-  // Combined stacked verse (primary then secondary inside same box)
-  function renderCombinedVerse(idx, chapA, chapB){
+  // Combined box: Option B styling (labels for each version inside same box)
+  function renderCombinedBox(idx, chapA, chapB, fileA, fileB){
     const va = chapA[idx] || null; const vb = chapB[idx] || null;
     const key = va ? va.key : (vb ? vb.key : (idx+1));
-    const block = document.createElement('div'); block.className = 'verse-block';
+    const labelA = (fileA||'').replace('_bible.json','').replace('.json','').toUpperCase();
+    const labelB = (fileB||'').replace('_bible.json','').replace('.json','').toUpperCase();
+    const block = document.createElement('div'); block.className='verse-block';
     let inner = `<div class="verse-num">Verse ${key}</div>`;
+    inner += `<div class="verse-label">${esc(labelA)}</div>`;
     inner += `<div class="verse-text">${esc(va?va.text:'')}</div>`;
-    if(vb && vb.text) inner += `<div class="verse-secondary">${esc(vb.text)}</div>`;
-    block.innerHTML = inner;
-    readVerses.appendChild(block);
+    inner += `<div class="verse-label">${esc(labelB)}</div>`;
+    inner += `<div class="verse-secondary">${esc(vb?vb.text:'')}</div>`;
+    block.innerHTML = inner; readVerses.appendChild(block);
   }
 
-  function renderSingleVerse(fname, idx){
-    const n = normCache[fname]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; const v = ch[idx];
-    readVerses.innerHTML = `<div class="verse-block active-verse"><div class="verse-num">Verse ${v.key}</div><div class="verse-text">${esc(v.text)}</div></div>`;
-  }
-  function renderRange(fname, s, e){
-    const n = normCache[fname]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; const comb = ch.slice(s, e+1).map(x=>x.text).join(' ');
-    readVerses.innerHTML = `<div class="verse-block active-verse"><div class="verse-num">Verses ${ch[s].key}${s!==e?('-'+ch[e].key):''}</div><div class="verse-text">${esc(comb)}</div></div>`;
-  }
+  function renderSingleBox(fname, idx){ const n = normCache[fname]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; const v = ch[idx]; readVerses.innerHTML = `<div class="verse-block active-verse"><div class="verse-num">Verse ${v.key}</div><div class="verse-text">${esc(v.text)}</div></div>`; }
+  function renderRange(fname, s, e){ const n = normCache[fname]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; const comb = ch.slice(s,e+1).map(x=>x.text).join(' '); readVerses.innerHTML = `<div class="verse-block active-verse"><div class="verse-num">Verses ${ch[s].key}${s!==e?('-'+ch[e].key):''}</div><div class="verse-text">${esc(comb)}</div></div>`; }
 
   let currentVerseIndex = null;
   function showReadNav(show, idx=null){ readNav.style.display = show ? 'flex' : 'none'; currentVerseIndex = (typeof idx==='number')?idx:null; }
 
-  prevVerseBtn.addEventListener('click', ()=> { if(currentVerseIndex===null) return; const n = normCache[state.version]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; if(currentVerseIndex>0){ setVerseKeyByIndex(currentVerseIndex-1); } else { if(state.chapterIndex>0){ state.chapterIndex--; const ch2 = n.books[state.bookIndex].chapters[state.chapterIndex]; setVerseKeyByIndex(ch2.length-1); } } });
-  nextVerseBtn.addEventListener('click', ()=> { if(currentVerseIndex===null) return; const n = normCache[state.version]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; if(currentVerseIndex < ch.length-1){ setVerseKeyByIndex(currentVerseIndex+1); } else { if(state.chapterIndex+1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); } } });
+  prevVerseBtn.addEventListener('click', ()=>{ if(currentVerseIndex===null) return; const n = normCache[state.version]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; if(currentVerseIndex>0){ setVerseKeyByIndex(currentVerseIndex-1); } else { if(state.chapterIndex>0){ state.chapterIndex--; const ch2 = n.books[state.bookIndex].chapters[state.chapterIndex]; setVerseKeyByIndex(ch2.length-1); } } });
+  nextVerseBtn.addEventListener('click', ()=>{ if(currentVerseIndex===null) return; const n = normCache[state.version]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; if(currentVerseIndex < ch.length-1){ setVerseKeyByIndex(currentVerseIndex+1); } else { if(state.chapterIndex+1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); } } });
+  function setVerseKeyByIndex(idx){ const n = normCache[state.version]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; state.verseKey = ch[idx].key; renderRead(); updateUrl(); }
 
-  function setVerseKeyByIndex(idx){
-    const n = normCache[state.version]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; state.verseKey = ch[idx].key; renderRead(); updateUrl();
-  }
+  prevChapterBtn.addEventListener('click', ()=>{ if(state.chapterIndex>0){ state.chapterIndex--; state.verseKey=null; renderRead(); updateUrl(); } });
+  nextChapterBtn.addEventListener('click', ()=>{ const n = normCache[state.version]; if(state.chapterIndex+1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey=null; renderRead(); updateUrl(); } });
 
-  prevChapterBtn.addEventListener('click', ()=> { if(state.chapterIndex>0){ state.chapterIndex--; state.verseKey=null; renderRead(); updateUrl(); } });
-  nextChapterBtn.addEventListener('click', ()=> { const n = normCache[state.version]; if(state.chapterIndex+1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey=null; renderRead(); updateUrl(); } });
-
-  // swipe / drag / arrow keys
+  // swipe/drag/keys
   let touchStartX = 0; document.addEventListener('touchstart', e=> touchStartX = e.changedTouches[0].clientX);
   document.addEventListener('touchend', e=>{ const dx = e.changedTouches[0].clientX - touchStartX; if(Math.abs(dx)<60) return; const n = normCache[state.version]; if(dx<0){ if(state.chapterIndex+1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey=null; renderRead(); updateUrl(); } } else { if(state.chapterIndex>0){ state.chapterIndex--; state.verseKey=null; renderRead(); updateUrl(); } } });
-
   let mouseDown=false, startX=0, curX=0;
   readVerses.addEventListener('mousedown', e=>{ mouseDown=true; startX=e.clientX; });
-  document.addEventListener('mousemove', e=>{ if(!mouseDown) return; curX = e.clientX; });
-  document.addEventListener('mouseup', e=>{ if(!mouseDown) return; mouseDown=false; const dx = (curX||e.clientX) - startX; if(Math.abs(dx)>100){ const n = normCache[state.version]; if(dx<0){ if(state.chapterIndex+1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey=null; renderRead(); updateUrl(); } } else { if(state.chapterIndex>0){ state.chapterIndex--; state.verseKey=null; renderRead(); updateUrl(); } } } startX=curX=0; });
-
+  document.addEventListener('mousemove', e=>{ if(!mouseDown) return; curX=e.clientX; });
+  document.addEventListener('mouseup', e=>{ if(!mouseDown) return; mouseDown=false; const dx = (curX||e.clientX)-startX; if(Math.abs(dx)>100){ const n = normCache[state.version]; if(dx<0){ if(state.chapterIndex+1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey=null; renderRead(); updateUrl(); } } else { if(state.chapterIndex>0){ state.chapterIndex--; state.verseKey=null; renderRead(); updateUrl(); } } } startX=curX=0; });
   document.addEventListener('keydown', e=>{ if(e.key==='ArrowRight'){ const n = normCache[state.version]; if(n && state.chapterIndex+1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey=null; renderRead(); updateUrl(); } } if(e.key==='ArrowLeft'){ if(state.chapterIndex>0){ state.chapterIndex--; state.verseKey=null; renderRead(); updateUrl(); } } });
 
-  // TTS (same behavior)
+  // TTS (unchanged)
   let ttsQueue=[];
-  function buildTTS(){
-    ttsQueue = [];
-    if(!state.version) return;
-    const n = normCache[state.version]; if(!n) return;
-    const ch = n.books[state.bookIndex].chapters[state.chapterIndex] || [];
-    if(state.verseKey){
-      const exact = ch.findIndex(v=>v.key===state.verseKey);
-      if(exact!==-1){ ttsQueue.push({text: ch[exact].text, idx: exact}); return; }
-      const m = state.verseKey.match(/^(\d+)\s*-\s*(\d+)$/);
-      if(m){ const s = Number(m[1]) -1, e = Number(m[2]) -1; for(let i=Math.max(0,s); i<=Math.min(e,ch.length-1); i++) ttsQueue.push({text: ch[i].text, idx:i}); return; }
-      if(/^\d+$/.test(state.verseKey)){ const idx = Math.max(0, Math.min(Number(state.verseKey)-1, ch.length-1)); ttsQueue.push({text: ch[idx].text, idx}); return; }
-      return;
-    }
-    for(let i=0;i<ch.length;i++) ttsQueue.push({text: ch[i].text, idx:i});
-  }
+  function buildTTS(){ ttsQueue=[]; if(!state.version) return; const n = normCache[state.version]; if(!n) return; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]||[]; if(state.verseKey){ const exact = ch.findIndex(v=>v.key===state.verseKey); if(exact!==-1){ ttsQueue.push({text:ch[exact].text, idx:exact}); return; } const m = state.verseKey.match(/^(\d+)\s*-\s*(\d+)$/); if(m){ const s=Number(m[1])-1,e=Number(m[2])-1; for(let i=Math.max(0,s);i<=Math.min(e,ch.length-1);i++) ttsQueue.push({text:ch[i].text, idx:i}); return; } if(/^\d+$/.test(state.verseKey)){ const idx=Math.max(0,Math.min(Number(state.verseKey)-1,ch.length-1)); ttsQueue.push({text:ch[idx].text, idx}); return; } return; } for(let i=0;i<ch.length;i++) ttsQueue.push({text:ch[i].text, idx:i}); }
   function speakNext(){ if(ttsQueue.length===0) return; const item = ttsQueue.shift(); if(!item||!item.text) return setTimeout(speakNext,120); const blocks = document.querySelectorAll('.verse-block'); blocks.forEach(b=>b.classList.remove('active-verse')); if(blocks[item.idx]){ blocks[item.idx].classList.add('active-verse'); blocks[item.idx].scrollIntoView({behavior:'smooth', block:'center'}); } const u = new SpeechSynthesisUtterance(String(item.text)); u.onend = ()=> setTimeout(speakNext,120); u.onerror = ()=> setTimeout(speakNext,180); speechSynthesis.speak(u); }
   playBtn.addEventListener('click', ()=>{ speechSynthesis.cancel(); buildTTS(); speakNext(); });
   pauseBtn.addEventListener('click', ()=>{ try{ speechSynthesis.pause(); }catch(e){} });
@@ -532,72 +368,30 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
   async function doSearch(q){
     searchResults.innerHTML=''; searchInfo.textContent='';
     if(!q) return;
-    if(!state.version){ searchInfo.textContent = 'Select a version in HOME first'; return; }
-    try{ await fetchAndNormalize(state.version); const idx = searchIndexCache[state.version] || buildSearchIndex(state.version, normCache[state.version]); const results=[]; const max=250; for(let i=0;i<idx.length && results.length<max;i++){ if(idx[i].low.includes(q)) results.push(idx[i]); } searchInfo.textContent = `Found ${results.length}`; if(!results.length){ searchResults.innerHTML='<div style="padding:8px;color:#666">No results</div>'; return; } const safe = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); const re = new RegExp(safe,'ig'); const frag = document.createDocumentFragment(); results.forEach(r=>{ const div = document.createElement('div'); div.className='search-item'; const snippet = esc(r.text).replace(re, m=>`<span class="highlight">${m}</span>`); div.innerHTML = `<strong>${esc(r.book)} ${r.chapter}:${r.verseKey}</strong><div style="margin-top:6px">${snippet}</div><small style="display:block;margin-top:6px;color:#666">Click to open</small>`; div.onclick = async ()=>{ state.bookIndex = r.bookIndex; state.chapterIndex = r.chapterIndex; state.verseKey = r.verseKey; activateTab('read'); await fetchAndNormalize(state.version); renderRead(); updateUrl(); }; frag.appendChild(div); }); searchResults.appendChild(frag); activateTab('search'); }catch(e){ showNotice('Search failed'); } }
+    if(!state.version){ searchInfo.textContent='Select a version in HOME first'; return; }
+    try{ await fetchAndNormalize(state.version); const idx = searchIndexCache[state.version] || buildSearchIndex(state.version, normCache[state.version]); const results=[]; const max=250; for(let i=0;i<idx.length && results.length<max;i++){ if(idx[i].low.includes(q)) results.push(idx[i]); } searchInfo.textContent = `Found ${results.length}`; if(!results.length){ searchResults.innerHTML='<div style="padding:8px;color:#666">No results</div>'; return; } const safe = q.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\$&'); const re = new RegExp(safe,'ig'); const frag = document.createDocumentFragment(); results.forEach(r=>{ const div=document.createElement('div'); div.className='search-item'; const snippet = esc(r.text).replace(re, m=>`<span class="highlight">${m}</span>`); div.innerHTML = `<strong>${esc(r.book)} ${r.chapter}:${r.verseKey}</strong><div style="margin-top:6px">${snippet}</div><small style="display:block;margin-top:6px;color:#666">Click to open</small>`; div.onclick = async ()=>{ state.bookIndex = r.bookIndex; state.chapterIndex = r.chapterIndex; state.verseKey = r.verseKey; activateTab('read'); await fetchAndNormalize(state.version); renderRead(); updateUrl(); }; frag.appendChild(div); }); searchResults.appendChild(frag); activateTab('search'); }catch(e){ showNotice('Search failed'); } }
   searchBox.addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch((searchBox.value||'').trim().toLowerCase()); });
 
-  // PARALLEL controls: populate book/chapter/verse based on Version A selection
+  // PARALLEL controls population (based on parallelA)
   parallelA.addEventListener('change', async function(){
-    const f = this.value || state.version;
-    if(!f) return;
-    state.version = f; // keep main state version in sync with A for convenience
-    await fetchAndNormalize(f);
-    // populate parallelBook with A's books
-    parallelBook.innerHTML = "<option value=''>Book</option>";
-    const n = normCache[f];
-    n.books.forEach((b,i)=> parallelBook.appendChild(new Option(b.name, i)));
-    parallelChapter.innerHTML = "<option value=''>Chapter</option>";
-    parallelVerse.innerHTML = "<option value=''>Verse</option>";
-    showNotice(this.options[this.selectedIndex].text + ' loaded (A)');
-  });
+    const f = this.value || state.version; if(!f) return; state.version = f; parallelA.value = f; await fetchAndNormalize(f); parallelBook.innerHTML = "<option value=''>Book</option>"; const n = normCache[f]; n.books.forEach((b,i)=> parallelBook.appendChild(new Option(b.name,i))); parallelChapter.innerHTML = "<option value=''>Chapter</option>"; parallelVerse.innerHTML = "<option value=''>Verse</option>"; showNotice(this.options[this.selectedIndex].text + ' loaded (A)'); });
 
-  parallelBook.addEventListener('change', async function(){
-    const bi = Number(this.value || 0); const f = parallelA.value || state.version;
-    if(!f) return;
-    const n = await fetchAndNormalize(f);
-    const ccount = (n.books[bi] && n.books[bi].chapters) ? n.books[bi].chapters.length : 0;
-    parallelChapter.innerHTML = "<option value=''>Chapter</option>";
-    for(let i=1;i<=ccount;i++) parallelChapter.appendChild(new Option(i, i-1));
-    parallelVerse.innerHTML = "<option value=''>Verse</option>";
-  });
+  parallelBook.addEventListener('change', async function(){ const bi = Number(this.value || 0); const f = parallelA.value || state.version; if(!f) return; const n = await fetchAndNormalize(f); const ccount = (n.books[bi] && n.books[bi].chapters) ? n.books[bi].chapters.length : 0; parallelChapter.innerHTML = "<option value=''>Chapter</option>"; for(let i=1;i<=ccount;i++) parallelChapter.appendChild(new Option(i, i-1)); parallelVerse.innerHTML = "<option value=''>Verse</option>"; });
 
-  parallelChapter.addEventListener('change', async function(){
-    const bi = Number(parallelBook.value || 0); const ci = Number(this.value || 0); const f = parallelA.value || state.version;
-    if(!f) return;
-    const n = await fetchAndNormalize(f);
-    const vcount = (n.books[bi] && n.books[bi].chapters[ci]) ? n.books[bi].chapters[ci].length : 0;
-    parallelVerse.innerHTML = "<option value=''>Verse</option>";
-    for(let v=1; v<=vcount; v++) parallelVerse.appendChild(new Option(v, v-1));
-  });
+  parallelChapter.addEventListener('change', async function(){ const bi = Number(parallelBook.value || 0); const ci = Number(this.value || 0); const f = parallelA.value || state.version; if(!f) return; const n = await fetchAndNormalize(f); const vcount = (n.books[bi] && n.books[bi].chapters[ci]) ? n.books[bi].chapters[ci].length : 0; parallelVerse.innerHTML = "<option value=''>Verse</option>"; for(let v=1; v<=vcount; v++) parallelVerse.appendChild(new Option(v, v-1)); });
 
-  // PARALLEL OPEN -> set state.parallelB and open READ (do not render verses in parallel tab)
-  parallelOpen.addEventListener('click', async function(){
-    const a = parallelA.value || state.version;
-    const b = parallelB.value || state.parallelB;
-    if(!a || !b){ showNotice('Select both versions'); return; }
-    const bi = parallelBook.value !== '' ? Number(parallelBook.value) : 0;
-    const ci = parallelChapter.value !== '' ? Number(parallelChapter.value) : 0;
-    const vi = parallelVerse.value !== '' ? Number(parallelVerse.value) : null;
-    state.version = a; state.parallelB = b; state.bookIndex = bi; state.chapterIndex = ci;
-    if(vi !== null) state.verseKey = String(vi + 1); else state.verseKey = null;
-    try{ await fetchAndNormalize(a); await fetchAndNormalize(b); }catch(e){ showNotice('Failed to load versions'); return; }
-    // do NOT render inside parallel tab — instead switch to read and render combined view
-    activateTab('read'); renderRead();
-  });
+  // PARALLEL OPEN -> switch to READ and render combined; do NOT render in parallel pane
+  parallelOpen.addEventListener('click', async function(){ const a = parallelA.value || state.version; const b = parallelB.value || state.parallelB; if(!a || !b){ showNotice('Select both versions'); return; } const bi = parallelBook.value !== '' ? Number(parallelBook.value) : 0; const ci = parallelChapter.value !== '' ? Number(parallelChapter.value) : 0; const vi = parallelVerse.value !== '' ? Number(parallelVerse.value) : null; state.version = a; state.parallelB = b; state.bookIndex = bi; state.chapterIndex = ci; state.verseKey = (vi !== null) ? String(vi + 1) : null; try{ await fetchAndNormalize(a); await fetchAndNormalize(b); }catch(e){ showNotice('Failed to load versions'); return; } activateTab('read'); renderRead(); updateUrl(); });
 
-  // renderParallelPreview intentionally minimal: show instructions (do not auto-render verses)
-  function renderParallelPreview(){
-    parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Choose two versions and a passage. Click OPEN to view in READ (combined view).</div>';
-  }
+  function renderParallelPreview(){ parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Choose two versions and a passage. Click OPEN to view combined passage in READ.</div>'; }
 
-  // initial load from URL if provided
+  // initial load from URL
   if(state.version){ homeVersion.value = state.version; parallelA.value = state.version; try{ await fetchAndNormalize(state.version); await populateHomeBooks(state.version); }catch(e){} activateTab(state.view || 'home', false); if(state.view==='read') renderRead(); if(state.view==='parallel') renderParallelPreview(); } else { activateTab('home', false); }
 
   window.addEventListener('popstate', async e=>{ readUrlIntoState(); if(state.version){ await fetchAndNormalize(state.version); await populateHomeBooks(state.version); } if(state.view) activateTab(state.view, false); if(state.view==='read') renderRead(); if(state.view==='parallel') renderParallelPreview(); });
 
-  // small helper expose
+  // expose helper
   window._spa = { state };
-
 })(); // IIFE end
 </script>
 </body>
