@@ -3,14 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Bible Reader</title>
-
-<!-- Font Awesome for icons -->
+<title>Bible Reader — SPA (Final)</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-
-<!-- Serif for verses -->
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
-
 <style>
 :root{
   --bg:#f7f9fc; --card:#ffffff; --accent:#0b66c2; --muted:#6f7f8b;
@@ -68,7 +63,7 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
 .highlight{background:#fff3c4;padding:2px;border-radius:4px}
 
 /* Parallel specific */
-.parallel-controls{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.parallel-controls{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;justify-content:center}
 .parallel-container .parallel-pair{margin-bottom:14px}
 .parallel-verse{background:#fff;border-radius:10px;border:1px solid var(--border);padding:12px;margin-bottom:10px}
 
@@ -84,6 +79,7 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
   .home-row label{min-width:70px}
   .home-card{padding:16px}
   .reader-ref{font-size:18px}
+  .parallel-controls{flex-direction:column;align-items:stretch}
 }
 </style>
 </head>
@@ -94,7 +90,7 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     <div class="tab active" id="tab-home" data-tab="home"><i class="fa-solid fa-house"></i><span>HOME</span></div>
     <div class="tab" id="tab-read" data-tab="read"><i class="fa-solid fa-book"></i><span>READ</span></div>
     <div class="tab" id="tab-search" data-tab="search"><i class="fa-solid fa-magnifying-glass"></i><span>SEARCH</span></div>
-    <div class="tab" id="tab-parallel" data-tab="parallel"><i class="fa-solid fa-columns"></i><span>PARALLEL</span></div>
+    <div class="tab" id="tab-parallel" data-tab="parallel"><i class="fa-solid fa-clone"></i><span>PARALLEL</span></div>
   </nav>
 </header>
 
@@ -167,17 +163,28 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     </div>
   </section>
 
-  <!-- PARALLEL pane -->
+  <!-- PARALLEL pane (Card layout C) -->
   <section id="pane-parallel" class="pane" role="region" aria-label="Parallel">
     <div class="card">
-      <div class="parallel-controls">
-        <select id="parallelA" class="select"><option value="">Version A</option></select>
-        <select id="parallelB" class="select"><option value="">Version B</option></select>
-        <div style="flex:1"></div>
-        <button id="parallelOpen" class="btn">OPEN</button>
+      <div class="home-title" style="margin-bottom:10px">Parallel — compare two versions</div>
+      <div class="parallel-controls card" style="padding:14px;max-width:820px;margin:0 auto 12px auto">
+        <div style="margin-bottom:10px;font-weight:700;color:#334">Choose versions</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+          <select id="parallelA" class="select"><option value="">Version A</option></select>
+          <select id="parallelB" class="select"><option value="">Version B</option></select>
+        </div>
+
+        <div style="margin-top:6px;margin-bottom:6px;font-weight:700;color:#334">Choose passage</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <select id="parallelBook" class="select"><option value="">Book</option></select>
+          <select id="parallelChapter" class="select"><option value="">Chapter</option></select>
+          <select id="parallelVerse" class="select"><option value="">Verse</option></select>
+          <div style="flex:1"></div>
+          <button id="parallelOpen" class="btn">OPEN</button>
+        </div>
       </div>
 
-      <div id="parallelContainer" class="parallel-container"></div>
+      <div id="parallelContainer" class="parallel-container" style="max-width:820px;margin:0 auto"></div>
     </div>
   </section>
 </main>
@@ -185,20 +192,15 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
 <div id="notice" class="notice" role="status" aria-live="polite"></div>
 
 <script>
-/* Single-file SPA JS
-   - Option A behaviour: HOME selection determines active version for READ/SEARCH/PARALLEL
-   - Unified UI: HOME card + READ + PARALLEL consistent styles
-   - PARALLEL: no version labels inside verse blocks
-*/
+/* Final SPA with HOME / READ / SEARCH / PARALLEL (parallel card C) */
 
 (async function(){
   const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/";
   const FILES = [
-"AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json",
-"NIV_bible.json","NKJV_bible.json","NLT_bible.json","afrikaans_bible.json",
-"bengali_bible.json","gujarati_bible.json","hindi_bible.json","hungarian_bible.json",
-"indonesian_bible.json","kannada_bible.json","malayalam_bible.json","marathi_bible.json",
-"nepali_bible.json","odia_bible.json","punjabi_bible.json","sepedi_bible.json",
+"AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json","NIV_bible.json",
+"NKJV_bible.json","NLT_bible.json","afrikaans_bible.json","bengali_bible.json","gujarati_bible.json",
+"hindi_bible.json","hungarian_bible.json","indonesian_bible.json","kannada_bible.json","malayalam_bible.json",
+"marathi_bible.json","nepali_bible.json","odia_bible.json","punjabi_bible.json","sepedi_bible.json",
 "tamil_bible.json","telugu_bible.json","xhosa_bible.json","zulu_bible.json"
   ];
 
@@ -216,7 +218,6 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     parallel: document.getElementById('pane-parallel')
   };
 
-  // HOME
   const homeVersion = document.getElementById('homeVersion');
   const homeBook = document.getElementById('homeBook');
   const homeChapter = document.getElementById('homeChapter');
@@ -224,7 +225,6 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
   const homeRange = document.getElementById('homeRange');
   const homeOpen = document.getElementById('homeOpen');
 
-  // READ
   const readRef = document.getElementById('readRef');
   const readVerses = document.getElementById('readVerses');
   const readNav = document.getElementById('readNav');
@@ -237,68 +237,52 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
   const resumeBtn = document.getElementById('resume');
   const stopBtn = document.getElementById('stop');
 
-  // SEARCH
   const searchBox = document.getElementById('searchBox');
   const searchInfo = document.getElementById('searchInfo');
   const searchResults = document.getElementById('searchResults');
 
-  // PARALLEL
   const parallelA = document.getElementById('parallelA');
   const parallelB = document.getElementById('parallelB');
+  const parallelBook = document.getElementById('parallelBook');
+  const parallelChapter = document.getElementById('parallelChapter');
+  const parallelVerse = document.getElementById('parallelVerse');
   const parallelOpen = document.getElementById('parallelOpen');
   const parallelContainer = document.getElementById('parallelContainer');
 
   const notice = document.getElementById('notice');
 
-  // caches & state
+  // caches and state
   const rawCache = {};
   const normCache = {};
   const searchIndexCache = {};
-  const state = {
-    version: null,        // active version (set from HOME)
-    bookIndex: 0,
-    chapterIndex: 0,
-    verseKey: null,       // "7" or "7-8" etc.
-    view: 'home',
-    parallelB: null       // second version for parallel
-  };
+  const state = { version: null, bookIndex: 0, chapterIndex: 0, verseKey: null, view: 'home', parallelB: null };
 
-  // utilities
   function showNotice(msg, ms=1400){ notice.textContent = msg; notice.style.display='block'; setTimeout(()=> notice.style.display='none', ms); }
   function esc(s){ return (s===undefined || s===null) ? '' : String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
   function sortKeys(keys){ return keys.sort((a,b)=> (parseInt(String(a).split('-')[0])||0) - (parseInt(String(b).split('-')[0])||0)); }
 
-  // normalize JSON shapes (array-of-books or object keyed by book)
   function normalize(json){
     if(!json) return {books:[]};
     if(json.books && Array.isArray(json.books)){
-      return { books: json.books.map(b=>({
-        name: b.name || b.book || "Unknown",
-        chapters: (b.chapters || []).map(ch=>{
-          if(Array.isArray(ch)) return ch.map((t,i)=>({key:String(i+1), text:t}));
-          if(typeof ch === 'object'){ const keys = sortKeys(Object.keys(ch||{})); return keys.map(k=>({key:k, text: ch[k]})); }
-          return [];
-        })
-      }))};
+      return { books: json.books.map(b=>({ name: b.name||b.book||'Unknown', chapters: (b.chapters||[]).map(ch=>{ if(Array.isArray(ch)) return ch.map((t,i)=>({key:String(i+1), text:t})); if(typeof ch==='object'){ const ks=sortKeys(Object.keys(ch||{})); return ks.map(k=>({key:k,text:ch[k]})); } return []; }) })) };
     }
     const books=[];
     for(const bk of Object.keys(json||{})){
       const bookObj = json[bk];
       if(!bookObj || typeof bookObj !== 'object') continue;
-      const ck = Object.keys(bookObj).sort((a,b)=>Number(a)-Number(b));
-      const chapters=[];
-      for(const k of ck){
-        const ch = bookObj[k];
+      const ckeys = Object.keys(bookObj).sort((a,b)=>Number(a)-Number(b));
+      const chapters = [];
+      for(const ck of ckeys){
+        const ch = bookObj[ck];
         if(!ch || typeof ch !== 'object'){ chapters.push([]); continue; }
-        const vkeys = sortKeys(Object.keys(ch||{}));
-        chapters.push(vkeys.map(vk=>({key: vk, text: ch[vk]})));
+        const vks = sortKeys(Object.keys(ch||{}));
+        chapters.push(vks.map(vk=>({key:vk, text: ch[vk]})));
       }
       books.push({name: bk, chapters});
     }
     return { books };
   }
 
-  // fetch & cache
   async function fetchAndNormalize(fname){
     if(!fname) throw new Error("No file");
     if(normCache[fname]) return normCache[fname];
@@ -312,7 +296,6 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     return n;
   }
 
-  // build search index for a version (flattened)
   function buildSearchIndex(fname, norm){
     if(searchIndexCache[fname]) return searchIndexCache[fname];
     const arr=[];
@@ -324,22 +307,18 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
         });
       });
     });
-    searchIndexCache[fname] = arr;
-    return arr;
+    searchIndexCache[fname] = arr; return arr;
   }
 
   // populate version selects
   FILES.forEach(f => {
     const label = f.replace("_bible.json","").replace(".json","").toUpperCase();
-    const opt1 = new Option(label, f);
-    homeVersion.appendChild(opt1);
-    const optA = new Option(label, f);
-    parallelA.appendChild(optA);
-    const optB = new Option(label, f);
-    parallelB.appendChild(optB);
+    homeVersion.appendChild(new Option(label, f));
+    parallelA.appendChild(new Option(label, f));
+    parallelB.appendChild(new Option(label, f));
   });
 
-  // SPA / Tab activation
+  // SPA navigation
   function activateTab(name, push=true){
     Object.keys(panes).forEach(k => panes[k].classList.toggle('show', k === name));
     Object.values(tabs).forEach(t => t.classList.remove('active'));
@@ -347,13 +326,8 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     state.view = name;
     if(push) updateUrl();
   }
-  Object.keys(tabs).forEach(k => tabs[k].addEventListener('click', ()=> {
-    activateTab(k);
-    if(k === 'read') renderRead();
-    if(k === 'parallel') renderParallel();
-  }));
+  Object.keys(tabs).forEach(k => tabs[k].addEventListener('click', ()=> { activateTab(k); if(k==='read') renderRead(); if(k==='parallel') renderParallel(); }));
 
-  // update browser URL (deep link)
   function updateUrl(replace=false){
     const p = new URLSearchParams();
     if(state.version) p.set('version', state.version);
@@ -366,7 +340,6 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     if(replace) history.replaceState({...state}, '', url); else history.pushState({...state}, '', url);
   }
 
-  // read initial URL into state
   function readUrlIntoState(){
     const p = new URLSearchParams(location.search);
     const v = p.get('version'); if(v) state.version = v;
@@ -378,19 +351,12 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
   }
   readUrlIntoState();
 
-  // populate home book dropdown once a version chosen
+  // populate home book list when version selected
   async function populateHomeBooks(fname){
     if(!fname) return;
-    try{
-      const n = await fetchAndNormalize(fname);
-      homeBook.innerHTML = "<option value=''>Book</option>";
-      n.books.forEach((b,i)=> homeBook.appendChild(new Option(b.name, i)));
-      homeChapter.innerHTML = "<option value=''>Chapter</option>";
-      homeVerse.innerHTML = "<option value=''>Verse</option>";
-    }catch(e){ showNotice('Failed to load version'); }
+    try{ const n = await fetchAndNormalize(fname); homeBook.innerHTML = "<option value=''>Book</option>"; n.books.forEach((b,i)=> homeBook.appendChild(new Option(b.name, i))); homeChapter.innerHTML = "<option value=''>Chapter</option>"; homeVerse.innerHTML = "<option value=''>Verse</option>"; }catch(e){ showNotice('Failed to load version'); }
   }
 
-  // book -> chapters
   homeBook.addEventListener('change', async function(){
     const bi = Number(this.value || 0);
     if(!state.version) return;
@@ -401,7 +367,6 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     homeVerse.innerHTML = "<option value=''>Verse</option>";
   });
 
-  // chapter -> verses
   homeChapter.addEventListener('change', async function(){
     const bi = Number(homeBook.value || 0);
     const ci = Number(this.value || 0);
@@ -412,344 +377,243 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     for(let v=1; v<=vcount; v++) homeVerse.appendChild(new Option(v, v-1));
   });
 
-  // HOME version selected
   homeVersion.addEventListener('change', async function(){
     const f = this.value;
     if(!f) return;
-    state.version = f; // Option A: this becomes active
-    parallelA.value = f; // reflect in parallel A
+    state.version = f; parallelA.value = f;
     await populateHomeBooks(f);
     showNotice(this.options[this.selectedIndex].text + ' loaded');
     updateUrl(true);
   });
 
-  // OPEN button: set state & switch to READ
   homeOpen.addEventListener('click', async function(){
     if(!state.version){ showNotice('Select a version'); return; }
     const bi = homeBook.value !== '' ? Number(homeBook.value) : 0;
     const ci = homeChapter.value !== '' ? Number(homeChapter.value) : 0;
     const viDropdown = homeVerse.value !== '' ? Number(homeVerse.value) : null;
     const rng = (homeRange.value || '').trim();
-    state.bookIndex = bi;
-    state.chapterIndex = ci;
-    if(rng) state.verseKey = rng;
-    else if(viDropdown !== null) state.verseKey = String(viDropdown + 1);
-    else state.verseKey = null;
+    state.bookIndex = bi; state.chapterIndex = ci;
+    if(rng) state.verseKey = rng; else if(viDropdown !== null) state.verseKey = String(viDropdown + 1); else state.verseKey = null;
     try{ await fetchAndNormalize(state.version); }catch(e){ showNotice('Failed to load version'); return; }
-    activateTab('read');
-    renderRead();
+    activateTab('read'); renderRead();
   });
 
-  // READ render (clean)
+  // READ render supports single and parallel (state.parallelB)
   function renderRead(){
     if(!state.version){ readRef.textContent = 'No version selected'; readVerses.innerHTML=''; return; }
     const n = normCache[state.version];
     if(!n){ readRef.textContent = 'Loading...'; readVerses.innerHTML=''; return; }
-    // clamp book/chapter
     if(state.bookIndex < 0) state.bookIndex = 0;
     if(state.bookIndex >= n.books.length) state.bookIndex = 0;
     const book = n.books[state.bookIndex];
     if(!book){ readRef.textContent = 'No book'; readVerses.innerHTML=''; return; }
     if(state.chapterIndex < 0) state.chapterIndex = 0;
     if(state.chapterIndex >= book.chapters.length) state.chapterIndex = 0;
-    const chap = book.chapters[state.chapterIndex] || [];
+    const chapA = book.chapters[state.chapterIndex] || [];
     readRef.textContent = `${book.name} ${state.chapterIndex + 1}`;
     readVerses.innerHTML = '';
 
-    // verseKey -> single or range or numeric
-    if(state.verseKey){
-      // exact key match
-      const exact = chap.findIndex(v => v.key === state.verseKey);
-      if(exact !== -1){ renderOneVerse(state.version, exact); showReadNav(true, exact); return; }
-      // range like "7-8"
-      const m = state.verseKey.match(/^(\d+)\s*-\s*(\d+)$/);
-      if(m){
-        const s = Math.max(1, Number(m[1])) - 1;
-        const e = Math.max(1, Number(m[2])) - 1;
-        const start = Math.max(0, Math.min(s, chap.length-1));
-        const end = Math.max(start, Math.min(e, chap.length-1));
-        renderRange(state.version, start, end);
-        showReadNav(true, start);
-        return;
+    // If parallel mode requested (state.parallelB) then show both versions stacked per verse
+    if(state.parallelB){
+      // ensure parallel loaded
+      const bfile = state.parallelB;
+      const nb = normCache[bfile];
+      // fallback if not loaded
+      if(!nb){ readVerses.innerHTML = '<div style="padding:12px;color:#666">Parallel version not loaded</div>'; return; }
+      const bookB = nb.books[state.bookIndex] || {chapters:[]};
+      const chapB = (bookB.chapters && bookB.chapters[state.chapterIndex]) ? bookB.chapters[state.chapterIndex] : [];
+      // if verseKey -> single/range handling
+      if(state.verseKey){
+        const exact = chapA.findIndex(v => v.key === state.verseKey);
+        if(exact !== -1){ renderParallelVersePair(chapA[exact], chapB.find(x=>x.key===chapA[exact].key) || null); showReadNav(true, exact); return; }
+        const m = state.verseKey.match(/^(\d+)\s*-\s*(\d+)$/);
+        if(m){ const s = Number(m[1]) -1, e = Number(m[2]) -1, start = Math.max(0,Math.min(s, chapA.length-1)), end = Math.max(start, Math.min(e, chapA.length-1)); for(let i=start;i<=end;i++) renderParallelVersePair(chapA[i], chapB.find(x=>x.key===chapA[i].key) || null); showReadNav(true, start); return; }
+        if(/^\d+$/.test(state.verseKey)){ const idx = Math.max(0, Math.min(Number(state.verseKey)-1, chapA.length-1)); renderParallelVersePair(chapA[idx], chapB.find(x=>x.key===chapA[idx].key) || null); showReadNav(true, idx); return; }
+        readVerses.innerHTML = '<div style="padding:12px;color:#666">Verse not found</div>'; showReadNav(false); return;
       }
-      // numeric
-      if(/^\d+$/.test(state.verseKey)){
-        const idx = Math.max(0, Math.min(Number(state.verseKey) - 1, chap.length-1));
-        renderOneVerse(state.version, idx); showReadNav(true, idx); return;
+      // full chapter: iterate through max length
+      const maxLen = Math.max(chapA.length, chapB.length);
+      for(let i=0;i<maxLen;i++){
+        const va = chapA[i]; const vb = chapB[i];
+        const pair = document.createElement('div'); pair.className = 'parallel-pair';
+        pair.innerHTML = `<div class="verse-block"><div class="verse-num">Verse ${va ? va.key : (vb ? vb.key : i+1)}</div><div class="verse-text">${esc(va?va.text:'')}</div></div>
+                          <div class="verse-block"><div class="verse-num">Verse ${vb ? vb.key : (va ? va.key : i+1)}</div><div class="verse-text">${esc(vb?vb.text:'')}</div></div>`;
+        readVerses.appendChild(pair);
       }
-      readVerses.innerHTML = '<div style="padding:12px;color:#666">Verse not found</div>'; showReadNav(false); return;
+      showReadNav(false);
+      return;
     }
 
-    // else full chapter
-    for(let i=0;i<chap.length;i++){
-      const v = chap[i];
-      const block = document.createElement('div');
-      block.className = 'verse-block';
-      block.innerHTML = `<div class="verse-num">Verse ${v.key}</div>
-                         <div class="verse-text">${esc(v.text)}</div>`;
+    // Single version render (same as earlier)
+    if(state.verseKey){
+      const exact = chapA.findIndex(v => v.key === state.verseKey);
+      if(exact !== -1){ renderOneVerse(state.version, exact); showReadNav(true, exact); return; }
+      const m = state.verseKey.match(/^(\d+)\s*-\s*(\d+)$/);
+      if(m){ const s = Math.max(1, Number(m[1])) - 1; const e = Math.max(1, Number(m[2])) - 1; const start = Math.max(0, Math.min(s, chapA.length-1)); const end = Math.max(start, Math.min(e, chapA.length-1)); renderRange(state.version, start, end); showReadNav(true, start); return; }
+      if(/^\d+$/.test(state.verseKey)){ const idx = Math.max(0, Math.min(Number(state.verseKey)-1, chapA.length-1)); renderOneVerse(state.version, idx); showReadNav(true, idx); return; }
+      readVerses.innerHTML = '<div style="padding:12px;color:#666">Verse not found</div>'; showReadNav(false); return;
+    }
+    for(let i=0;i<chapA.length;i++){
+      const v = chapA[i];
+      const block = document.createElement('div'); block.className = 'verse-block'; block.innerHTML = `<div class="verse-num">Verse ${v.key}</div><div class="verse-text">${esc(v.text)}</div>`;
       readVerses.appendChild(block);
     }
     showReadNav(false);
   }
 
+  function renderParallelVersePair(va, vb){
+    const wrapper = document.createElement('div'); wrapper.className = 'parallel-pair';
+    wrapper.innerHTML = `<div class="verse-block"><div class="verse-num">Verse ${va ? va.key : (vb?vb.key:'')}</div><div class="verse-text">${esc(va?va.text:'')}</div></div>
+                         <div class="verse-block"><div class="verse-num">Verse ${vb ? vb.key : (va?va.key:'')}</div><div class="verse-text">${esc(vb?vb.text:'')}</div></div>`;
+    readVerses.appendChild(wrapper);
+  }
+
   function renderOneVerse(fname, idx){
-    const n = normCache[fname];
-    const ch = n.books[state.bookIndex].chapters[state.chapterIndex];
-    const v = ch[idx];
+    const n = normCache[fname]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; const v = ch[idx];
     readVerses.innerHTML = `<div class="verse-block active-verse"><div class="verse-num">Verse ${v.key}</div><div class="verse-text">${esc(v.text)}</div></div>`;
   }
   function renderRange(fname, s, e){
-    const n = normCache[fname];
-    const ch = n.books[state.bookIndex].chapters[state.chapterIndex];
-    const comb = ch.slice(s, e+1).map(x => x.text).join(' ');
+    const n = normCache[fname]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; const comb = ch.slice(s, e+1).map(x=>x.text).join(' ');
     readVerses.innerHTML = `<div class="verse-block active-verse"><div class="verse-num">Verses ${ch[s].key}${s!==e?('-'+ch[e].key):''}</div><div class="verse-text">${esc(comb)}</div></div>`;
   }
 
-  // nav visibility and current verse index for verse navigation
   let currentVerseIndex = null;
-  function showReadNav(show, idx=null){
-    readNav.style.display = show ? 'flex' : 'none';
-    currentVerseIndex = (typeof idx === 'number') ? idx : null;
-  }
+  function showReadNav(show, idx=null){ readNav.style.display = show ? 'flex' : 'none'; currentVerseIndex = (typeof idx==='number')?idx:null; }
 
-  // prev/next verse handling
-  prevVerseBtn.addEventListener('click', ()=> {
-    if(currentVerseIndex === null) return;
-    if(currentVerseIndex > 0){
-      const n = normCache[state.version]; state.verseKey = n.books[state.bookIndex].chapters[state.chapterIndex][currentVerseIndex - 1].key; renderRead(); updateUrl();
-    } else {
-      if(state.chapterIndex > 0){
-        state.chapterIndex--; const ch = normCache[state.version].books[state.bookIndex].chapters[state.chapterIndex]; state.verseKey = ch[ch.length-1].key; renderRead(); updateUrl();
-      }
-    }
-  });
-  nextVerseBtn.addEventListener('click', ()=> {
-    if(currentVerseIndex === null) return;
-    const n = normCache[state.version]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex];
-    if(currentVerseIndex < ch.length -1){
-      state.verseKey = ch[currentVerseIndex + 1].key; renderRead(); updateUrl();
-    } else {
-      if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); }
-    }
-  });
+  prevVerseBtn.addEventListener('click', ()=> { if(currentVerseIndex===null) return; const n = normCache[state.version]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; if(currentVerseIndex>0){ state.verseKey = ch[currentVerseIndex-1].key; renderRead(); updateUrl(); } else { if(state.chapterIndex>0){ state.chapterIndex--; const ch2 = n.books[state.bookIndex].chapters[state.chapterIndex]; state.verseKey = ch2[ch2.length-1].key; renderRead(); updateUrl(); } } });
+  nextVerseBtn.addEventListener('click', ()=> { if(currentVerseIndex===null) return; const n = normCache[state.version]; const ch = n.books[state.bookIndex].chapters[state.chapterIndex]; if(currentVerseIndex < ch.length-1){ state.verseKey = ch[currentVerseIndex+1].key; renderRead(); updateUrl(); } else { if(state.chapterIndex+1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); } } });
 
-  prevChapterBtn.addEventListener('click', ()=> { if(state.chapterIndex > 0){ state.chapterIndex--; state.verseKey = null; renderRead(); updateUrl(); }});
-  nextChapterBtn.addEventListener('click', ()=> { const n = normCache[state.version]; if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); }});
+  prevChapterBtn.addEventListener('click', ()=> { if(state.chapterIndex>0){ state.chapterIndex--; state.verseKey=null; renderRead(); updateUrl(); } });
+  nextChapterBtn.addEventListener('click', ()=> { const n = normCache[state.version]; if(state.chapterIndex+1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey=null; renderRead(); updateUrl(); } });
 
-  // swiping & desktop drag for chapters
-  let touchStartX = 0;
-  document.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].clientX);
-  document.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    if(Math.abs(dx) < 60) return;
-    const n = normCache[state.version];
-    if(dx < 0){ if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); } }
-    else { if(state.chapterIndex > 0){ state.chapterIndex--; state.verseKey = null; renderRead(); updateUrl(); } }
-  });
+  // swipe / drag / arrow keys
+  let touchStartX = 0; document.addEventListener('touchstart', e=> touchStartX = e.changedTouches[0].clientX);
+  document.addEventListener('touchend', e=>{ const dx = e.changedTouches[0].clientX - touchStartX; if(Math.abs(dx)<60) return; const n = normCache[state.version]; if(dx<0){ if(state.chapterIndex+1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey=null; renderRead(); updateUrl(); } } else { if(state.chapterIndex>0){ state.chapterIndex--; state.verseKey=null; renderRead(); updateUrl(); } } });
 
-  // desktop drag
   let mouseDown=false, startX=0, curX=0;
-  readVerses.addEventListener('mousedown', e => { mouseDown=true; startX = e.clientX; });
-  document.addEventListener('mousemove', e => { if(!mouseDown) return; curX = e.clientX; });
-  document.addEventListener('mouseup', e => {
-    if(!mouseDown) return; mouseDown=false;
-    const dx = (curX || e.clientX) - startX;
-    if(Math.abs(dx) > 100){
-      const n = normCache[state.version];
-      if(dx < 0){ if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); } }
-      else { if(state.chapterIndex > 0){ state.chapterIndex--; state.verseKey = null; renderRead(); updateUrl(); } }
-    }
-    startX = curX = 0;
-  });
+  readVerses.addEventListener('mousedown', e=>{ mouseDown=true; startX=e.clientX; });
+  document.addEventListener('mousemove', e=>{ if(!mouseDown) return; curX = e.clientX; });
+  document.addEventListener('mouseup', e=>{ if(!mouseDown) return; mouseDown=false; const dx = (curX||e.clientX) - startX; if(Math.abs(dx)>100){ const n = normCache[state.version]; if(dx<0){ if(state.chapterIndex+1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey=null; renderRead(); updateUrl(); } } else { if(state.chapterIndex>0){ state.chapterIndex--; state.verseKey=null; renderRead(); updateUrl(); } } } startX=curX=0; });
 
-  document.addEventListener('keydown', e=>{
-    if(e.key === 'ArrowRight'){ const n = normCache[state.version]; if(n && state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl(); } }
-    if(e.key === 'ArrowLeft'){ if(state.chapterIndex > 0){ state.chapterIndex--; state.verseKey = null; renderRead(); updateUrl(); } }
-  });
+  document.addEventListener('keydown', e=>{ if(e.key==='ArrowRight'){ const n = normCache[state.version]; if(n && state.chapterIndex+1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey=null; renderRead(); updateUrl(); } } if(e.key==='ArrowLeft'){ if(state.chapterIndex>0){ state.chapterIndex--; state.verseKey=null; renderRead(); updateUrl(); } } });
 
-  // TTS simple queue (primary only)
-  let ttsQueue = [];
+  // TTS
+  let ttsQueue=[];
   function buildTTS(){
     ttsQueue = [];
     if(!state.version) return;
-    const n = normCache[state.version];
-    if(!n) return;
+    const n = normCache[state.version]; if(!n) return;
     const ch = n.books[state.bookIndex].chapters[state.chapterIndex] || [];
     if(state.verseKey){
-      const exact = ch.findIndex(v => v.key === state.verseKey);
-      if(exact !== -1){ ttsQueue.push({text: ch[exact].text, idx: exact}); return; }
+      const exact = ch.findIndex(v=>v.key===state.verseKey);
+      if(exact!==-1){ ttsQueue.push({text: ch[exact].text, idx: exact}); return; }
       const m = state.verseKey.match(/^(\d+)\s*-\s*(\d+)$/);
-      if(m){ const s = Number(m[1]) - 1, e = Number(m[2]) - 1; for(let i=Math.max(0,s); i<=Math.min(e, ch.length-1); i++) ttsQueue.push({text: ch[i].text, idx:i}); return; }
-      if(/^\d+$/.test(state.verseKey)){ const idx = Number(state.verseKey) - 1; ttsQueue.push({text: ch[idx].text, idx}); return; }
+      if(m){ const s = Number(m[1]) -1, e = Number(m[2]) -1; for(let i=Math.max(0,s); i<=Math.min(e,ch.length-1); i++) ttsQueue.push({text: ch[i].text, idx:i}); return; }
+      if(/^\d+$/.test(state.verseKey)){ const idx = Math.max(0, Math.min(Number(state.verseKey)-1, ch.length-1)); ttsQueue.push({text: ch[idx].text, idx}); return; }
       return;
     }
     for(let i=0;i<ch.length;i++) ttsQueue.push({text: ch[i].text, idx:i});
   }
-  function speakNext(){ if(ttsQueue.length === 0) return; const item = ttsQueue.shift(); const blocks = document.querySelectorAll('.verse-block'); blocks.forEach(b=>b.classList.remove('active-verse')); if(blocks[item.idx]){ blocks[item.idx].classList.add('active-verse'); blocks[item.idx].scrollIntoView({behavior:'smooth', block:'center'}); } const u = new SpeechSynthesisUtterance(String(item.text)); u.onend = ()=> setTimeout(speakNext, 120); u.onerror = ()=> setTimeout(speakNext, 180); speechSynthesis.speak(u); }
-  playBtn.addEventListener('click', ()=> { speechSynthesis.cancel(); buildTTS(); speakNext(); });
-  pauseBtn.addEventListener('click', ()=> { try{ speechSynthesis.pause(); }catch(e){} });
-  resumeBtn.addEventListener('click', ()=> { try{ speechSynthesis.resume(); }catch(e){} });
-  stopBtn.addEventListener('click', ()=> { try{ speechSynthesis.cancel(); ttsQueue=[]; }catch(e){} });
+  function speakNext(){ if(ttsQueue.length===0) return; const item = ttsQueue.shift(); if(!item||!item.text) return setTimeout(speakNext,120); const blocks = document.querySelectorAll('.verse-block'); blocks.forEach(b=>b.classList.remove('active-verse')); if(blocks[item.idx]){ blocks[item.idx].classList.add('active-verse'); blocks[item.idx].scrollIntoView({behavior:'smooth', block:'center'}); } const u = new SpeechSynthesisUtterance(String(item.text)); u.onend = ()=> setTimeout(speakNext,120); u.onerror = ()=> setTimeout(speakNext,180); speechSynthesis.speak(u); }
+  playBtn.addEventListener('click', ()=>{ speechSynthesis.cancel(); buildTTS(); speakNext(); });
+  pauseBtn.addEventListener('click', ()=>{ try{ speechSynthesis.pause(); }catch(e){} });
+  resumeBtn.addEventListener('click', ()=>{ try{ speechSynthesis.resume(); }catch(e){} });
+  stopBtn.addEventListener('click', ()=>{ try{ speechSynthesis.cancel(); ttsQueue=[]; }catch(e){} });
 
-  // SEARCH: uses current state.version (HOME)
+  // SEARCH
   async function doSearch(q){
-    searchResults.innerHTML = ''; searchInfo.textContent = '';
+    searchResults.innerHTML=''; searchInfo.textContent='';
     if(!q) return;
     if(!state.version){ searchInfo.textContent = 'Select a version in HOME first'; return; }
-    try{
-      await fetchAndNormalize(state.version);
-      const idx = searchIndexCache[state.version] || buildSearchIndex(state.version, normCache[state.version]);
-      const results = [];
-      const max = 250;
-      for(let i=0;i<idx.length && results.length < max;i++){
-        if(idx[i].low.includes(q)) results.push(idx[i]);
-      }
-      searchInfo.textContent = `Found ${results.length}${results.length >= max ? ' (showing first '+max+')' : ''}`;
-      if(!results.length){ searchResults.innerHTML = '<div style="padding:8px;color:#666">No results</div>'; return; }
-      const safe = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-      const re = new RegExp(safe, 'ig');
-      const frag = document.createDocumentFragment();
-      results.forEach(r=>{
-        const div = document.createElement('div'); div.className = 'search-item';
-        const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
-        div.innerHTML = `<strong>${esc(r.book)} ${r.chapter}:${r.verseKey}</strong><div style="margin-top:6px">${snippet}</div><small style="display:block;margin-top:6px;color:#666">Click to open</small>`;
-        div.onclick = async () => {
-          state.bookIndex = r.bookIndex; state.chapterIndex = r.chapterIndex; state.verseKey = r.verseKey;
-          activateTab('read'); await fetchAndNormalize(state.version); renderRead(); updateUrl();
-        };
-        frag.appendChild(div);
-      });
-      searchResults.appendChild(frag);
-      activateTab('search');
-    }catch(e){ showNotice('Search failed'); }
-  }
-  searchBox.addEventListener('keydown', e => { if(e.key === 'Enter') doSearch((searchBox.value || '').trim().toLowerCase()); });
+    try{ await fetchAndNormalize(state.version); const idx = searchIndexCache[state.version] || buildSearchIndex(state.version, normCache[state.version]); const results=[]; const max=250; for(let i=0;i<idx.length && results.length<max;i++){ if(idx[i].low.includes(q)) results.push(idx[i]); } searchInfo.textContent = `Found ${results.length}`; if(!results.length){ searchResults.innerHTML='<div style="padding:8px;color:#666">No results</div>'; return; } const safe = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); const re = new RegExp(safe,'ig'); const frag = document.createDocumentFragment(); results.forEach(r=>{ const div = document.createElement('div'); div.className='search-item'; const snippet = esc(r.text).replace(re, m=>`<span class="highlight">${m}</span>`); div.innerHTML = `<strong>${esc(r.book)} ${r.chapter}:${r.verseKey}</strong><div style="margin-top:6px">${snippet}</div><small style="display:block;margin-top:6px;color:#666">Click to open</small>`; div.onclick = async ()=>{ state.bookIndex = r.bookIndex; state.chapterIndex = r.chapterIndex; state.verseKey = r.verseKey; activateTab('read'); await fetchAndNormalize(state.version); renderRead(); updateUrl(); }; frag.appendChild(div); }); searchResults.appendChild(frag); activateTab('search'); }catch(e){ showNotice('Search failed'); } }
+  searchBox.addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch((searchBox.value||'').trim().toLowerCase()); });
 
-  // PARALLEL: create clean view (no version labels inside verse blocks)
+  // PARALLEL controls: populate book/chapter/verse based on Version A selection
+  parallelA.addEventListener('change', async function(){
+    const f = this.value || state.version;
+    if(!f) return;
+    await fetchAndNormalize(f);
+    // populate books
+    parallelBook.innerHTML = "<option value=''>Book</option>";
+    const n = normCache[f];
+    n.books.forEach((b,i)=> parallelBook.appendChild(new Option(b.name, i)));
+    parallelChapter.innerHTML = "<option value=''>Chapter</option>";
+    parallelVerse.innerHTML = "<option value=''>Verse</option>";
+    parallelB.value = parallelB.value || '';
+    showNotice(this.options[this.selectedIndex].text + ' loaded');
+  });
+
+  parallelBook.addEventListener('change', async function(){
+    const bi = Number(this.value || 0); const f = parallelA.value || state.version;
+    if(!f) return;
+    const n = await fetchAndNormalize(f);
+    const ccount = (n.books[bi] && n.books[bi].chapters) ? n.books[bi].chapters.length : 0;
+    parallelChapter.innerHTML = "<option value=''>Chapter</option>";
+    for(let i=1;i<=ccount;i++) parallelChapter.appendChild(new Option(i, i-1));
+    parallelVerse.innerHTML = "<option value=''>Verse</option>";
+  });
+
+  parallelChapter.addEventListener('change', async function(){
+    const bi = Number(parallelBook.value || 0); const ci = Number(this.value || 0); const f = parallelA.value || state.version;
+    if(!f) return;
+    const n = await fetchAndNormalize(f);
+    const vcount = (n.books[bi] && n.books[bi].chapters[ci]) ? n.books[bi].chapters[ci].length : 0;
+    parallelVerse.innerHTML = "<option value=''>Verse</option>";
+    for(let v=1; v<=vcount; v++) parallelVerse.appendChild(new Option(v, v-1));
+  });
+
+  // PARALLEL OPEN -> set state to parallel mode and open READ showing both versions
   parallelOpen.addEventListener('click', async function(){
     const a = parallelA.value || state.version;
     const b = parallelB.value || state.parallelB;
     if(!a || !b){ showNotice('Select both versions'); return; }
-    state.parallelB = b;
-    try{
-      await fetchAndNormalize(a); await fetchAndNormalize(b);
-      renderParallel();
-      activateTab('parallel');
-    }catch(e){ showNotice('Failed to load versions'); }
+    const bi = parallelBook.value !== '' ? Number(parallelBook.value) : 0;
+    const ci = parallelChapter.value !== '' ? Number(parallelChapter.value) : 0;
+    const vi = parallelVerse.value !== '' ? Number(parallelVerse.value) : null;
+    state.version = a; state.parallelB = b; state.bookIndex = bi; state.chapterIndex = ci;
+    if(vi !== null) state.verseKey = String(vi + 1); else state.verseKey = null;
+    try{ await fetchAndNormalize(a); await fetchAndNormalize(b); }catch(e){ showNotice('Failed to load versions'); return; }
+    activateTab('read'); renderRead();
   });
 
+  // initial load from URL if provided
+  if(state.version){ homeVersion.value = state.version; parallelA.value = state.version; try{ await fetchAndNormalize(state.version); await populateHomeBooks(state.version); }catch(e){} activateTab(state.view || 'home', false); if(state.view==='read') renderRead(); if(state.view==='parallel') renderParallel(); } else { activateTab('home', false); }
+
+  window.addEventListener('popstate', async e=>{ readUrlIntoState(); if(state.version){ await fetchAndNormalize(state.version); await populateHomeBooks(state.version); } if(state.view) activateTab(state.view, false); if(state.view==='read') renderRead(); if(state.view==='parallel') renderParallel(); });
+
+  // helper: renderParallel preview inside Parallel tab (not the main READ)
   async function renderParallel(){
     parallelContainer.innerHTML = '';
-    const a = parallelA.value || state.version;
-    const b = parallelB.value || state.parallelB;
-    if(!a || !b){ parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Select both versions</div>'; return; }
+    const a = parallelA.value || state.version; const b = parallelB.value || state.parallelB;
+    if(!a || !b){ parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Select both versions and passage, then OPEN to view in READ.</div>'; return; }
     try{
-      const na = await fetchAndNormalize(a);
-      const nb = await fetchAndNormalize(b);
-      // clamp
-      if(state.bookIndex >= na.books.length) state.bookIndex = 0;
-      const bookA = na.books[state.bookIndex];
-      const bookB = nb.books[state.bookIndex] || {chapters: []};
-      if(state.chapterIndex >= bookA.chapters.length) state.chapterIndex = 0;
-      const chA = bookA.chapters[state.chapterIndex] || [];
-      const chB = (bookB.chapters && bookB.chapters[state.chapterIndex]) ? bookB.chapters[state.chapterIndex] : [];
-      // If READ shows verse or range -> show only that set
-      if(state.verseKey){
-        const exactIdx = chA.findIndex(v=>v.key === state.verseKey);
-        if(exactIdx !== -1){
-          const va = chA[exactIdx]; const vb = chB.find(x=>x.key === va.key) || {};
-          const wrapper = document.createElement('div');
-          wrapper.className = 'parallel-pair';
-          wrapper.innerHTML = `<div class="parallel-verse"><div class="verse-num">Verse ${va.key}</div><div class="verse-text">${esc(va.text)}</div></div>
-                               <div class="parallel-verse"><div class="verse-num">Verse ${vb.key || va.key}</div><div class="verse-text">${esc(vb.text || '')}</div></div>`;
-          parallelContainer.appendChild(wrapper);
-          return;
-        }
-        const m = state.verseKey.match(/^(\d+)\s*-\s*(\d+)$/);
-        if(m){
-          const s = Number(m[1]) - 1, e = Number(m[2]) - 1;
-          const start = Math.max(0, Math.min(s, chA.length-1)), end = Math.max(start, Math.min(e, chA.length-1));
-          for(let i=start;i<=end;i++){
-            const va = chA[i]; const vb = chB.find(x=>x.key === va.key) || {};
-            const pair = document.createElement('div'); pair.className = 'parallel-pair';
-            pair.innerHTML = `<div class="parallel-verse"><div class="verse-num">Verse ${va.key}</div><div class="verse-text">${esc(va.text)}</div></div>
-                              <div class="parallel-verse"><div class="verse-num">Verse ${vb.key || va.key}</div><div class="verse-text">${esc(vb.text || '')}</div></div>`;
-            parallelContainer.appendChild(pair);
-          }
-          return;
-        }
-        if(/^\d+$/.test(state.verseKey)){
-          const idx = Number(state.verseKey) - 1;
-          if(idx >= 0 && idx < chA.length){
-            const va = chA[idx]; const vb = chB.find(x=>x.key === va.key) || {};
-            parallelContainer.innerHTML = `<div class="parallel-verse"><div class="verse-num">Verse ${va.key}</div><div class="verse-text">${esc(va.text)}</div></div>
-                                           <div class="parallel-verse"><div class="verse-num">Verse ${vb.key || va.key}</div><div class="verse-text">${esc(vb.text || '')}</div></div>`;
-            return;
-          }
-        }
-        parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Verse not found</div>';
-        return;
+      const na = await fetchAndNormalize(a); const nb = await fetchAndNormalize(b);
+      const bi = parallelBook.value !== '' ? Number(parallelBook.value) : 0; const ci = parallelChapter.value !== '' ? Number(parallelChapter.value) : 0;
+      const chA = (na.books[bi] && na.books[bi].chapters[ci]) ? na.books[bi].chapters[ci] : []; const chB = (nb.books[bi] && nb.books[bi].chapters[ci]) ? nb.books[bi].chapters[ci] : [];
+      if(parallelVerse.value !== ''){
+        const idx = Number(parallelVerse.value);
+        const va = chA[idx] || null; const vb = chB[idx] || null;
+        if(!va && !vb){ parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Verse not found</div>'; return; }
+        const pair = document.createElement('div'); pair.className='parallel-pair';
+        pair.innerHTML = `<div class="verse-block"><div class="verse-num">Verse ${va?va.key:vb?vb.key:''}</div><div class="verse-text">${esc(va?va.text:'')}</div></div>
+                          <div class="verse-block"><div class="verse-num">Verse ${vb?vb.key:va?va.key:''}</div><div class="verse-text">${esc(vb?vb.text:'')}</div></div>`;
+        parallelContainer.appendChild(pair); return;
       }
-      // full chapter: for each verse index, show A then B
-      for(let i=0;i<Math.max(chA.length, chB.length); i++){
+      const maxLen = Math.max(chA.length, chB.length);
+      for(let i=0;i<maxLen;i++){
         const va = chA[i]; const vb = chB[i];
-        const pair = document.createElement('div');
-        pair.className = 'parallel-pair';
-        pair.innerHTML = `<div class="parallel-verse"><div class="verse-num">Verse ${va ? va.key : (vb ? vb.key : i+1)}</div><div class="verse-text">${esc(va ? va.text : '')}</div></div>
-                          <div class="parallel-verse"><div class="verse-num">Verse ${vb ? vb.key : (va ? va.key : i+1)}</div><div class="verse-text">${esc(vb ? vb.text : '')}</div></div>`;
+        const pair = document.createElement('div'); pair.className='parallel-pair';
+        pair.innerHTML = `<div class="verse-block"><div class="verse-num">Verse ${va?va.key:(vb?vb.key:i+1)}</div><div class="verse-text">${esc(va?va.text:'')}</div></div>
+                          <div class="verse-block"><div class="verse-num">Verse ${vb?vb.key:(va?va.key:i+1)}</div><div class="verse-text">${esc(vb?vb.text:'')}</div></div>`;
         parallelContainer.appendChild(pair);
       }
-    }catch(e){
-      parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Load failed</div>';
-    }
+    }catch(e){ parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Load failed</div>'; }
   }
 
-  // On initial load: set HOME version from URL if present
-  if(state.version){
-    homeVersion.value = state.version;
-    parallelA.value = state.version;
-    try{ await fetchAndNormalize(state.version); await populateHomeBooks(state.version); }catch(e){}
-    // pre-select book/chapter/verse if they exist
-    if(homeBook.options.length > 1) homeBook.value = state.bookIndex;
-    if(homeChapter.options.length > 1) homeChapter.value = state.chapterIndex;
-    if(state.verseKey && /^\d+$/.test(state.verseKey) && homeVerse.options.length > 1) homeVerse.value = String(Number(state.verseKey) - 1);
-    // switch to requested view if present
-    activateTab(state.view || 'home', false);
-    if(state.view === 'read'){ renderRead(); }
-    if(state.view === 'parallel'){ renderParallel(); }
-  } else {
-    // default tab
-    activateTab('home', false);
-  }
+  // small helper expose
+  window._spa = { state };
 
-  // popstate (back/forward)
-  window.addEventListener('popstate', async e => {
-    readUrlIntoState();
-    if(state.version) { await fetchAndNormalize(state.version); await populateHomeBooks(state.version); }
-    if(state.view) activateTab(state.view, false);
-    if(state.view === 'read') renderRead();
-    if(state.view === 'parallel') renderParallel();
-  });
-
-  // helper to set HOME version (programmatic)
-  async function setHomeVersion(v){
-    state.version = v;
-    homeVersion.value = v;
-    parallelA.value = v;
-    try{ await fetchAndNormalize(v); await populateHomeBooks(v); }catch(e){}
-    updateUrl(true);
-  }
-  window.setHomeVersion = setHomeVersion;
-
-  // initial render if read requested
-  if(state.view === 'read' && state.version){ renderRead(); }
-  if(state.view === 'parallel' && state.version){ renderParallel(); }
-
-  // expose updateUrl
-  window._spa = { state, setHomeVersion };
-
-})();
+})(); // IIFE end
 </script>
-
 </body>
 </html>
