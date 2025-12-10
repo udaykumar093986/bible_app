@@ -600,35 +600,4 @@ searchBox.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(s
   });
 
   // Initial Load
-  async function initialLoad() {
-    populateVersions();
-    loadVersions();
-
-    const p = new URLSearchParams(location.search);
-
-    const vA = p.get("versionA") || state.versionA;
-    const vB = p.get("versionB") || state.versionB;
-
-    if (vA) {
-      state.versionA = vA;
-      homeA.value = vA;
-      await populateBooksA(vA);
-      await fetchAndNormalize(vA);
-    }
-
-    if (vB) {
-      state.versionB = vB;
-      homeB.value = vB;
-      await fetchAndNormalize(vB);
-    }
-
-    state.bookIndex = Number(p.get("bookIndex") || 0);
-    state.chapterIndex = Number(p.get("chapter") || 1) - 1;
-    state.verseKey = p.get("verse") || null;
-
-    activateTab(p.get("view") || state.view);
-  }
-
-  initialLoad();
-
-})();
+  async function initialLoad() { populateVersions(); loadVersions(); const params = new URLSearchParams(location.search); const vA = params.get("versionA") || state.versionA; const vB = params.get("versionB") || state.versionB; if (vA) { state.versionA = vA; homeA.value = vA; await populateBooksA(vA); await fetchAndNormalize(vA); } if (vB) { state.versionB = vB; homeB.value = vB; await fetchAndNormalize(vB); } state.bookIndex = Number(params.get("bookIndex") || 0); state.chapterIndex = Number(params.get("chapter") || 1) - 1; state.verseKey = params.get("verse") || null; activateTab(params.get("view") || "home"); } await initialLoad(); })();
