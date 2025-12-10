@@ -241,7 +241,6 @@
     readVerses.innerHTML = '';
 
     if(state.verseKey){
-      // exact, range or single number
       const exact = chapA.findIndex(v=>v.key===state.verseKey);
       if(exact !== -1){ renderVerse(exact, chapA, chapB); showReadNav(true, exact); return; }
       const m = String(state.verseKey).match(/^(\d+)\s*-\s*(\d+)$/);
@@ -371,23 +370,39 @@
     if(replace) history.replaceState({...state}, '', url); else history.pushState({...state}, '', url);
   }
 
-  // swipe navigation (touch + mouse)
-  (function attachSwipe(){
-    if(!readVerses) return;
-    let touchStartX = 0, touchEndX = 0, isTouching = false;
-    readVerses.addEventListener('touchstart', e=>{ isTouching = true; touchStartX = e.changedTouches[0].clientX; });
-    readVerses.addEventListener('touchmove', e=>{ if(!isTouching) return; touchEndX = e.changedTouches[0].clientX; });
-    readVerses.addEventListener('touchend', e=>{
-      if(!isTouching) return; isTouching=false; const dx = touchEndX - touchStartX;
-      if(Math.abs(dx) < 60) return;
-      if(dx < 0) goNextChapter(); else goPrevChapter();
+  // swipe navigation (attached to full read pane)
+  (function attachSwipe() {
+    const touchArea = document.getElementById("pane-read");
+    if (!touchArea) return;
+
+    let startX = 0;
+    let endX = 0;
+    let dragging = false;
+
+    // TOUCH EVENTS
+    touchArea.addEventListener("touchstart", (e) => {
+      dragging = true;
+      startX = e.changedTouches[0].clientX;
+    }, { passive: true });
+
+    touchArea.addEventListener("touchmove", (e) => {
+      if (!dragging) return;
+      endX = e.changedTouches[0].clientX;
+    }, { passive: true });
+
+    touchArea.addEventListener("touchend", () => {
+      if (!dragging) return;
+      dragging = false;
+      const dx = endX - startX;
+      if (Math.abs(dx) < 60) return;
+      if (dx < 0) goNextChapter(); else goPrevChapter();
     });
 
-    // mouse drag
-    let mouseDown=false, mouseStart=0, mouseEnd=0;
-    readVerses.addEventListener('mousedown', e=>{ mouseDown=true; mouseStart = e.clientX; });
-    document.addEventListener('mousemove', e=>{ if(!mouseDown) return; mouseEnd = e.clientX; });
-    document.addEventListener('mouseup', e=>{ if(!mouseDown) return; mouseDown=false; const dx = mouseEnd - mouseStart; if(Math.abs(dx) < 100) return; if(dx < 0) goNextChapter(); else goPrevChapter(); });
+    // MOUSE EVENTS (desktop)
+    let mouseDown=false, mStart=0, mEnd=0;
+    touchArea.addEventListener("mousedown", (e)=>{ mouseDown=true; mStart=e.clientX; });
+    document.addEventListener("mousemove", (e)=>{ if(!mouseDown) return; mEnd=e.clientX; });
+    document.addEventListener("mouseup", (e)=>{ if(!mouseDown) return; mouseDown=false; const dx = mEnd - mStart; if(Math.abs(dx) < 100) return; if(dx < 0) goNextChapter(); else goPrevChapter(); });
 
     function goNextChapter(){ const n = normCache[state.versionA]; if(!n) return; const cCount = n.books[state.bookIndex].chapters.length; if(state.chapterIndex + 1 < cCount){ state.chapterIndex++; state.verseKey=null; renderRead(); updateUrl(); } }
     function goPrevChapter(){ if(state.chapterIndex>0){ state.chapterIndex--; state.verseKey=null; renderRead(); updateUrl(); } }
@@ -407,119 +422,6 @@
     state.verseKey = params.get('verse') || state.verseKey;
     activateTab(params.get('view') || state.view || 'home');
   }
-  // KEYBOARD NAVIGATION (desktop shortcuts)
-document.addEventListener("keydown", (e) => {
-  if (state.view !== "read") return;
-
-  const n = normCache[state.versionA];
-  if (!n) return;
-
-  const books = n.books;
-  const chapters = books[state.bookIndex].chapters;
-  const totalChapters = chapters.length;
-
-  // -----------------------
-  //  CHAPTER NAVIGATION
-  // -----------------------
-
-  // Next Chapter → 
-  if (e.key === "ArrowRight" && !e.shiftKey) {
-    if (state.chapterIndex + 1 < totalChapters) {
-      state.chapterIndex++;
-      state.verseKey = null;
-      renderRead();
-      updateUrl();
-    }
-  }
-
-  // Previous Chapter ←
-  if (e.key === "ArrowLeft" && !e.shiftKey) {
-    if (state.chapterIndex > 0) {
-      state.chapterIndex--;
-      state.verseKey = null;
-      renderRead();
-      updateUrl();
-    }
-  }
-
-  // -----------------------
-  //  VERSE NAVIGATION
-  // -----------------------
-  const currentChapter = chapters[state.chapterIndex];
-  let verseList = currentChapter.map(v => v.key);
-  let verseIndex = state.verseKey ? verseList.indexOf(state.verseKey) : -1;
-
-  // Next Verse ↓
-  if (e.key === "ArrowDown") {
-    if (verseIndex >= 0 && verseIndex + 1 < verseList.length) {
-      state.verseKey = verseList[verseIndex + 1];
-      renderRead();
-      updateUrl();
-    }
-  }
-
-  // Previous Verse ↑
-  if (e.key === "ArrowUp") {
-    if (verseIndex > 0) {
-      state.verseKey = verseList[verseIndex - 1];
-      renderRead();
-      updateUrl();
-    }
-  }
-
-  // -----------------------
-  // FAST CHAPTER JUMP
-  // -----------------------
-
-  // PageDown → Jump +5 chapters
-  if (e.key === "PageDown") {
-    const target = Math.min(state.chapterIndex + 5, totalChapters - 1);
-    if (target !== state.chapterIndex) {
-      state.chapterIndex = target;
-      state.verseKey = null;
-      renderRead();
-      updateUrl();
-    }
-  }
-
-  // PageUp → Jump -5 chapters
-  if (e.key === "PageUp") {
-    const target = Math.max(state.chapterIndex - 5, 0);
-    if (target !== state.chapterIndex) {
-      state.chapterIndex = target;
-      state.verseKey = null;
-      renderRead();
-      updateUrl();
-    }
-  }
-
-  // -----------------------
-  // BOOK NAVIGATION
-  // -----------------------
-
-  // Shift + → (Next Book)
-  if (e.key === "ArrowRight" && e.shiftKey) {
-    if (state.bookIndex + 1 < books.length) {
-      state.bookIndex++;
-      state.chapterIndex = 0;
-      state.verseKey = null;
-      renderRead();
-      updateUrl();
-    }
-  }
-
-  // Shift + ← (Previous Book)
-  if (e.key === "ArrowLeft" && e.shiftKey) {
-    if (state.bookIndex > 0) {
-      state.bookIndex--;
-      state.chapterIndex = 0;
-      state.verseKey = null;
-      renderRead();
-      updateUrl();
-    }
-  }
-});
-
 
   window.addEventListener('popstate', async ()=>{
     const p = new URLSearchParams(location.search);
