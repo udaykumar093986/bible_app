@@ -5,62 +5,110 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Bible Reader — Index</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
+
 <style>
-:root{--bg:#f7f9fc;--accent:#0b66c2;--border:#e2e8f0;--highlight:#fff3c4;--pulse:#ffda6b}
-*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+:root{
+  --bg:#f7f9fc; --accent:#0b66c2; --border:#e2e8f0;
+  --highlight:#fff3c4; --pulse:#ffda6b;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui}
 body{background:var(--bg);color:#1d2d35;-webkit-font-smoothing:antialiased}
-header{padding:14px 20px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;display:flex;justify-content:space-between;align-items:center}
-.header .brand{font-size:20px;font-weight:700;color:var(--accent)}
+
+/* HEADER */
+header{
+  padding:14px 20px;background:#fff;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;z-index:100;
+}
+header .brand{font-size:22px;font-weight:700;color:var(--accent)}
+header .meta{font-size:14px;color:#466}
+
+/* MAIN */
 main{max-width:1100px;margin:20px auto;padding:0 18px}
-.controls{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:14px}
-select,input{padding:12px;border-radius:10px;border:1px solid var(--border);background:#fff;font-size:14px;min-width:140px}
-button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px}
-.jump-container{background:white;border-radius:12px;border:1px solid var(--border);margin-bottom:18px;overflow:hidden}
-.jump-header{padding:14px 16px;background:#f4f8ff;cursor:pointer;font-weight:700;color:var(--accent)}
-.jump-body{display:none;padding:14px;background:#fff}
-.jump-body select{min-width:140px;margin-right:8px;padding:10px;border-radius:8px;border:1px solid var(--border)}
-.jump-body input.range{min-width:160px;padding:10px;border-radius:8px;border:1px solid var(--border);margin-right:8px}
-.reader{background:white;border-radius:12px;border:1px solid var(--border);padding:18px;margin-bottom:20px}
+
+.controls{
+  display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:14px;
+}
+
+select,input{
+  padding:12px;border-radius:10px;border:1px solid var(--border);
+  background:#fff;font-size:14px;min-width:140px;
+}
+button{
+  border:0;background:var(--accent);color:#fff;
+  padding:10px 18px;border-radius:10px;font-weight:600;cursor:pointer;
+}
+
+.jump-container{
+  background:#fff;border-radius:12px;border:1px solid var(--border);
+  margin-bottom:18px;overflow:hidden;
+}
+.jump-header{
+  padding:14px 16px;background:#f4f8ff;cursor:pointer;
+  font-weight:700;color:var(--accent);
+}
+.jump-body{display:none;padding:14px}
+.jump-body select,.jump-body input{
+  margin-right:8px;padding:10px;border-radius:8px;border:1px solid var(--border)
+}
+
+.reader{
+  background:#fff;border-radius:12px;border:1px solid var(--border);
+  padding:18px;margin-bottom:20px;
+}
 .ref{font-size:22px;font-weight:700;color:var(--accent);margin-bottom:16px}
-.verse-block{padding:14px;background:#f8fbff;border-radius:12px;border:1px solid var(--border);margin-bottom:14px;transition:0.25s;cursor:pointer}
-.verse-num{font-size:13px;font-weight:700;color:#345;margin-bottom:6px}
-.verse-primary{font-family:"Noto Serif",serif;font-size:18px;line-height:1.75;color:#111}
-.verse-parallel{margin-top:10px;padding-left:14px;border-left:3px solid var(--accent);font-family:"Noto Serif",serif;font-size:17px;color:#2a3c55}
-.active-verse{background:#fff8d1 !important;border-color:#ffd56b !important;animation:pulseAnim 1.4s infinite ease-in-out}
-@keyframes pulseAnim{0%{box-shadow:0 0 0px var(--pulse)}50%{box-shadow:0 0 12px var(--pulse)}100%{box-shadow:0 0 0px var(--pulse)}}
-.search-item{padding:12px;border-radius:10px;border:1px solid var(--border);background:white;margin-bottom:10px;cursor:pointer}
-.highlight{background:var(--highlight);border-radius:4px;padding:2px}
-.notice{position:fixed;top:70px;left:20px;right:20px;padding:12px;border-radius:10px;background:white;border:1px solid var(--border);text-align:center;display:none;z-index:200}
-@media(max-width:720px){.controls select,input{width:100%}.jump-body{display:block}}
+
+.search-item{
+  padding:12px;border-radius:10px;border:1px solid var(--border);
+  background:white;margin-bottom:10px;cursor:pointer;
+}
+
+.highlight{background:var(--highlight);padding:2px;border-radius:4px}
+
+.notice{
+  position:fixed;top:70px;left:20px;right:20px;padding:12px;
+  border-radius:10px;background:white;border:1px solid var(--border);
+  text-align:center;display:none;z-index:200;
+}
+
+@media(max-width:720px){
+  .controls select,input{width:100%}
+  .jump-body{display:block}
+}
 </style>
 </head>
+
 <body>
 <header>
   <div class="brand">Bible Reader</div>
-  <div class="meta">Parallel • Search • Deep links</div>
+  <div class="meta">PARALLEL • SEARCH • LINKS</div>
 </header>
+
 <main>
   <div class="controls">
     <select id="primarySelect"><option value="">PRIMARY VERSION</option></select>
     <select id="parallelSelect"><option value="">PARALLEL VERSION</option></select>
     <button id="openBtn">Open (first book)</button>
+
     <input id="searchBox" placeholder="Search Text…" style="min-width:240px" />
     <button id="searchBtn">Search</button>
   </div>
 
   <div class="jump-container">
     <div class="jump-header" id="jumpToggle">▼ Jump to Book / Chapter / Verse</div>
-    <div class="jump-body" id="jumpBody" aria-hidden="true">
-      <select id="bookSelect"><option value="">Book</option></select>
-      <select id="chapterSelect"><option value="">Chapter</option></select>
-      <select id="verseSelect"><option value="">Verse</option></select>
-      <input id="verseRange" class="range" placeholder="Verse or range (e.g. 7 or 7-8)" />
+
+    <div class="jump-body" id="jumpBody">
+      <select id="bookSelect"><option>Book</option></select>
+      <select id="chapterSelect"><option>Chapter</option></select>
+      <select id="verseSelect"><option>Verse</option></select>
+
+      <input id="verseRange" placeholder="Verse or range (e.g. 7 or 7-8)" />
       <button id="jumpGo">Go</button>
     </div>
   </div>
 
-  <div class="reader" id="readerPlaceholder">
-    <div id="currentRef" class="ref">Choose a version and press Open, or use Jump / Search.</div>
+  <div class="reader">
+    <div id="currentRef" class="ref">Choose a version and press Open or Jump/Search.</div>
     <div id="versesContainer"></div>
   </div>
 
@@ -68,7 +116,7 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
   <div id="searchResults"></div>
 </main>
 
-<div id="notice" class="notice" role="status" aria-live="polite"></div>
+<div id="notice" class="notice"></div>
 
 <script>
 (async function(){
@@ -83,8 +131,8 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
   ];
 
   // DOM refs
-  const primarySelect = document.getElementById("primarySelect");
-  const parallelSelect = document.getElementById("parallelSelect");
+  const VSEL = document.getElementById("primarySelect");
+  const PSEL = document.getElementById("parallelSelect");
   const openBtn = document.getElementById("openBtn");
   const searchBox = document.getElementById("searchBox");
   const searchBtn = document.getElementById("searchBtn");
@@ -176,9 +224,9 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
   // populate version selects
   FILES.forEach(fn => {
     versionMap[fn] = fn;
-    const label = fn.replace('.json','');
-    primarySelect.appendChild(new Option(label, fn));
-    parallelSelect.appendChild(new Option(label, fn));
+    const label = f.replace("_bible.json","").toUpperCase();
+    VSEL.appendChild(new Option(label, f));
+    PSEL.appendChild(new Option(label, f));
   });
 
   jumpToggle.onclick = ()=> {
