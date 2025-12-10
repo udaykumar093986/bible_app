@@ -4,333 +4,335 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Read — Bible Reader</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
+
 <style>
-:root{--bg:#f7f9fc;--accent:#0b66c2;--border:#e2e8f0}
-body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:#222}
-.header{padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
-.header a{color:var(--accent);text-decoration:none;font-weight:700}
-.container{max-width:900px;margin:18px auto;padding:0 16px}
-.controls-top{display:flex;gap:8px;align-items:center;margin-bottom:12px}
-.select{padding:8px;border-radius:8px;border:1px solid var(--border);background:#fff}
-.btn{padding:8px 10px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
-.ref{font-size:20px;font-weight:700;color:var(--accent);margin-bottom:12px}
-.verse-block{background:#fff;padding:14px;border-radius:10px;border:1px solid var(--border);margin-bottom:10px}
-.verse-num{font-weight:700;margin-bottom:8px}
-.verse-primary{font-family:"Noto Serif",serif;font-size:18px;line-height:1.7}
-.verse-parallel{margin-top:10px;padding-left:14px;border-left:3px solid var(--accent);font-family:"Noto Serif",serif;font-size:17px;color:#2a3c55}
-.active-verse{background:#fff8d1;border-color:#ffd56b}
-.note{color:#666;font-size:13px;margin-left:auto}
-@media(max-width:600px){.controls-top{flex-direction:column;align-items:stretch}.note{margin-left:0}}
+:root { --bg:#f7f9fc; --accent:#0b66c2; --border:#e2e8f0; }
+body { margin:0; font-family:Inter,system-ui,sans-serif; background:var(--bg); }
+
+.header {
+  background:#fff; padding:12px 16px; border-bottom:1px solid var(--border);
+  display:flex; gap:14px; align-items:center;
+}
+.header a { color:var(--accent); font-weight:700; text-decoration:none; }
+
+.container { max-width:900px; margin:20px auto; padding:0 16px; }
+
+.controls {
+  display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; align-items:center;
+}
+select {
+  padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:white;
+}
+button {
+  padding:8px 12px; border-radius:8px; border:0; background:var(--accent);
+  color:white; cursor:pointer; font-weight:600;
+}
+
+.ref {
+  font-size:22px; font-weight:700; color:var(--accent); margin-bottom:16px;
+}
+
+.verse-block {
+  background:#fff; padding:14px; border-radius:12px;
+  border:1px solid var(--border); margin-bottom:12px;
+}
+.verse-num { font-weight:700; margin-bottom:6px; }
+.verse-primary {
+  font-family:"Noto Serif",serif; font-size:18px; line-height:1.7;
+}
+.verse-parallel {
+  margin-top:10px; padding-left:14px;
+  border-left:3px solid var(--accent);
+  font-size:17px; line-height:1.6;
+  font-family:"Noto Serif",serif;
+  color:#2a3c55;
+}
+
+.active-verse {
+  background:#fff8d1 !important;
+  border-color:#ffd56b !important;
+}
+
+.note { font-size:13px; color:#666; margin-left:auto; }
 </style>
 </head>
+
 <body>
+
 <div class="header">
   <a href="/">← Back</a>
-  <div style="flex:1"></div>
   <div class="note">Swipe left/right to change chapter</div>
 </div>
 
 <div class="container">
-  <div class="controls-top">
-    <select id="primarySel" class="select"></select>
-    <select id="parallelSel" class="select"></select>
-    <button id="playBtn" class="btn">▶ Play</button>
-    <button id="pauseBtn" class="btn">⏸ Pause</button>
-    <button id="resumeBtn" class="btn">⏯ Resume</button>
-    <button id="stopBtn" class="btn">⏹ Stop</button>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <select id="primarySel"></select>
+    <select id="parallelSel"></select>
+
+    <button id="playBtn">▶ Play</button>
+    <button id="pauseBtn">⏸ Pause</button>
+    <button id="resumeBtn">⏯ Resume</button>
+    <button id="stopBtn">⏹ Stop</button>
   </div>
 
+  <!-- REFERENCE -->
   <div id="ref" class="ref"></div>
+
+  <!-- VERSES AREA -->
   <div id="verses"></div>
+
 </div>
 
 <script>
 (async function(){
-  const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/";
-  // available versions (mirror the index list)
+
+  const BASE =
+    "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/";
+
+  // FULL LIST OF YOUR FILES
   const FILES = [
-    "AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json","NIV_bible.json",
-    "NKJV_bible.json","NLT_bible.json","afrikaans_bible.json","bengali_bible.json","gujarati_bible.json",
-    "hindi_bible.json","hungarian_bible.json","indonesian_bible.json","kannada_bible.json","malayalam_bible.json",
-    "marathi_bible.json","nepali_bible.json","odia_bible.json","punjabi_bible.json","sepedi_bible.json",
+    "AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json",
+    "NIV_bible.json","NKJV_bible.json","NLT_bible.json","afrikaans_bible.json",
+    "bengali_bible.json","gujarati_bible.json","hindi_bible.json",
+    "hungarian_bible.json","indonesian_bible.json","kannada_bible.json",
+    "malayalam_bible.json","marathi_bible.json","nepali_bible.json",
+    "odia_bible.json","punjabi_bible.json","sepedi_bible.json",
     "tamil_bible.json","telugu_bible.json","xhosa_bible.json","zulu_bible.json"
   ];
 
-  const primarySel = document.getElementById('primarySel');
-  const parallelSel = document.getElementById('parallelSel');
-  const playBtn = document.getElementById('playBtn');
-  const pauseBtn = document.getElementById('pauseBtn');
-  const resumeBtn = document.getElementById('resumeBtn');
-  const stopBtn = document.getElementById('stopBtn');
-  const refEl = document.getElementById('ref');
-  const versesEl = document.getElementById('verses');
+  // ELEMENTS
+  const primarySel = document.getElementById("primarySel");
+  const parallelSel = document.getElementById("parallelSel");
+  const refEl = document.getElementById("ref");
+  const versesEl = document.getElementById("verses");
 
-  // fill selects
-  FILES.forEach(f => {
-    const label = f.replace('.json','');
-    primarySel.appendChild(new Option(label, f));
-    parallelSel.appendChild(new Option(label, f));
+  const playBtn = document.getElementById("playBtn");
+  const pauseBtn = document.getElementById("pauseBtn");
+  const resumeBtn = document.getElementById("resumeBtn");
+  const stopBtn = document.getElementById("stopBtn");
+
+  // Populate selectors with filenames (correct)
+  FILES.forEach(f=>{
+    primarySel.appendChild(new Option(f, f));
+    parallelSel.appendChild(new Option(f, f));
   });
 
-  // helpers
-  function esc(s){ return (s===undefined||s===null)?'':String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-  function sortVerseKeys(keys){ return keys.sort((a,b)=> (parseInt(String(a).split('-')[0],10)||0) - (parseInt(String(b).split('-')[0],10)||0)); }
+  function esc(s){
+    return String(s||"")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;");
+  }
+
+  function sortVerseKeys(keys){
+    return keys.sort((a,b)=>{
+      const A = parseInt(String(a).split("-")[0]);  
+      const B = parseInt(String(b).split("-")[0]);
+      return A - B;
+    });
+  }
 
   function normalize(json){
-    if(!json) return [];
-    if(json.books && Array.isArray(json.books)){
-      return json.books.map(b=>({
-        name: b.name || b.book || 'Unknown',
-        chapters: (b.chapters || []).map(ch => {
-          if(Array.isArray(ch)) return ch.map((t,i)=> ({key:String(i+1), text:t}));
-          if(typeof ch === 'object'){ const vk = sortVerseKeys(Object.keys(ch||{})); return vk.map(k=>({key:k, text: ch[k]})); }
-          return [];
-        })
-      }));
-    }
     const books = [];
-    for(const bk of Object.keys(json||{})){
-      const bookObj = json[bk];
-      if(!bookObj || typeof bookObj !== 'object') continue;
-      const chKeys = Object.keys(bookObj).sort((a,b)=> Number(a)-Number(b));
-      const chapters = [];
-      for(const ck of chKeys){
-        const ch = bookObj[ck];
-        if(!ch || typeof ch !== 'object'){ chapters.push([]); continue; }
-        const vkeys = sortVerseKeys(Object.keys(ch));
-        chapters.push(vkeys.map(k => ({ key: k, text: ch[k] })));
-      }
+    for(const bk of Object.keys(json)){
+      const chObj = json[bk];
+      const chapterKeys = Object.keys(chObj).sort((a,b)=>Number(a)-Number(b));
+      const chapters = chapterKeys.map(ck=>{
+        const vObj = chObj[ck];
+        const vkeys = sortVerseKeys(Object.keys(vObj));
+        return vkeys.map(k=>({ key:k, text: vObj[k] }));
+      });
       books.push({ name: bk, chapters });
     }
     return books;
   }
 
-  // read URL params
+  // URL PARAMS
   const params = new URLSearchParams(location.search);
-  const urlVersion = params.get('version') || 'telugu_bible.json';
-  let bookIndex = Number(params.get('bookIndex') || 0);
-  let chapterIndex = Number(params.get('chapter') ? Number(params.get('chapter')) - 1 : 0);
-  let verseParam = params.get('verse') || null;
+  let version = params.get("version") || "telugu_bible.json";
+  if(!version.endsWith(".json")) version += ".json";
+  let bookIndex = Number(params.get("bookIndex")||0);
+  let chapter = Number(params.get("chapter")||1) - 1;
+  let verseParam = params.get("verse") || null;
 
-  // caches
-  const cacheNorm = {};
+  // Set initial dropdown
+  primarySel.value = version;
+  parallelSel.value = "AMP_bible.json";
 
-  async function loadVersionFile(fn){
-    if(cacheNorm[fn]) return cacheNorm[fn];
-    const res = await fetch(BASE + fn);
+  const cache = {};
+  async function loadFile(f){
+    if(cache[f]) return cache[f];
+    const res = await fetch(BASE + f);
     const j = await res.json();
     const norm = normalize(j);
-    cacheNorm[fn] = norm;
+    cache[f] = norm;
     return norm;
   }
 
-  // set initial select values (if the file exists in list)
-  if(FILES.includes(urlVersion)) primarySel.value = urlVersion;
-  else primarySel.value = FILES[0];
-  parallelSel.value = FILES[0];
-
-  let primaryData = await loadVersionFile(primarySel.value);
-  let parallelData = await loadVersionFile(parallelSel.value);
+  let primaryBible = await loadFile(primarySel.value);
+  let parallelBible = await loadFile(parallelSel.value);
 
   function render(){
-    const book = primaryData[bookIndex];
-    const chapter = book ? (book.chapters[chapterIndex] || []) : [];
-    refEl.textContent = `${book ? book.name : 'Unknown'} ${chapterIndex + 1}`;
-    versesEl.innerHTML = '';
-    // normalize verseParam numeric to key if needed
+    const book = primaryBible[bookIndex];
+    const chapterData = book.chapters[chapter];
+
+    refEl.textContent = `${book.name} ${chapter+1}`;
+    versesEl.innerHTML = "";
+
     let highlightKey = verseParam;
+
     if(highlightKey && /^\d+$/.test(highlightKey)){
-      const idx = Number(highlightKey) - 1;
-      if(chapter[idx]) highlightKey = chapter[idx].key;
-    }
-    for(let i=0;i<chapter.length;i++){
-      const v = chapter[i];
-      const primaryText = v.text || '';
-      // find parallel verse with same key
-      const pbook = parallelData[bookIndex];
-      const pch = pbook ? (pbook.chapters[chapterIndex] || []) : [];
-      const parObj = pch.find(x => x.key === v.key) || {};
-      const parText = parObj.text || '';
-
-      const block = document.createElement('div');
-      block.className = 'verse-block' + (v.key === highlightKey ? ' active-verse' : '');
-      block.innerHTML = `<div class="verse-num">Verse ${v.key}</div>
-                         <div class="verse-primary">${esc(primaryText)}</div>
-                         ${ parText ? `<div class="verse-parallel">${esc(parText)}</div>` : '' }`;
-      // clicking opens index or further behavior (optional)
-      block.onclick = ()=> {
-        // open index at same location (optional) — currently keep as no-op or could open index
-      };
-      versesEl.appendChild(block);
+      const idx = Number(highlightKey)-1;
+      if(chapterData[idx]) highlightKey = chapterData[idx].key;
     }
 
-    // if verseParam is a range like "7-8" not found as key, join numeric range
-    if(verseParam && verseParam.includes('-')){
-      // if exact key exists we already handled; else show combined fallback
-      const exactFound = chapter.some(v=> v.key === verseParam);
-      if(!exactFound){
-        const m = verseParam.match(/^(\d+)\s*-\s*(\d+)$/);
-        if(m){
-          const s = Math.max(1, Number(m[1])) - 1;
-          const e = Math.max(1, Number(m[2])) - 1;
-          const start = Math.max(0, Math.min(s, chapter.length-1));
-          const end = Math.max(start, Math.min(e, chapter.length-1));
-          // create a combined block at top
-          const combinedText = chapter.slice(start, end+1).map(x=>x.text).join(' ');
-          const combinedPar = (parallelData[bookIndex] && parallelData[bookIndex].chapters[chapterIndex]) ? parallelData[bookIndex].chapters[chapterIndex].slice(start,end+1).map(x=>x.text).join(' ') : '';
-          const comb = document.createElement('div');
-          comb.className = 'verse-block active-verse';
-          comb.innerHTML = `<div class="verse-num">Verse ${chapter[start].key}${start!==end ? (' - ' + chapter[end].key) : ''}</div>
-                            <div class="verse-primary">${esc(combinedText)}</div>
-                            ${ combinedPar ? `<div class="verse-parallel">${esc(combinedPar)}</div>` : '' }`;
-          versesEl.insertBefore(comb, versesEl.firstChild);
-        }
+    chapterData.forEach((v,i)=>{
+      const pb = parallelBible[bookIndex];
+      const parallelChapter = pb ? pb.chapters[chapter] : [];
+      const parObj = parallelChapter.find(x=>x.key===v.key) || {};
+
+      const div = document.createElement("div");
+      div.className = "verse-block" + (v.key===highlightKey ? " active-verse":"");
+      div.innerHTML = `
+        <div class="verse-num">Verse ${v.key}</div>
+        <div class="verse-primary">${esc(v.text)}</div>
+        ${ parObj.text ? `<div class="verse-parallel">${esc(parObj.text)}</div>` : "" }
+      `;
+      versesEl.appendChild(div);
+    });
+
+    // Combined range (7-8) case
+    if(verseParam && verseParam.includes("-")){
+      const [s,e] = verseParam.split("-").map(x=>Number(x)-1);
+      const start = Math.max(0, s);
+      const end = Math.min(chapterData.length-1, e);
+      if(start <= end){
+        const combined = chapterData.slice(start,end+1).map(x=>x.text).join(" ");
+        const parBook = parallelBible[bookIndex];
+        const parCh = parBook ? parBook.chapters[chapter] : [];
+        const combinedPar = parCh.slice(start,end+1).map(x=>x.text).join(" ");
+
+        const block = document.createElement("div");
+        block.className = "verse-block active-verse";
+        block.innerHTML = `
+          <div class="verse-num">Verse ${chapterData[start].key}-${chapterData[end].key}</div>
+          <div class="verse-primary">${esc(combined)}</div>
+          ${ combinedPar ? `<div class="verse-parallel">${esc(combinedPar)}</div>` : "" }
+        `;
+        versesEl.insertBefore(block, versesEl.firstChild);
       }
     }
   }
 
-  // attach selects change handlers
-  primarySel.onchange = async function(){
-    primaryData = await loadVersionFile(this.value);
+  // Dropdown changes
+  primarySel.onchange = async ()=>{
+    primaryBible = await loadFile(primarySel.value);
     render();
+    updateURL();
   };
-  parallelSel.onchange = async function(){
-    parallelData = await loadVersionFile(this.value);
+  parallelSel.onchange = async ()=>{
+    parallelBible = await loadFile(parallelSel.value);
     render();
   };
 
-  // navigation: swipe + keys
-  let stX = 0;
-  document.addEventListener('touchstart', e => stX = e.changedTouches[0].clientX);
-  document.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - stX;
+  function updateURL(){
+    const p = new URLSearchParams();
+    p.set("version", primarySel.value);
+    p.set("bookIndex", bookIndex);
+    p.set("chapter", chapter+1);
+    if(verseParam) p.set("verse",verseParam);
+    history.replaceState(null,"",location.pathname+"?"+p.toString());
+  }
+
+  // Swipe navigation
+  let sx = 0;
+  document.addEventListener("touchstart", e=> sx=e.changedTouches[0].clientX);
+  document.addEventListener("touchend", e=>{
+    const dx = e.changedTouches[0].clientX - sx;
     if(Math.abs(dx) < 60) return;
-    if(dx < 0) nextChapter();
+    if(dx<0) nextChapter();
     else prevChapter();
   });
-  document.addEventListener('keydown', e => {
-    if(e.key === 'ArrowRight') nextChapter();
-    if(e.key === 'ArrowLeft') prevChapter();
+
+  document.addEventListener("keydown", e=>{
+    if(e.key==="ArrowRight") nextChapter();
+    if(e.key==="ArrowLeft") prevChapter();
   });
 
   function nextChapter(){
-    const book = primaryData[bookIndex];
-    if(!book) return;
-    if(chapterIndex + 1 < book.chapters.length){ chapterIndex++; verseParam = null; render(); updateUrl(); }
+    if(chapter+1 < primaryBible[bookIndex].chapters.length){
+      chapter++; verseParam=null; render(); updateURL();
+    }
   }
   function prevChapter(){
-    if(chapterIndex - 1 >= 0){ chapterIndex--; verseParam = null; render(); updateUrl(); }
-  }
-  function updateUrl(){
-    const p = new URLSearchParams();
-    p.set('version', primarySel.value);
-    p.set('bookIndex', bookIndex);
-    p.set('chapter', chapterIndex + 1);
-    history.replaceState(null, '', location.pathname + '?' + p.toString());
+    if(chapter-1 >= 0){
+      chapter--; verseParam=null; render(); updateURL();
+    }
   }
 
-  // TTS: alternate primary -> parallel -> primary...
-  let ttsQueue = [];
-  function buildTTSQueue(){
-    ttsQueue = [];
-    const primaryBook = primaryData[bookIndex];
-    const pchapter = primaryBook ? (primaryBook.chapters[chapterIndex] || []) : [];
-    const parallelBook = parallelData[bookIndex];
-    const pchapter2 = parallelBook ? (parallelBook.chapters[chapterIndex] || []) : [];
+  // TTS
+  let queue = [];
+  function buildQueue(){
+    queue = [];
+    const book = primaryBible[bookIndex];
+    const ch = book.chapters[chapter];
+    const pbook = parallelBible[bookIndex];
+    const pch = pbook ? pbook.chapters[chapter] : [];
 
-    // If verseParam exact key exists, only queue that verse
     if(verseParam){
-      // exact key
-      const exactIndex = pchapter.findIndex(v => v.key === verseParam);
-      if(exactIndex !== -1){
-        ttsQueue.push({text: pchapter[exactIndex].text, index: exactIndex});
-        if(pchapter2[exactIndex]) ttsQueue.push({text: pchapter2[exactIndex].text, index: exactIndex});
-        return;
-      }
-      // range fallback numeric
-      const m = verseParam.match(/^(\d+)\s*-\s*(\d+)$/);
-      if(m){
-        const s = Math.max(1, Number(m[1])) - 1;
-        const e = Math.max(1, Number(m[2])) - 1;
-        const start = Math.max(0, Math.min(s, pchapter.length-1));
-        const end = Math.max(start, Math.min(e, pchapter.length-1));
-        for(let i=start;i<=end;i++){
-          ttsQueue.push({text: pchapter[i].text, index: i});
-          if(pchapter2[i]) ttsQueue.push({text: pchapter2[i].text, index: i});
-        }
+      const exact = ch.findIndex(v=>v.key===verseParam);
+      if(exact!==-1){
+        queue.push({text:ch[exact].text, index:exact});
+        if(pch[exact]) queue.push({text:pch[exact].text, index:exact});
         return;
       }
     }
 
-    // default: full chapter
-    for(let i=0;i<pchapter.length;i++){
-      ttsQueue.push({text: pchapter[i].text, index: i});
-      if(pchapter2[i]) ttsQueue.push({text: pchapter2[i].text, index: i});
-    }
+    ch.forEach((v,i)=>{
+      queue.push({text:v.text,index:i});
+      if(pch[i]) queue.push({text:pch[i].text,index:i});
+    });
   }
 
   function speakNext(){
-    if(ttsQueue.length === 0) return;
-    const item = ttsQueue.shift();
-    if(!item || !item.text) { setTimeout(speakNext, 120); return; }
+    if(queue.length===0) return;
+    const item = queue.shift();
     highlight(item.index);
-    const u = new SpeechSynthesisUtterance(String(item.text));
+    const u = new SpeechSynthesisUtterance(item.text);
     u.rate = 1.0;
-    u.onend = ()=> setTimeout(speakNext, 120);
-    u.onerror = ()=> setTimeout(speakNext, 180);
+    u.onend = ()=>setTimeout(speakNext,120);
+    u.onerror = ()=>setTimeout(speakNext,150);
     speechSynthesis.speak(u);
   }
 
   function highlight(i){
-    document.querySelectorAll('.verse-block').forEach(el=> el.classList.remove('active-verse'));
-    const all = document.querySelectorAll('.verse-block');
-    const el = all[i];
-    if(el){ el.classList.add('active-verse'); el.scrollIntoView({behavior:'smooth', block:'center'}); }
+    document.querySelectorAll(".verse-block").forEach(el=>el.classList.remove("active-verse"));
+    const blocks = document.querySelectorAll(".verse-block");
+    if(blocks[i]){
+      blocks[i].classList.add("active-verse");
+      blocks[i].scrollIntoView({behavior:"smooth",block:"center"});
+    }
   }
 
-  playBtn.onclick = function(){
-    speechSynthesis.cancel(); buildTTSQueue(); speakNext();
+  playBtn.onclick = ()=>{
+    speechSynthesis.cancel();
+    buildQueue();
+    speakNext();
   };
-  pauseBtn.onclick = function(){ if('speechSynthesis' in window) speechSynthesis.pause(); };
-  resumeBtn.onclick = function(){ if('speechSynthesis' in window) speechSynthesis.resume(); };
-  stopBtn.onclick = function(){ if('speechSynthesis' in window){ speechSynthesis.cancel(); ttsQueue = []; } };
-
-  // initial render (use URL params version if provided)
-  if(FILES.includes(urlVersion)) {
-    // if urlVersion present (from params), set primarySel
-    primarySel.value = urlVersion;
-    primaryData = await loadAndCache(primarySel.value);
-  }
-
-  async function loadAndCache(fn){
-    if(cache[fn]) return cache[fn];
-    const res = await fetch(BASE + fn);
-    const j = await res.json();
-    const norm = normalize(j);
-    cache[fn] = norm;
-    return norm;
-  }
-
-  // small cache for read.html
-  const cache = {};
-  // primary and parallel already loaded above, but ensure consistent load if user switches selects
-  primarySel.onchange = async function(){
-    primaryData = await loadAndCache(this.value);
-    // reset chapter/book if out of bounds
-    if(!primaryData[bookIndex]) bookIndex = 0;
-    if(!primaryData[bookIndex].chapters[chapterIndex]) chapterIndex = 0;
-    render();
-    updateUrl();
-  };
-  parallelSel.onchange = async function(){
-    parallelData = await loadAndCache(this.value);
-    render();
+  pauseBtn.onclick = ()=>speechSynthesis.pause();
+  resumeBtn.onclick = ()=>speechSynthesis.resume();
+  stopBtn.onclick = ()=>{
+    speechSynthesis.cancel();
+    queue=[];
   };
 
-  // initial load: ensure both data are loaded (already loaded above but safe)
-  primaryData = primaryData || await loadAndCache(primarySel.value);
-  parallelData = parallelData || await loadAndCache(parallelSel.value);
+  // INITIAL RENDER
+  primaryBible = await loadFile(primarySel.value);
+  parallelBible = await loadFile(parallelSel.value);
   render();
 
 })();
