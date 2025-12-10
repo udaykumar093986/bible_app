@@ -470,89 +470,34 @@
 
   // SEARCH — FIXED & FULLY WORKING
   // SEARCH — MULTI VERSION SEARCH (A + B)
-searchBox.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    doSearch((searchBox.value || "").trim().toLowerCase());
-  }
-});
-
-async function doSearch(q) {
-  searchResults.innerHTML = "";
-  searchInfo.textContent = "";
-
-  if (!q) return;
-
-  if (!state.versionA) {
-    searchInfo.textContent = "Select Version A first";
-    activateTab("home");
-    return;
-  }
-
-  // Load versions
-  await fetchAndNormalize(state.versionA);
-  if (state.versionB) await fetchAndNormalize(state.versionB);
-
-  const versionsToSearch = [state.versionA];
-  if (state.versionB) versionsToSearch.push(state.versionB);
-
-  let totalResults = 0;
-  const wrapper = document.createDocumentFragment();
-
-  for (const ver of versionsToSearch) {
-    const index = searchIndexCache[ver];
-    if (!index) continue;
-
-    const results = index.filter(r => r.low.includes(q)).slice(0, 150);
-    totalResults += results.length;
-
-    // Version header
-    const header = document.createElement("div");
-    header.className = "search-version-header";
-    header.textContent =
-      ver.replace("_bible.json", "").replace(".json", "").toUpperCase() +
-      " — " + results.length + " results";
-    wrapper.appendChild(header);
-
-    const safe = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(safe, "ig");
-
-    results.forEach((r) => {
-      const div = document.createElement("div");
-      div.className = "search-item";
-
-      const highlighted = esc(r.text).replace(re, (m) => `<span class="highlight">${m}</span>`);
-
-      div.innerHTML = `
-        <strong>${esc(r.book)} ${r.chapter}:${r.verseKey}</strong>
-        <div style="margin-top:6px">${highlighted}</div>
-        <small style="color:#666">Click to open (${ver.replace("_bible.json","").toUpperCase()})</small>
-      `;
-
-      div.addEventListener("click", async () => {
-        state.versionA = ver;
-        homeA.value = ver;
-
-        // Load if required
-        await fetchAndNormalize(ver);
-
-        // Open selected reference
-        state.bookIndex = r.bookIndex;
-        state.chapterIndex = r.chapterIndex;
-        state.verseKey = r.verseKey;
-
-        activateTab("read");
-        renderRead();
-        updateUrl();
+if(searchBox) searchBox.addEventListener('keydown', (e)=> { if(e.key === 'Enter') doSearch((searchBox.value||'').trim().toLowerCase()); });
+  async function doSearch(q){
+    searchResults.innerHTML = ''; searchInfo.textContent = '';
+    if(!q) return;
+    if(!state.versionA){ searchInfo.textContent = 'Select Version A first'; activateTab('home'); return; }
+    await fetchAndNormalize(state.versionA);
+    const idx = searchIndexCache[state.versionA];
+    if(!idx){ searchInfo.textContent = 'No index'; return; }
+    const results = idx.filter(r => r.low.includes(q)).slice(0,250);
+    searchInfo.textContent = `Found ${results.length}`;
+    if(!results.length){ searchResults.innerHTML = `<div style="padding:8px;color:#666">No results</div>`; return; }
+    const safe = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); const re = new RegExp(safe, 'ig');
+    const frag = document.createDocumentFragment();
+    results.forEach(r=>{
+      const div = document.createElement('div'); div.className = 'search-item';
+      const highlighted = esc(r.text).replace(re, m=>`<span class="highlight">${m}</span>`);
+      div.innerHTML = `<strong>${esc(r.book)} ${r.chapter}:${r.verseKey}</strong><div style="margin-top:6px">${highlighted}</div><small style="color:#666">Click to open</small>`;
+      div.addEventListener('click', async ()=>{
+        state.bookIndex = r.bookIndex; state.chapterIndex = r.chapterIndex; state.verseKey = r.verseKey;
+        await fetchAndNormalize(state.versionA);
+        activateTab('read'); renderRead(); updateUrl();
       });
-
-      wrapper.appendChild(div);
+      frag.appendChild(div);
     });
+    searchResults.appendChild(frag);
+    activateTab('search');
   }
 
-  searchResults.appendChild(wrapper);
-  searchInfo.textContent = "Found " + totalResults + " total results";
-  activateTab("search");
-}
 
 
   // URL Update
