@@ -407,6 +407,119 @@
     state.verseKey = params.get('verse') || state.verseKey;
     activateTab(params.get('view') || state.view || 'home');
   }
+  // KEYBOARD NAVIGATION (desktop shortcuts)
+document.addEventListener("keydown", (e) => {
+  if (state.view !== "read") return;
+
+  const n = normCache[state.versionA];
+  if (!n) return;
+
+  const books = n.books;
+  const chapters = books[state.bookIndex].chapters;
+  const totalChapters = chapters.length;
+
+  // -----------------------
+  //  CHAPTER NAVIGATION
+  // -----------------------
+
+  // Next Chapter → 
+  if (e.key === "ArrowRight" && !e.shiftKey) {
+    if (state.chapterIndex + 1 < totalChapters) {
+      state.chapterIndex++;
+      state.verseKey = null;
+      renderRead();
+      updateUrl();
+    }
+  }
+
+  // Previous Chapter ←
+  if (e.key === "ArrowLeft" && !e.shiftKey) {
+    if (state.chapterIndex > 0) {
+      state.chapterIndex--;
+      state.verseKey = null;
+      renderRead();
+      updateUrl();
+    }
+  }
+
+  // -----------------------
+  //  VERSE NAVIGATION
+  // -----------------------
+  const currentChapter = chapters[state.chapterIndex];
+  let verseList = currentChapter.map(v => v.key);
+  let verseIndex = state.verseKey ? verseList.indexOf(state.verseKey) : -1;
+
+  // Next Verse ↓
+  if (e.key === "ArrowDown") {
+    if (verseIndex >= 0 && verseIndex + 1 < verseList.length) {
+      state.verseKey = verseList[verseIndex + 1];
+      renderRead();
+      updateUrl();
+    }
+  }
+
+  // Previous Verse ↑
+  if (e.key === "ArrowUp") {
+    if (verseIndex > 0) {
+      state.verseKey = verseList[verseIndex - 1];
+      renderRead();
+      updateUrl();
+    }
+  }
+
+  // -----------------------
+  // FAST CHAPTER JUMP
+  // -----------------------
+
+  // PageDown → Jump +5 chapters
+  if (e.key === "PageDown") {
+    const target = Math.min(state.chapterIndex + 5, totalChapters - 1);
+    if (target !== state.chapterIndex) {
+      state.chapterIndex = target;
+      state.verseKey = null;
+      renderRead();
+      updateUrl();
+    }
+  }
+
+  // PageUp → Jump -5 chapters
+  if (e.key === "PageUp") {
+    const target = Math.max(state.chapterIndex - 5, 0);
+    if (target !== state.chapterIndex) {
+      state.chapterIndex = target;
+      state.verseKey = null;
+      renderRead();
+      updateUrl();
+    }
+  }
+
+  // -----------------------
+  // BOOK NAVIGATION
+  // -----------------------
+
+  // Shift + → (Next Book)
+  if (e.key === "ArrowRight" && e.shiftKey) {
+    if (state.bookIndex + 1 < books.length) {
+      state.bookIndex++;
+      state.chapterIndex = 0;
+      state.verseKey = null;
+      renderRead();
+      updateUrl();
+    }
+  }
+
+  // Shift + ← (Previous Book)
+  if (e.key === "ArrowLeft" && e.shiftKey) {
+    if (state.bookIndex > 0) {
+      state.bookIndex--;
+      state.chapterIndex = 0;
+      state.verseKey = null;
+      renderRead();
+      updateUrl();
+    }
+  }
+});
+
 
   window.addEventListener('popstate', async ()=>{
     const p = new URLSearchParams(location.search);
