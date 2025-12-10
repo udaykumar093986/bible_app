@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Bible Reader — SPA (Final)</title>
+<title>Bible Reader — SPA (Patched)</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -169,12 +169,37 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
   const parallelA = document.getElementById('parallelA'); const parallelB = document.getElementById('parallelB'); const parallelBook = document.getElementById('parallelBook'); const parallelChapter = document.getElementById('parallelChapter'); const parallelVerse = document.getElementById('parallelVerse'); const parallelOpen = document.getElementById('parallelOpen'); const parallelContainer = document.getElementById('parallelContainer');
   const notice = document.getElementById('notice');
 
-  const rawCache = {}, normCache = {}, searchIndexCache = {};
-  const state = { version: null, bookIndex: 0, chapterIndex: 0, verseKey: null, view: 'home', parallelB: null };
+  // caches & state
+  let rawCache = {}, normCache = {}, searchIndexCache = {};
+  let state = { version: null, bookIndex: 0, chapterIndex: 0, verseKey: null, view: 'home', parallelB: null };
 
   function showNotice(msg, ms=1400){ notice.textContent = msg; notice.style.display='block'; setTimeout(()=> notice.style.display='none', ms); }
   function esc(s){ return (s===undefined||s===null)?'':String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
   function sortKeys(keys){ return keys.sort((a,b)=> (parseInt(String(a).split('-')[0])||0) - (parseInt(String(b).split('-')[0])||0)); }
+
+  // ---------------------------
+  // RESET STATE / CLEAR CACHE
+  // ---------------------------
+  function resetState(){
+    // reset state object but preserve view to be set by activateTab
+    state = { version: null, bookIndex: 0, chapterIndex: 0, verseKey: null, view: 'home', parallelB: null };
+
+    // clear caches
+    rawCache = {}; normCache = {}; searchIndexCache = {};
+
+    // clear UI selections but keep version options present
+    document.querySelectorAll("select").forEach(s => { try{ s.selectedIndex = 0; }catch(e){} });
+    document.querySelectorAll("input").forEach(i => { try{ i.value = ''; }catch(e){} });
+
+    // clear content areas
+    if(document.getElementById('readRef')) document.getElementById('readRef').textContent = '';
+    if(document.getElementById('readVerses')) document.getElementById('readVerses').innerHTML = '';
+    if(document.getElementById('searchResults')) document.getElementById('searchResults').innerHTML = '';
+    if(document.getElementById('parallelContainer')) document.getElementById('parallelContainer').innerHTML = '';
+
+    // small UX feedback
+    console.log("Reset: cleared state and caches");
+  }
 
   function normalize(json){
     if(!json) return {books:[]};
@@ -218,16 +243,22 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     searchIndexCache[fname] = arr; return arr;
   }
 
-  // populate selects labels uppercase and strip suffix
+  // populate version selects labels uppercase and strip suffix
   FILES.forEach(f=>{ const label = f.replace("_bible.json","").replace(".json","").toUpperCase(); homeVersion.appendChild(new Option(label,f)); parallelA.appendChild(new Option(label,f)); parallelB.appendChild(new Option(label,f)); });
 
-  // SPA nav
+  // SPA nav with reset on switch
   function activateTab(name, push=true){
+    // clear all state when switching tabs (as requested)
+    resetState();
+    // set view after reset
+    state.view = name;
     Object.keys(panes).forEach(k => panes[k].classList.toggle('show', k === name));
     Object.values(tabs).forEach(t => t.classList.remove('active'));
     if(tabs[name]) tabs[name].classList.add('active');
-    state.view = name;
     if(push) updateUrl();
+    // when switching to specific panes, re-populate minimal things if needed
+    if(name === 'home' && state.version) { populateHomeBooks(state.version).catch(()=>{}); }
+    if(name === 'parallel') { renderParallelPreview(); }
   }
   Object.keys(tabs).forEach(k => tabs[k].addEventListener('click', ()=> { activateTab(k); if(k==='read') renderRead(); if(k==='parallel') renderParallelPreview(); }));
 
@@ -268,7 +299,7 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
 
   homeOpen.addEventListener('click', async function(){ if(!state.version){ showNotice('Select a version'); return; } const bi = homeBook.value !== '' ? Number(homeBook.value) : 0; const ci = homeChapter.value !== '' ? Number(homeChapter.value) : 0; const viDropdown = homeVerse.value !== '' ? Number(homeVerse.value) : null; const rng = (homeRange.value || '').trim(); state.bookIndex = bi; state.chapterIndex = ci; if(rng) state.verseKey = rng; else if(viDropdown !== null) state.verseKey = String(viDropdown + 1); else state.verseKey = null; try{ await fetchAndNormalize(state.version); }catch(e){ showNotice('Failed to load version'); return; } activateTab('read'); renderRead(); });
 
-  // RENDER READ
+  // RENDER READ (unchanged logic; will show empty if resetState cleared things)
   function renderRead(){
     if(!state.version){ readRef.textContent = 'No version selected'; readVerses.innerHTML=''; return; }
     const n = normCache[state.version];
@@ -281,16 +312,11 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     readRef.textContent = `${book.name} ${state.chapterIndex + 1}`;
     readVerses.innerHTML = '';
 
-    // if parallel requested (state.parallelB) load it (if missing, attempt fetch but don't throw)
     if(state.parallelB){
       const pb = state.parallelB;
       const nb = normCache[pb];
-      if(!nb){ // try to fetch silently
-        fetchAndNormalize(pb).catch(()=>{});
-        readVerses.innerHTML = '<div style="padding:12px;color:#666">Parallel version not loaded.</div>'; return;
-      }
+      if(!nb){ fetchAndNormalize(pb).catch(()=>{}); readVerses.innerHTML = '<div style="padding:12px;color:#666">Parallel version not loaded.</div>'; return; }
       const bookB = nb.books[state.bookIndex] || {chapters:[]}; const chapB = (bookB.chapters && bookB.chapters[state.chapterIndex]) ? bookB.chapters[state.chapterIndex] : [];
-      // verseKey handling
       if(state.verseKey){
         const exact = chapA.findIndex(v=>v.key===state.verseKey);
         if(exact !== -1){ renderCombinedBox(exact, chapA, chapB, state.version, pb); showReadNav(true, exact); return; }
@@ -304,7 +330,6 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
       showReadNav(false); return;
     }
 
-    // Single version rendering
     if(state.verseKey){
       const exact = chapA.findIndex(v=>v.key===state.verseKey);
       if(exact !== -1){ renderSingleBox(state.version, exact); showReadNav(true, exact); return; }
@@ -318,7 +343,6 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     showReadNav(false);
   }
 
-  // Combined box: Option B styling (labels for each version inside same box)
   function renderCombinedBox(idx, chapA, chapB, fileA, fileB){
     const va = chapA[idx] || null; const vb = chapB[idx] || null;
     const key = va ? va.key : (vb ? vb.key : (idx+1));
