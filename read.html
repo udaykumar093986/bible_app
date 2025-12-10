@@ -1,10 +1,9 @@
-<!-- FILE: read.html -->
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Reader — Bible Reader</title>
+<title>Read — Bible Reader</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f7f9fc;--accent:#0b66c2;--border:#e2e8f0}
@@ -17,6 +16,7 @@ body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;ba
 .controls{display:flex;gap:8px;align-items:center;margin-bottom:12px}
 .btn{padding:8px 10px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
 .note{color:#666;font-size:13px}
+.active-verse{background:#fff8d1;border-color:#ffd56b}
 @media(max-width:600px){.ref{font-size:18px}}
 </style>
 </head>
@@ -30,140 +30,210 @@ body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;ba
     <input id="verseInput" placeholder="Verse or range (7 or 7-8)" style="padding:8px;border-radius:8px;border:1px solid var(--border);min-width:120px" />
     <button id="goBtn" class="btn">Go</button>
   </div>
+
   <div id="ref" class="ref"></div>
   <div id="verses"></div>
 </div>
+
 <script>
-const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/";
-const VERSION_DEFAULT = 'telugu_bible.json';
-const versionSel = document.getElementById('versionSel');
-const bookSel = document.getElementById('bookSel');
-const chapterSel = document.getElementById('chapterSel');
-const verseInput = document.getElementById('verseInput');
-const goBtn = document.getElementById('goBtn');
-const refEl = document.getElementById('ref');
-const versesEl = document.getElementById('verses');
+(async function(){
+  const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/";
+  const DEFAULT_VERSION = 'telugu_bible.json';
 
-let bible = null; let version = null; let bookIndex=0; let chapterIndex=0;
+  const versionSel = document.getElementById('versionSel');
+  const bookSel = document.getElementById('bookSel');
+  const chapterSel = document.getElementById('chapterSel');
+  const verseInput = document.getElementById('verseInput');
+  const goBtn = document.getElementById('goBtn');
+  const refEl = document.getElementById('ref');
+  const versesEl = document.getElementById('verses');
 
-async function init(){
-  // populate version select
-  const versions = ['telugu_bible.json','KJV_bible.json','NIV_bible.json'];
-  versions.forEach(v=> versionSel.appendChild(new Option(v.replace('.json',''),v)));
-  // read query params
+  let bible = null, version = null, bookIndex = 0, chapterIndex = 0;
+
+  // normalize (same logic as index)
+  function sortVerseKeys(keys){
+    return keys.sort((a,b)=> {
+      const pa = parseInt(String(a).split('-')[0],10) || 0;
+      const pb = parseInt(String(b).split('-')[0],10) || 0;
+      return pa - pb;
+    });
+  }
+  function normalize(json){
+    if(!json) return [];
+    if(json.books && Array.isArray(json.books)){
+      return json.books.map(b => ({
+        name: b.name || b.book || 'Unknown',
+        chapters: (b.chapters || []).map(ch => {
+          if(Array.isArray(ch)) return ch.map((t,i)=> ({key: String(i+1), text: t}));
+          if(typeof ch === 'object'){
+            const vk = sortVerseKeys(Object.keys(ch||{}));
+            return vk.map(k=> ({ key: k, text: ch[k] }));
+          }
+          return [];
+        })
+      }));
+    }
+    const books = [];
+    for(const bk of Object.keys(json||{})){
+      const bookObj = json[bk];
+      if(!bookObj || typeof bookObj !== 'object') continue;
+      const chKeys = Object.keys(bookObj).sort((a,b)=> Number(a)-Number(b));
+      const chapters = [];
+      for(const ck of chKeys){
+        const ch = bookObj[ck];
+        if(!ch || typeof ch !== 'object'){ chapters.push([]); continue; }
+        const vkeys = sortVerseKeys(Object.keys(ch));
+        chapters.push(vkeys.map(k => ({key: k, text: ch[k]})));
+      }
+      books.push({ name: bk, chapters });
+    }
+    return books;
+  }
+
+  // helpers
+  function esc(s){ return (s===undefined||s===null)?'':String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+  function qs(name){ return new URLSearchParams(location.search).get(name); }
+
+  async function loadVersion(v){
+    version = v || DEFAULT_VERSION;
+    versionSel.value = version;
+    const res = await fetch(BASE + version);
+    const j = await res.json();
+    bible = normalize(j);
+  }
+
+  function populateSelectors(){
+    bookSel.innerHTML = '';
+    chapterSel.innerHTML = '';
+    bible.forEach((b,i)=> bookSel.appendChild(new Option(b.name,i)));
+    bookSel.value = bookIndex;
+    const chCount = (bible[bookIndex] && bible[bookIndex].chapters) ? bible[bookIndex].chapters.length : 0;
+    for(let i=1;i<=chCount;i++) chapterSel.appendChild(new Option(i,i-1));
+    chapterSel.value = chapterIndex;
+  }
+
+  // parse verse param: supports exact key match ("7-8") or number "7"
+  function parseVerseParam(vstr, chapterData){
+    if(!vstr) return null;
+    const s = String(vstr).trim();
+    // first attempt: exact key match
+    const exactIndex = chapterData.findIndex(v => v.key === s);
+    if(exactIndex !== -1) return { type:'exact', index: exactIndex, key: s };
+    // attempt numeric
+    if(/^\d+$/.test(s)){
+      const n = Number(s);
+      // find verse with key equal to number string or falling back to nth element
+      const idxByKey = chapterData.findIndex(v => v.key === String(n));
+      if(idxByKey !== -1) return { type:'numeric', index: idxByKey, key: chapterData[idxByKey].key };
+      // fallback: if chapters are sequential numeric keys use n-1
+      if(n-1 >=0 && n-1 < chapterData.length) return { type:'numeric', index: n-1, key: chapterData[n-1].key };
+    }
+    // not found
+    return null;
+  }
+
+  function renderChapter(){
+    const book = bible[bookIndex];
+    if(!book){ versesEl.innerHTML = '<div style="padding:12px;color:#666">No data</div>'; return; }
+    const chapterData = book.chapters[chapterIndex] || [];
+    const vparam = qs('verse') || (verseInput.value||'').trim();
+    // if verse param exists, try to render exact or numeric or range if it contains '-'
+    if(vparam){
+      // if user passed a range like 7-8 and that exact key exists in data -> show it
+      if(vparam.includes('-')){
+        // first try exact match in keys (e.g., "7-8")
+        const exactIdx = chapterData.findIndex(v => v.key === vparam);
+        if(exactIdx !== -1){
+          const vobj = chapterData[exactIdx];
+          refEl.textContent = `${book.name} ${chapterIndex+1}:${vobj.key}`;
+          versesEl.innerHTML = `<div class="verse active-verse"><div style="font-weight:700">Verse ${vobj.key}</div><div style="margin-top:8px">${esc(vobj.text)}</div></div>`;
+          return;
+        } else {
+          // if exact key doesn't exist, treat it as numeric range and join numeric verses
+          const m = vparam.match(/^(\d+)\s*-\s*(\d+)$/);
+          if(m){
+            const s = Math.max(1,Number(m[1])) - 1;
+            const e = Math.max(1,Number(m[2])) - 1;
+            const start = Math.max(0, Math.min(s, chapterData.length-1));
+            const end = Math.max(start, Math.min(e, chapterData.length-1));
+            const text = chapterData.slice(start, end+1).map(v=>v.text).join(' ');
+            refEl.textContent = `${book.name} ${chapterIndex+1} — Verses ${chapterData[start].key}${start!==end?('-'+chapterData[end].key):''}`;
+            versesEl.innerHTML = `<div class="verse active-verse"><div style="font-weight:700">Verse ${chapterData[start].key}${start!==end?('-'+chapterData[end].key):''}</div><div style="margin-top:8px">${esc(text)}</div></div>`;
+            return;
+          }
+        }
+      } else {
+        // single verse param: try exact key or numeric
+        const info = parseVerseParam(vparam, chapterData);
+        if(info){
+          const vobj = chapterData[info.index];
+          refEl.textContent = `${book.name} ${chapterIndex+1}:${vobj.key}`;
+          versesEl.innerHTML = `<div class="verse active-verse"><div style="font-weight:700">Verse ${vobj.key}</div><div style="margin-top:8px">${esc(vobj.text)}</div></div>`;
+          return;
+        }
+      }
+    }
+
+    // default: render full chapter
+    refEl.textContent = `${book.name} ${chapterIndex+1}`;
+    versesEl.innerHTML = chapterData.map(v=> `<div class="verse" data-key="${v.key}"><div style="font-weight:700">${v.key}</div><div style="margin-top:8px">${esc(v.text)}</div></div>`).join('');
+    // attach click handlers to open the same read.html in new tab with that verse
+    document.querySelectorAll('.verse').forEach(el=>{
+      el.onclick = ()=>{
+        const key = el.getAttribute('data-key');
+        const params = new URLSearchParams();
+        params.set('version', version);
+        params.set('bookIndex', bookIndex);
+        params.set('chapter', chapterIndex + 1);
+        params.set('verse', key);
+        window.open(location.pathname + '?' + params.toString(), '_blank');
+      };
+    });
+  }
+
+  // swipe / keyboard
+  let tStartX = 0, tEndX = 0;
+  document.addEventListener('touchstart', e=> tStartX = e.changedTouches[0].screenX );
+  document.addEventListener('touchend', e=> { tEndX = e.changedTouches[0].screenX; const dx = tEndX - tStartX; if(Math.abs(dx) < 60) return; if(dx > 0) prevChapter(); else nextChapter(); });
+  document.addEventListener('keydown', e=> { if(e.key === 'ArrowRight') nextChapter(); if(e.key === 'ArrowLeft') prevChapter(); });
+
+  function nextChapter(){ if(bookIndex+1 < (bible[bookIndex].chapters.length)){ chapterIndex++; populateSelectors(); renderChapter(); } else alert('No next chapter'); }
+  function prevChapter(){ if(chapterIndex-1 >= 0){ chapterIndex--; populateSelectors(); renderChapter(); } else alert('No previous chapter'); }
+
+  // UI events
+  goBtn.onclick = ()=>{
+    const v = versionSel.value || version;
+    const bi = Number(bookSel.value || bookIndex);
+    const ch = Number(chapterSel.value || chapterIndex) + 1;
+    const verse = (verseInput.value||'').trim();
+    const params = new URLSearchParams();
+    params.set('version', v);
+    params.set('bookIndex', bi);
+    params.set('chapter', ch);
+    if(verse) params.set('verse', verse);
+    // reload the same page with params (works for deep link)
+    location.search = params.toString();
+  };
+
+  versionSel.onchange = async ()=> { await loadVersion(versionSel.value); populateSelectors(); renderChapter(); };
+  bookSel.onchange = ()=> { bookIndex = Number(bookSel.value); chapterIndex = 0; populateSelectors(); renderChapter(); };
+  chapterSel.onchange = ()=> { chapterIndex = Number(chapterSel.value); renderChapter(); };
+
+  // init
   const params = new URLSearchParams(location.search);
-  version = params.get('version') || VERSION_DEFAULT;
-  versionSel.value = version;
-  const bidx = params.get('bookIndex');
-  const chap = params.get('chapter');
-  const verseParam = params.get('verse');
-  await loadVersion(version);
-  if(bidx!==null) bookIndex = Number(bidx);
-  if(chap!==null) chapterIndex = Number(chap)-1;
+  const verParam = params.get('version') || DEFAULT_VERSION;
+  const bidx = params.get('bookIndex'); const chap = params.get('chapter'); const verseParam = params.get('verse');
+
+  await loadVersion(verParam);
+  // populate version selector
+  ['telugu_bible.json','KJV_bible.json','NIV_bible.json','ESV_bible.json'].forEach(v=> versionSel.appendChild(new Option(v,v)));
+  versionSel.value = verParam;
+  bookIndex = bidx !== null ? Number(bidx) : 0;
+  chapterIndex = chap !== null ? (Number(chap)-1) : 0;
   populateSelectors();
   if(verseParam) verseInput.value = verseParam;
-  render();
-}
-
-function normalize(json){
-  const books = [];
-  Object.keys(json).forEach(bk=>{
-    const bookObj = json[bk];
-    const chKeys = Object.keys(bookObj||{}).sort((a,b)=>Number(a)-Number(b));
-    const chapters = chKeys.map(ck=>{
-      const ch = bookObj[ck];
-      if(Array.isArray(ch)) return ch;
-      const vKeys = Object.keys(ch||{}).sort((a,b)=>Number(a)-Number(b));
-      return vKeys.map(vk=> ch[vk]);
-    });
-    books.push({name:bk, chapters});
-  });
-  return books;
-}
-
-async function loadVersion(v){
-  try{
-    const res = await fetch(BASE + v);
-    const j = await res.json(); bible = normalize(j);
-  }catch(e){ alert('Failed to load version'); }
-}
-
-function populateSelectors(){
-  bookSel.innerHTML=''; chapterSel.innerHTML='';
-  bible.forEach((b,bi)=> bookSel.appendChild(new Option(b.name,bi)));
-  bookSel.value = bookIndex;
-  const chCount = bible[bookIndex].chapters.length;
-  for(let i=1;i<=chCount;i++) chapterSel.appendChild(new Option(i,i-1));
-  chapterSel.value = chapterIndex;
-}
-
-function render(){
-  const book = bible[bookIndex];
-  const chapter = book.chapters[chapterIndex] || [];
-  refEl.textContent = `${book.name} ${chapterIndex+1}`;
-  // check verseInput for single or range
-  const vq = (verseInput.value||'').trim();
-  if(vq){
-    const range = parseRange(vq, chapter.length);
-    renderRange(range.start, range.end, chapter);
-  } else {
-    // render whole chapter
-    versesEl.innerHTML = chapter.map((v,i)=> `<div class="verse"><strong>${i+1}</strong><div style="margin-top:6px">${escapeHtml(v)}</div><div style="margin-top:6px"><button data-vi="${i}">Open verse</button></div></div>`).join('');
-    // attach open verse handlers
-    versesEl.querySelectorAll('button[data-vi]').forEach(b=> b.onclick = ()=> { const vi = Number(b.dataset.vi); // open same page with verse param
-      const params = new URLSearchParams(location.search); params.set('bookIndex', bookIndex); params.set('chapter', chapterIndex+1); params.set('verse', vi+1); location.search = params.toString();
-    });
-  }
-}
-
-function renderRange(start, end, chapter){
-  const items = [];
-  for(let i=start;i<=end;i++){
-    items.push(`<div class="verse"><strong>${i+1}</strong><div style="margin-top:6px">${escapeHtml(chapter[i]||'')}</div></div>`);
-  }
-  versesEl.innerHTML = `<div class="verse"><strong>${start+1}-${end+1}</strong><div style="margin-top:6px">${escapeHtml(chapter.slice(start,end+1).join(' '))}</div></div>`;
-}
-
-function parseRange(q, max){
-  if(q.includes('-')){
-    const [a,b] = q.split('-').map(x=>Number(x)-1);
-    const start = Math.max(0, Math.min(a,max-1));
-    const end = Math.max(start, Math.min(b,max-1));
-    return {start,end};
-  }
-  const n = Number(q)-1; const nn = Math.max(0, Math.min(n, max-1)); return {start:nn,end:nn};
-}
-
-function escapeHtml(s){ return (s||'').toString().replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-
-// handle UI changes
-versionSel.onchange = async ()=>{ version = versionSel.value; await loadVersion(version); populateSelectors(); render(); };
-bookSel.onchange = ()=> { bookIndex = Number(bookSel.value); chapterIndex = 0; populateSelectors(); render(); };
-chapterSel.onchange = ()=> { chapterIndex = Number(chapterSel.value); render(); };
-goBtn.onclick = ()=> { // apply verse input and re-render
-  const params = new URLSearchParams(location.search);
-  params.set('version', version);
-  params.set('bookIndex', bookIndex);
-  params.set('chapter', chapterIndex+1);
-  if(verseInput.value) params.set('verse', verseInput.value);
-  history.replaceState(null,'', location.pathname + '?' + params.toString());
-  render();
-};
-
-// swipe support for chapters
-let touchStartX = 0, touchEndX = 0;
-document.addEventListener('touchstart', e=> { touchStartX = e.changedTouches[0].screenX; });
-document.addEventListener('touchend', e=> { touchEndX = e.changedTouches[0].screenX; handleSwipe(); });
-function handleSwipe(){ const dx = touchEndX - touchStartX; if(Math.abs(dx) < 60) return; if(dx > 0) gotoPrevChapter(); else gotoNextChapter(); }
-function gotoNextChapter(){ const book = bible[bookIndex]; if(chapterIndex+1 < book.chapters.length){ chapterIndex++; populateSelectors(); render(); updateUrl(); } else { alert('No next chapter'); } }
-function gotoPrevChapter(){ if(chapterIndex-1 >= 0){ chapterIndex--; populateSelectors(); render(); updateUrl(); } else { alert('No previous chapter'); } }
-function updateUrl(){ const params = new URLSearchParams(location.search); params.set('version', version); params.set('bookIndex', bookIndex); params.set('chapter', chapterIndex+1); history.replaceState(null,'', location.pathname + '?' + params.toString()); }
-
-// keyboard arrows for desktop
-document.addEventListener('keydown', e=>{ if(e.key === 'ArrowRight') gotoNextChapter(); if(e.key === 'ArrowLeft') gotoPrevChapter(); });
-
-// initialize
-init();
+  renderChapter();
+})();
 </script>
 </body>
 </html>
