@@ -1,0 +1,169 @@
+<!-- FILE: read.html -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Reader — Bible Reader</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f9fc;--accent:#0b66c2;--border:#e2e8f0}
+body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:#222}
+.header{padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.header a{color:var(--accent);text-decoration:none;font-weight:700}
+.container{max-width:900px;margin:18px auto;padding:0 16px}
+.ref{font-size:20px;font-weight:700;color:var(--accent);margin-bottom:12px}
+.verse{background:#fff;padding:14px;border-radius:10px;border:1px solid var(--border);margin-bottom:10px}
+.controls{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.btn{padding:8px 10px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+.note{color:#666;font-size:13px}
+@media(max-width:600px){.ref{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="header"><a href="/">← Back</a><div style="flex:1"></div><div class="note">Swipe left/right to change chapter</div></div>
+<div class="container">
+  <div class="controls">
+    <select id="versionSel"></select>
+    <select id="bookSel"></select>
+    <select id="chapterSel"></select>
+    <input id="verseInput" placeholder="Verse or range (7 or 7-8)" style="padding:8px;border-radius:8px;border:1px solid var(--border);min-width:120px" />
+    <button id="goBtn" class="btn">Go</button>
+  </div>
+  <div id="ref" class="ref"></div>
+  <div id="verses"></div>
+</div>
+<script>
+const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/";
+const VERSION_DEFAULT = 'telugu_bible.json';
+const versionSel = document.getElementById('versionSel');
+const bookSel = document.getElementById('bookSel');
+const chapterSel = document.getElementById('chapterSel');
+const verseInput = document.getElementById('verseInput');
+const goBtn = document.getElementById('goBtn');
+const refEl = document.getElementById('ref');
+const versesEl = document.getElementById('verses');
+
+let bible = null; let version = null; let bookIndex=0; let chapterIndex=0;
+
+async function init(){
+  // populate version select
+  const versions = ['telugu_bible.json','KJV_bible.json','NIV_bible.json'];
+  versions.forEach(v=> versionSel.appendChild(new Option(v.replace('.json',''),v)));
+  // read query params
+  const params = new URLSearchParams(location.search);
+  version = params.get('version') || VERSION_DEFAULT;
+  versionSel.value = version;
+  const bidx = params.get('bookIndex');
+  const chap = params.get('chapter');
+  const verseParam = params.get('verse');
+  await loadVersion(version);
+  if(bidx!==null) bookIndex = Number(bidx);
+  if(chap!==null) chapterIndex = Number(chap)-1;
+  populateSelectors();
+  if(verseParam) verseInput.value = verseParam;
+  render();
+}
+
+function normalize(json){
+  const books = [];
+  Object.keys(json).forEach(bk=>{
+    const bookObj = json[bk];
+    const chKeys = Object.keys(bookObj||{}).sort((a,b)=>Number(a)-Number(b));
+    const chapters = chKeys.map(ck=>{
+      const ch = bookObj[ck];
+      if(Array.isArray(ch)) return ch;
+      const vKeys = Object.keys(ch||{}).sort((a,b)=>Number(a)-Number(b));
+      return vKeys.map(vk=> ch[vk]);
+    });
+    books.push({name:bk, chapters});
+  });
+  return books;
+}
+
+async function loadVersion(v){
+  try{
+    const res = await fetch(BASE + v);
+    const j = await res.json(); bible = normalize(j);
+  }catch(e){ alert('Failed to load version'); }
+}
+
+function populateSelectors(){
+  bookSel.innerHTML=''; chapterSel.innerHTML='';
+  bible.forEach((b,bi)=> bookSel.appendChild(new Option(b.name,bi)));
+  bookSel.value = bookIndex;
+  const chCount = bible[bookIndex].chapters.length;
+  for(let i=1;i<=chCount;i++) chapterSel.appendChild(new Option(i,i-1));
+  chapterSel.value = chapterIndex;
+}
+
+function render(){
+  const book = bible[bookIndex];
+  const chapter = book.chapters[chapterIndex] || [];
+  refEl.textContent = `${book.name} ${chapterIndex+1}`;
+  // check verseInput for single or range
+  const vq = (verseInput.value||'').trim();
+  if(vq){
+    const range = parseRange(vq, chapter.length);
+    renderRange(range.start, range.end, chapter);
+  } else {
+    // render whole chapter
+    versesEl.innerHTML = chapter.map((v,i)=> `<div class="verse"><strong>${i+1}</strong><div style="margin-top:6px">${escapeHtml(v)}</div><div style="margin-top:6px"><button data-vi="${i}">Open verse</button></div></div>`).join('');
+    // attach open verse handlers
+    versesEl.querySelectorAll('button[data-vi]').forEach(b=> b.onclick = ()=> { const vi = Number(b.dataset.vi); // open same page with verse param
+      const params = new URLSearchParams(location.search); params.set('bookIndex', bookIndex); params.set('chapter', chapterIndex+1); params.set('verse', vi+1); location.search = params.toString();
+    });
+  }
+}
+
+function renderRange(start, end, chapter){
+  const items = [];
+  for(let i=start;i<=end;i++){
+    items.push(`<div class="verse"><strong>${i+1}</strong><div style="margin-top:6px">${escapeHtml(chapter[i]||'')}</div></div>`);
+  }
+  versesEl.innerHTML = `<div class="verse"><strong>${start+1}-${end+1}</strong><div style="margin-top:6px">${escapeHtml(chapter.slice(start,end+1).join(' '))}</div></div>`;
+}
+
+function parseRange(q, max){
+  if(q.includes('-')){
+    const [a,b] = q.split('-').map(x=>Number(x)-1);
+    const start = Math.max(0, Math.min(a,max-1));
+    const end = Math.max(start, Math.min(b,max-1));
+    return {start,end};
+  }
+  const n = Number(q)-1; const nn = Math.max(0, Math.min(n, max-1)); return {start:nn,end:nn};
+}
+
+function escapeHtml(s){ return (s||'').toString().replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+// handle UI changes
+versionSel.onchange = async ()=>{ version = versionSel.value; await loadVersion(version); populateSelectors(); render(); };
+bookSel.onchange = ()=> { bookIndex = Number(bookSel.value); chapterIndex = 0; populateSelectors(); render(); };
+chapterSel.onchange = ()=> { chapterIndex = Number(chapterSel.value); render(); };
+goBtn.onclick = ()=> { // apply verse input and re-render
+  const params = new URLSearchParams(location.search);
+  params.set('version', version);
+  params.set('bookIndex', bookIndex);
+  params.set('chapter', chapterIndex+1);
+  if(verseInput.value) params.set('verse', verseInput.value);
+  history.replaceState(null,'', location.pathname + '?' + params.toString());
+  render();
+};
+
+// swipe support for chapters
+let touchStartX = 0, touchEndX = 0;
+document.addEventListener('touchstart', e=> { touchStartX = e.changedTouches[0].screenX; });
+document.addEventListener('touchend', e=> { touchEndX = e.changedTouches[0].screenX; handleSwipe(); });
+function handleSwipe(){ const dx = touchEndX - touchStartX; if(Math.abs(dx) < 60) return; if(dx > 0) gotoPrevChapter(); else gotoNextChapter(); }
+function gotoNextChapter(){ const book = bible[bookIndex]; if(chapterIndex+1 < book.chapters.length){ chapterIndex++; populateSelectors(); render(); updateUrl(); } else { alert('No next chapter'); } }
+function gotoPrevChapter(){ if(chapterIndex-1 >= 0){ chapterIndex--; populateSelectors(); render(); updateUrl(); } else { alert('No previous chapter'); } }
+function updateUrl(){ const params = new URLSearchParams(location.search); params.set('version', version); params.set('bookIndex', bookIndex); params.set('chapter', chapterIndex+1); history.replaceState(null,'', location.pathname + '?' + params.toString()); }
+
+// keyboard arrows for desktop
+document.addEventListener('keydown', e=>{ if(e.key === 'ArrowRight') gotoNextChapter(); if(e.key === 'ArrowLeft') gotoPrevChapter(); });
+
+// initialize
+init();
+</script>
+</body>
+</html>
