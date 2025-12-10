@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Bible Reader — SPA (Final)</title>
+<title>Bible Reader</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -178,13 +178,22 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
   function sortKeys(keys){ return keys.sort((a,b)=> (parseInt(String(a).split('-')[0])||0) - (parseInt(String(b).split('-')[0])||0)); }
 
   // ---------------------------
-  // RESET STATE / CLEAR CACHE (preserve state.version & state.parallelB)
+  // PERSIST selected versions (auto-load last selected)
+  // ---------------------------
+  function saveSelectedVersions(){
+    try{ localStorage.setItem('lastPrimary', state.version || ''); localStorage.setItem('lastParallelB', state.parallelB || ''); }catch(e){}
+  }
+  function loadSelectedVersions(){
+    try{ const p = localStorage.getItem('lastPrimary'); const pb = localStorage.getItem('lastParallelB'); if(p) state.version = p; if(pb) state.parallelB = pb; }catch(e){}
+  }
+
+  // ---------------------------
+  // RESET STATE / CLEAR CACHE (preserve selected versions)
   // ---------------------------
   function resetState(){
     // clear caches but preserve currently selected versions so OPEN works
     rawCache = {}; normCache = {}; searchIndexCache = {};
-    // clear UI fields except version selectors (we keep their options)
-    // reset book/chapter/verse dropdowns
+    // reset dropdowns UI
     [homeBook, homeChapter, homeVerse, parallelBook, parallelChapter, parallelVerse].forEach(el=>{ if(el) el.innerHTML = "<option value=''>"+(el===homeBook||el===parallelBook ? "Book" : el===homeChapter||el===parallelChapter ? "Chapter" : "Verse")+"</option>"; });
     // clear content areas
     if(readRef) readRef.textContent='';
@@ -241,7 +250,6 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
 
   // SPA nav with reset on switch (preserve selected versions)
   function activateTab(name, push=true){
-    // clear caches/UI but preserve selected versions
     resetState();
     state.view = name;
     Object.keys(panes).forEach(k => panes[k].classList.toggle('show', k === name));
@@ -273,6 +281,10 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     const pb = p.get('parallelB'); if(pb) state.parallelB = pb;
     state.view = p.get('view') || state.view || 'home';
   }
+
+  // load persisted versions first (auto-load behavior)
+  loadSelectedVersions();
+  // then override from URL if present (URL has priority)
   readUrlIntoState();
 
   // HOME population
@@ -285,7 +297,7 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
 
   homeChapter.addEventListener('change', async function(){ const bi = Number(homeBook.value || 0); const ci = Number(this.value || 0); if(!state.version) return; const n = await fetchAndNormalize(state.version); const vcount = (n.books[bi] && n.books[bi].chapters[ci]) ? n.books[bi].chapters[ci].length : 0; homeVerse.innerHTML = "<option value=''>Verse</option>"; for(let v=1; v<=vcount; v++) homeVerse.appendChild(new Option(v, v-1)); });
 
-  homeVersion.addEventListener('change', async function(){ const f = this.value; if(!f) return; state.version = f; parallelA.value = f; await populateHomeBooks(f); showNotice(this.options[this.selectedIndex].text + ' loaded'); updateUrl(true); });
+  homeVersion.addEventListener('change', async function(){ const f = this.value; if(!f) return; state.version = f; parallelA.value = f; await populateHomeBooks(f); showNotice(this.options[this.selectedIndex].text + ' loaded'); saveSelectedVersions(); updateUrl(true); });
 
   // HOME OPEN -> set state and show READ (SPA switch, no page reload)
   homeOpen.addEventListener('click', async function(){
@@ -300,16 +312,29 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     else if(viDropdown !== null) state.verseKey = String(viDropdown + 1);
     else state.verseKey = null;
     try{ await fetchAndNormalize(state.version); }catch(e){ showNotice('Failed to load version'); return; }
+    saveSelectedVersions();
     activateTab('read');
-    renderRead();
+    await renderRead();
     updateUrl();
   });
 
-  // RENDER READ
-  function renderRead(){
+  // RENDER READ (async and waits for versions to load)
+  async function renderRead(){
+    // ensure version available (auto-load last selected)
     if(!state.version){ readRef.textContent = 'No version selected'; readVerses.innerHTML=''; return; }
+    try{
+      await fetchAndNormalize(state.version);
+    }catch(e){
+      readRef.textContent = 'Failed to load primary version';
+      readVerses.innerHTML = '<div style="padding:12px;color:#666">Failed to load primary version.</div>';
+      return;
+    }
+    // if parallel requested, ensure parallel loaded
+    if(state.parallelB){
+      try{ await fetchAndNormalize(state.parallelB); }catch(e){ /* continue, we'll show fallback */ }
+    }
     const n = normCache[state.version];
-    if(!n){ readRef.textContent = 'Loading...'; readVerses.innerHTML=''; return; }
+    if(!n){ readRef.textContent = 'No data'; readVerses.innerHTML=''; return; }
     if(state.bookIndex < 0) state.bookIndex = 0; if(state.bookIndex >= n.books.length) state.bookIndex = 0;
     const book = n.books[state.bookIndex];
     if(!book){ readRef.textContent = 'No book'; readVerses.innerHTML=''; return; }
@@ -321,7 +346,7 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
     if(state.parallelB){
       const pb = state.parallelB;
       const nb = normCache[pb];
-      if(!nb){ fetchAndNormalize(pb).catch(()=>{}); readVerses.innerHTML = '<div style="padding:12px;color:#666">Parallel version not loaded.</div>'; return; }
+      if(!nb){ readVerses.innerHTML = '<div style="padding:12px;color:#666">Parallel version not loaded.</div>'; showReadNav(false); return; }
       const bookB = nb.books[state.bookIndex] || {chapters:[]}; const chapB = (bookB.chapters && bookB.chapters[state.chapterIndex]) ? bookB.chapters[state.chapterIndex] : [];
       if(state.verseKey){
         const exact = chapA.findIndex(v=>v.key===state.verseKey);
@@ -404,24 +429,32 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
 
   // PARALLEL controls population (based on parallelA)
   parallelA.addEventListener('change', async function(){
-    const f = this.value || state.version; if(!f) return; state.version = f; parallelA.value = f; await populateHomeBooks(f); parallelBook.innerHTML = "<option value=''>Book</option>"; const n = normCache[f]; n.books.forEach((b,i)=> parallelBook.appendChild(new Option(b.name,i))); parallelChapter.innerHTML = "<option value=''>Chapter</option>"; parallelVerse.innerHTML = "<option value=''>Verse</option>"; showNotice(this.options[this.selectedIndex].text + ' loaded (A)'); });
+    const f = this.value || state.version; if(!f) return; state.version = f; parallelA.value = f; await populateHomeBooks(f); parallelBook.innerHTML = "<option value=''>Book</option>"; const n = normCache[f]; n.books.forEach((b,i)=> parallelBook.appendChild(new Option(b.name,i))); parallelChapter.innerHTML = "<option value=''>Chapter</option>"; parallelVerse.innerHTML = "<option value=''>Verse</option>"; showNotice(this.options[this.selectedIndex].text + ' loaded (A)'); saveSelectedVersions(); });
 
   parallelBook.addEventListener('change', async function(){ const bi = Number(this.value || 0); const f = parallelA.value || state.version; if(!f) return; const n = await fetchAndNormalize(f); const ccount = (n.books[bi] && n.books[bi].chapters) ? n.books[bi].chapters.length : 0; parallelChapter.innerHTML = "<option value=''>Chapter</option>"; for(let i=1;i<=ccount;i++) parallelChapter.appendChild(new Option(i, i-1)); parallelVerse.innerHTML = "<option value=''>Verse</option>"; });
 
   parallelChapter.addEventListener('change', async function(){ const bi = Number(parallelBook.value || 0); const ci = Number(this.value || 0); const f = parallelA.value || state.version; if(!f) return; const n = await fetchAndNormalize(f); const vcount = (n.books[bi] && n.books[bi].chapters[ci]) ? n.books[bi].chapters[ci].length : 0; parallelVerse.innerHTML = "<option value=''>Verse</option>"; for(let v=1; v<=vcount; v++) parallelVerse.appendChild(new Option(v, v-1)); });
 
   // PARALLEL OPEN -> switch to READ and render combined; do NOT render in parallel pane
-  parallelOpen.addEventListener('click', async function(){ const a = parallelA.value || state.version; const b = parallelB.value || state.parallelB; if(!a || !b){ showNotice('Select both versions'); return; } const bi = parallelBook.value !== '' ? Number(parallelBook.value) : 0; const ci = parallelChapter.value !== '' ? Number(parallelChapter.value) : 0; const vi = parallelVerse.value !== '' ? Number(parallelVerse.value) : null; state.version = a; state.parallelB = b; state.bookIndex = bi; state.chapterIndex = ci; state.verseKey = (vi !== null) ? String(vi + 1) : null; try{ await fetchAndNormalize(a); await fetchAndNormalize(b); }catch(e){ showNotice('Failed to load versions'); return; } activateTab('read'); renderRead(); updateUrl(); });
+  parallelOpen.addEventListener('click', async function(){ const a = parallelA.value || state.version; const b = parallelB.value || state.parallelB; if(!a || !b){ showNotice('Select both versions'); return; } const bi = parallelBook.value !== '' ? Number(parallelBook.value) : 0; const ci = parallelChapter.value !== '' ? Number(parallelChapter.value) : 0; const vi = parallelVerse.value !== '' ? Number(parallelVerse.value) : null; state.version = a; state.parallelB = b; state.bookIndex = bi; state.chapterIndex = ci; state.verseKey = (vi !== null) ? String(vi + 1) : null; try{ await fetchAndNormalize(a); await fetchAndNormalize(b); }catch(e){ showNotice('Failed to load versions'); return; } saveSelectedVersions(); activateTab('read'); await renderRead(); updateUrl(); });
 
   function renderParallelPreview(){ parallelContainer.innerHTML = '<div style="padding:12px;color:#666">Choose two versions and a passage. Click OPEN to view combined passage in READ.</div>'; }
 
-  // initial load from URL or default
-  if(state.version){ homeVersion.value = state.version; parallelA.value = state.version; try{ await fetchAndNormalize(state.version); await populateHomeBooks(state.version); }catch(e){} activateTab(state.view || 'home', false); if(state.view==='read') renderRead(); if(state.view==='parallel') renderParallelPreview(); } else { activateTab('home', false); }
+  // initial load from persisted selection or URL
+  async function initialLoad(){
+    if(state.version){ homeVersion.value = state.version; parallelA.value = state.version; try{ await fetchAndNormalize(state.version); await populateHomeBooks(state.version); }catch(e){} }
+    if(state.parallelB){ parallelB.value = state.parallelB; }
+    activateTab(state.view || 'home', false);
+    if(state.view==='read'){ await renderRead(); }
+    if(state.view==='parallel'){ renderParallelPreview(); }
+  }
+  await initialLoad();
 
-  window.addEventListener('popstate', async e=>{ readUrlIntoState(); if(state.version){ await fetchAndNormalize(state.version); await populateHomeBooks(state.version); } if(state.view) activateTab(state.view, false); if(state.view==='read') renderRead(); if(state.view==='parallel') renderParallelPreview(); });
+  window.addEventListener('popstate', async e=>{ readUrlIntoState(); if(state.version){ await fetchAndNormalize(state.version); await populateHomeBooks(state.version); } if(state.view) activateTab(state.view, false); if(state.view==='read') await renderRead(); if(state.view==='parallel') renderParallelPreview(); });
 
   // expose helper
   window._spa = { state };
+
 })(); // IIFE end
 </script>
 </body>
