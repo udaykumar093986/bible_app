@@ -475,20 +475,7 @@ searchBox.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(s
 
 
   // URL Update
-  function updateUrl() {
-    const p = new URLSearchParams();
-
-    if (state.versionA) p.set("versionA", state.versionA);
-    if (state.versionB) p.set("versionB", state.versionB);
-
-    p.set("bookIndex", state.bookIndex);
-    p.set("chapter", state.chapterIndex + 1);
-    if (state.verseKey) p.set("verse", state.verseKey);
-
-    p.set("view", state.view);
-
-    history.replaceState({}, "", "?" + p.toString());
-  }
+  function updateUrl() { const p = new URLSearchParams(); if (state.versionA) p.set("versionA", state.versionA); if (state.versionB) p.set("versionB", state.versionB); p.set("bookIndex", state.bookIndex); p.set("chapter", state.chapterIndex + 1); if (state.verseKey) p.set("verse", state.verseKey); p.set("view", state.view); history.replaceState({}, "", "?" + p.toString()); }
 
   // SWIPE NAVIGATION + MOUSE DRAG
   (function attachSwipe() {
