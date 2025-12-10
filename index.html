@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Bible Reader — Index</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -14,7 +15,7 @@
 *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui}
 body{background:var(--bg);color:#1d2d35;-webkit-font-smoothing:antialiased}
 
-/* HEADER */
+/* HEADER UI */
 header{
   padding:14px 20px;background:#fff;border-bottom:1px solid var(--border);
   display:flex;justify-content:space-between;align-items:center;
@@ -23,7 +24,7 @@ header{
 header .brand{font-size:22px;font-weight:700;color:var(--accent)}
 header .meta{font-size:14px;color:#466}
 
-/* MAIN */
+/* MAIN LAYOUT */
 main{max-width:1100px;margin:20px auto;padding:0 18px}
 
 .controls{
@@ -39,6 +40,7 @@ button{
   padding:10px 18px;border-radius:10px;font-weight:600;cursor:pointer;
 }
 
+/* JUMP BOX */
 .jump-container{
   background:#fff;border-radius:12px;border:1px solid var(--border);
   margin-bottom:18px;overflow:hidden;
@@ -52,19 +54,21 @@ button{
   margin-right:8px;padding:10px;border-radius:8px;border:1px solid var(--border)
 }
 
+/* READER PREVIEW */
 .reader{
   background:#fff;border-radius:12px;border:1px solid var(--border);
   padding:18px;margin-bottom:20px;
 }
 .ref{font-size:22px;font-weight:700;color:var(--accent);margin-bottom:16px}
 
+/* SEARCH RESULTS */
 .search-item{
   padding:12px;border-radius:10px;border:1px solid var(--border);
   background:white;margin-bottom:10px;cursor:pointer;
 }
-
 .highlight{background:var(--highlight);padding:2px;border-radius:4px}
 
+/* NOTICE */
 .notice{
   position:fixed;top:70px;left:20px;right:20px;padding:12px;
   border-radius:10px;background:white;border:1px solid var(--border);
@@ -88,7 +92,8 @@ button{
   <div class="controls">
     <select id="primarySelect"><option value="">PRIMARY VERSION</option></select>
     <select id="parallelSelect"><option value="">PARALLEL VERSION</option></select>
-    <button id="openBtn">Open (first book)</button>
+
+    <button id="openBtn">Open (First Book)</button>
 
     <input id="searchBox" placeholder="Search Text…" style="min-width:240px" />
     <button id="searchBtn">Search</button>
@@ -108,7 +113,7 @@ button{
   </div>
 
   <div class="reader">
-    <div id="currentRef" class="ref">Choose a version and press Open or Jump/Search.</div>
+    <div id="currentRef" class="ref">Choose a version and click Open or Jump/Search.</div>
     <div id="versesContainer"></div>
   </div>
 
@@ -120,219 +125,245 @@ button{
 
 <script>
 (async function(){
-  const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/";
-  // Long list of versions (add or remove names as you host them)
-  const FILES = [
-    "AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json","NIV_bible.json",
-    "NKJV_bible.json","NLT_bible.json","afrikaans_bible.json","bengali_bible.json","gujarati_bible.json",
-    "hindi_bible.json","hungarian_bible.json","indonesian_bible.json","kannada_bible.json","malayalam_bible.json",
-    "marathi_bible.json","nepali_bible.json","odia_bible.json","punjabi_bible.json","sepedi_bible.json",
-    "tamil_bible.json","telugu_bible.json","xhosa_bible.json","zulu_bible.json"
-  ];
 
-  // DOM refs
-  const VSEL = document.getElementById("primarySelect");
-  const PSEL = document.getElementById("parallelSelect");
-  const openBtn = document.getElementById("openBtn");
-  const searchBox = document.getElementById("searchBox");
-  const searchBtn = document.getElementById("searchBtn");
-  const jumpToggle = document.getElementById("jumpToggle");
-  const jumpBody = document.getElementById("jumpBody");
-  const bookSelect = document.getElementById("bookSelect");
-  const chapterSelect = document.getElementById("chapterSelect");
-  const verseSelect = document.getElementById("verseSelect");
-  const verseRange = document.getElementById("verseRange");
-  const jumpGo = document.getElementById("jumpGo");
-  const currentRef = document.getElementById("currentRef");
-  const versesContainer = document.getElementById("versesContainer");
-  const searchResults = document.getElementById("searchResults");
-  const searchInfo = document.getElementById("searchInfo");
-  const notice = document.getElementById("notice");
+const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/";
 
-  const versionMap = {};
-  const bibleRawCache = {};
-  const bibleNormCache = {};
-  const searchIndexCache = {};
-  let current = { version: null, parallel: null, book: 0, chapter: 0, singleVerseMode: false, singleVerseIndex: null };
+const FILES = [
+"AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json",
+"NIV_bible.json","NKJV_bible.json","NLT_bible.json","afrikaans_bible.json",
+"bengali_bible.json","gujarati_bible.json","hindi_bible.json",
+"hungarian_bible.json","indonesian_bible.json","kannada_bible.json",
+"malayalam_bible.json","marathi_bible.json","nepali_bible.json",
+"odia_bible.json","punjabi_bible.json","sepedi_bible.json",
+"tamil_bible.json","telugu_bible.json","xhosa_bible.json","zulu_bible.json"
+];
 
-  function esc(s){ return (s===undefined||s===null)?'':String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-  function showNotice(msg,ms=1400){ notice.textContent = msg; notice.style.display = 'block'; setTimeout(()=> notice.style.display='none', ms); }
+/* DOM references */
+const primarySelect = document.getElementById("primarySelect");
+const parallelSelect = document.getElementById("parallelSelect");
+const openBtn = document.getElementById("openBtn");
+const searchBox = document.getElementById("searchBox");
+const searchBtn = document.getElementById("searchBtn");
+const jumpToggle = document.getElementById("jumpToggle");
+const jumpBody = document.getElementById("jumpBody");
+const bookSelect = document.getElementById("bookSelect");
+const chapterSelect = document.getElementById("chapterSelect");
+const verseSelect = document.getElementById("verseSelect");
+const verseRange = document.getElementById("verseRange");
+const jumpGo = document.getElementById("jumpGo");
+const searchResults = document.getElementById("searchResults");
+const searchInfo = document.getElementById("searchInfo");
+const versesContainer = document.getElementById("versesContainer");
+const notice = document.getElementById("notice");
 
-  function sortVerseKeys(keys){
-    return keys.sort((a,b)=>{
-      const pa = parseInt(String(a).split('-')[0],10) || 0;
-      const pb = parseInt(String(b).split('-')[0],10) || 0;
-      return pa - pb;
-    });
-  }
+/* Fill version dropdowns */
+FILES.forEach(f=>{
+  const label = f.replace("_bible.json","").toUpperCase();
+  primarySelect.appendChild(new Option(label, f));
+  parallelSelect.appendChild(new Option(label, f));
+});
 
-  function normalize(json){
-    if(!json) return {books:[]};
-    if(json.books && Array.isArray(json.books)){
-      return { books: json.books.map(b => ({
-        name: b.name || b.book || "Unknown",
-        chapters: (b.chapters || []).map(ch => {
-          if(Array.isArray(ch)) return ch.map((t,i)=> ({key:String(i+1), text: t}));
-          if(typeof ch === 'object'){ const vk = sortVerseKeys(Object.keys(ch||{})); return vk.map(k => ({ key: k, text: ch[k] })); }
+/* Notice popup */
+function showNotice(msg,ms=1200){
+  notice.textContent = msg;
+  notice.style.display="block";
+  setTimeout(()=> notice.style.display="none", ms);
+}
+
+/* Normalization logic (supports 1-8 and 1-2 ranges) */
+function sortVerseKeys(keys){
+  return keys.sort((a,b)=>{
+    const A = parseInt(String(a).split('-')[0]) || 0;
+    const B = parseInt(String(b).split('-')[0]) || 0;
+    return A-B;
+  });
+}
+
+function normalize(json){
+  if(!json) return {books:[]};
+
+  if(json.books){
+    return {
+      books: json.books.map(b=>({
+        name:b.name || "Unknown",
+        chapters:(b.chapters||[]).map(ch=>{
+          if(Array.isArray(ch)) return ch.map((t,i)=>({key:String(i+1),text:t}));
+          if(typeof ch === "object"){
+            const k = sortVerseKeys(Object.keys(ch));
+            return k.map(v=>({key:v,text:ch[v]}));
+          }
           return [];
         })
-      }))};
-    }
-    const books = [];
-    for(const bookName of Object.keys(json||{})){
-      const bookObj = json[bookName];
-      if(!bookObj || typeof bookObj !== 'object') continue;
-      const chKeys = Object.keys(bookObj).sort((a,b)=> Number(a)-Number(b));
-      const chapters = [];
-      for(const ck of chKeys){
-        const ch = bookObj[ck];
-        if(!ch || typeof ch !== 'object'){ chapters.push([]); continue; }
-        const vkeys = sortVerseKeys(Object.keys(ch));
-        chapters.push(vkeys.map(k => ({ key: k, text: ch[k] })));
-      }
-      books.push({ name: bookName, chapters });
-    }
-    return { books };
+      }))
+    };
   }
 
-  async function fetchAndNormalize(label){
-    if(bibleNormCache[label]) return bibleNormCache[label];
-    const url = BASE + label;
-    const res = await fetch(url);
-    if(!res.ok) throw new Error("Fetch failed: " + res.status);
-    const j = await res.json();
-    bibleRawCache[label] = j;
-    const norm = normalize(j);
-    bibleNormCache[label] = norm;
-    buildSearchIndex(label, norm);
-    return norm;
+  const books=[];
+  for(const bk of Object.keys(json)){
+    const bookObj=json[bk];
+    const chKeys=Object.keys(bookObj).sort((a,b)=>Number(a)-Number(b));
+    books.push({
+      name:bk,
+      chapters:chKeys.map(ck=>{
+        const ch=bookObj[ck];
+        if(!ch||typeof ch!=="object") return [];
+        const vkeys=sortVerseKeys(Object.keys(ch));
+        return vkeys.map(v=>({key:v,text:ch[v]}));
+      })
+    });
   }
+  return {books};
+}
 
-  function buildSearchIndex(label, norm){
-    const idx = [];
-    norm.books.forEach((b,bi)=>{
-      b.chapters.forEach((ch,ci)=>{
-        ch.forEach((v,vi)=>{
-          const t = (v && v.text) ? v.text.toString() : "";
-          idx.push({bookIndex:bi, chapterIndex:ci, verseIndex:vi, book:b.name, chapter:ci+1, verseKey:v.key, text:t, low:t.toLowerCase()});
+/* Caches */
+const bibleCache={};
+
+/* Fetch */
+async function loadVersion(file){
+  if(bibleCache[file]) return bibleCache[file];
+  const res=await fetch(BASE + file);
+  const j=await res.json();
+  const norm=normalize(j);
+  bibleCache[file]=norm;
+  return norm;
+}
+
+/* Toggle jump box */
+jumpToggle.onclick=()=>{
+  jumpBody.style.display = (jumpBody.style.display==="block") ? "none" : "block";
+};
+
+/* On primary version selection */
+primarySelect.onchange=async function(){
+  const file=this.value;
+  if(!file) return;
+
+  const data=await loadVersion(file);
+  showNotice("Loaded " + this.options[this.selectedIndex].text);
+
+  /* Populate books */
+  bookSelect.innerHTML="<option>Book</option>";
+  data.books.forEach((b,i)=> bookSelect.appendChild(new Option(b.name,i)));
+
+  chapterSelect.innerHTML="<option>Chapter</option>";
+  verseSelect.innerHTML="<option>Verse</option>";
+};
+
+/* On book selection */
+bookSelect.onchange=function(){
+  const p=primarySelect.value;
+  if(!p) return;
+
+  const file=p;
+  loadVersion(file).then(data=>{
+    const bi=Number(bookSelect.value);
+    const chapters=data.books[bi].chapters.length;
+    chapterSelect.innerHTML="<option>Chapter</option>";
+    for(let c=1;c<=chapters;c++)
+      chapterSelect.appendChild(new Option(c,c-1));
+  });
+};
+
+/* On chapter selection */
+chapterSelect.onchange=function(){
+  const p=primarySelect.value;
+  if(!p) return;
+
+  loadVersion(p).then(data=>{
+    const bi=Number(bookSelect.value);
+    const ci=Number(chapterSelect.value);
+    const verses=data.books[bi].chapters[ci].length;
+    verseSelect.innerHTML="<option>Verse</option>";
+    for(let v=1;v<=verses;v++)
+      verseSelect.appendChild(new Option(v,v-1));
+  });
+};
+
+/* Open first chapter */
+openBtn.onclick=function(){
+  if(!primarySelect.value){ showNotice("Select version"); return; }
+  const params=new URLSearchParams();
+  params.set("version", primarySelect.value);
+  params.set("bookIndex", 0);
+  params.set("chapter", 1);
+  window.open("read.html?" + params.toString(), "_blank");
+};
+
+/* Jump Go */
+jumpGo.onclick=function(){
+  if(!primarySelect.value){ showNotice("Select version"); return; }
+
+  const bi=bookSelect.value;
+  const ci=chapterSelect.value;
+  const verse=verseRange.value || (verseSelect.value ? Number(verseSelect.value)+1 : null);
+
+  const params=new URLSearchParams();
+  params.set("version", primarySelect.value);
+  params.set("bookIndex", bi);
+  params.set("chapter", Number(ci)+1);
+
+  if(verse) params.set("verse", verse);
+
+  window.open("read.html?" + params.toString(), "_blank");
+};
+
+/* SEARCH */
+searchBtn.onclick=async function(){
+  const q=(searchBox.value || "").trim().toLowerCase();
+  searchResults.innerHTML=""; searchInfo.textContent="";
+
+  if(!q) return;
+  if(!primarySelect.value){ searchInfo.textContent="Select version first"; return; }
+
+  const file=primarySelect.value;
+  const data=await loadVersion(file);
+
+  const index=[];
+  data.books.forEach((b,bi)=>{
+    b.chapters.forEach((ch,ci)=>{
+      ch.forEach((v,vi)=>{
+        const t=(v && v.text) ? v.text.toLowerCase() : "";
+        index.push({
+          book:b.name, bookIndex:bi,
+          chapter:ci+1, chapterIndex:ci,
+          verseKey:v.key, verseIndex:vi,
+          text:v.text, low:t
         });
       });
     });
-    searchIndexCache[label] = idx;
-  }
-
-  // populate version selects
-  FILES.forEach(fn => {
-    versionMap[fn] = fn;
-    const label = f.replace("_bible.json","").toUpperCase();
-    VSEL.appendChild(new Option(label, f));
-    PSEL.appendChild(new Option(label, f));
   });
 
-  jumpToggle.onclick = ()=> {
-    const show = jumpBody.style.display === 'block';
-    jumpBody.style.display = show ? 'none' : 'block';
-    jumpBody.setAttribute('aria-hidden', show ? 'true' : 'false');
-  };
+  const results=index.filter(x=>x.low.includes(q));
+  searchInfo.textContent="Found " + results.length;
 
-  primarySelect.onchange = async function(){
-    const label = this.value;
-    if(!label) return;
-    current.version = label;
-    current.book = 0; current.chapter = 0; current.singleVerseMode = false; current.singleVerseIndex = null;
-    verseRange.value = '';
-    try{ await fetchAndNormalize(label); showNotice(label + ' loaded',900); }catch(e){ showNotice('Load failed'); return; }
-    // populate book select
-    bookSelect.innerHTML = "<option value=''>Book</option>";
-    bibleNormCache[label].books.forEach((b,i)=> bookSelect.appendChild(new Option(b.name,i)));
-    chapterSelect.innerHTML = "<option value=''>Chapter</option>";
-    verseSelect.innerHTML = "<option value=''>Verse</option>";
-    versesContainer.innerHTML = "<div style='padding:12px'>Click Go to open read.html for a book/chapter.</div>";
-  };
+  if(!results.length){
+    searchResults.innerHTML="<div>No results</div>";
+    return;
+  }
 
-  parallelSelect.onchange = function(){ current.parallel = this.value || null; if(current.parallel) fetchAndNormalize(current.parallel).catch(()=>{}); };
+  const safe=q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  const re=new RegExp(safe,"ig");
 
-  openBtn.onclick = function(){
-    if(!current.version){ showNotice('Select primary version'); return; }
-    const params = new URLSearchParams();
-    params.set('version', current.version);
-    params.set('bookIndex', 0);
-    params.set('chapter', 1);
-    window.open('read.html?' + params.toString(), '_blank');
-  };
+  results.forEach(r=>{
+    const div=document.createElement("div");
+    div.className="search-item";
+    div.innerHTML=`
+      <strong>${r.book} ${r.chapter}:${r.verseKey}</strong>
+      <div>${(r.text||"").replace(re,m=>"<span class='highlight'>"+m+"</span>")}</div>
+    `;
+    div.onclick=()=>{
+      const params=new URLSearchParams();
+      params.set("version", primarySelect.value);
+      params.set("bookIndex", r.bookIndex);
+      params.set("chapter", r.chapter);
+      params.set("verse", r.verseKey);
+      window.open("read.html?" + params, "_blank");
+    };
+    searchResults.appendChild(div);
+  });
 
-  bookSelect.onchange = function(){
-    current.book = Number(this.value || 0);
-    current.chapter = 0;
-    current.singleVerseMode = false; current.singleVerseIndex = null; verseRange.value = '';
-    if(!current.version) return;
-    const chapters = bibleNormCache[current.version].books[current.book].chapters.length;
-    chapterSelect.innerHTML = "<option value=''>Chapter</option>";
-    for(let c=1;c<=chapters;c++) chapterSelect.appendChild(new Option(c,c-1));
-    verseSelect.innerHTML = "<option value=''>Verse</option>";
-  };
+};
 
-  chapterSelect.onchange = function(){
-    current.chapter = Number(this.value || 0);
-    current.singleVerseMode = false; current.singleVerseIndex = null; verseRange.value = '';
-    if(!current.version) return;
-    const verses = bibleNormCache[current.version].books[current.book].chapters[current.chapter].length;
-    verseSelect.innerHTML = "<option value=''>Verse</option>";
-    for(let v=1; v<=verses; v++) verseSelect.appendChild(new Option(v, v-1));
-  };
-
-  // search
-  searchBtn.onclick = async function(){
-    const q = (searchBox.value || '').trim().toLowerCase();
-    searchResults.innerHTML = ''; searchInfo.textContent = '';
-    if(!q) return;
-    if(!current.version){ searchInfo.textContent = 'Select primary version first'; return; }
-    if(!searchIndexCache[current.version]) await fetchAndNormalize(current.version);
-    const idx = searchIndexCache[current.version] || [];
-    const results = [];
-    for(let i=0;i<idx.length && results.length < 200;i++){
-      if(idx[i].low.includes(q)) results.push(idx[i]);
-    }
-    searchInfo.textContent = `Found ${results.length}`;
-    if(!results.length){ searchResults.innerHTML = '<div style="padding:8px;color:#666">No results</div>'; return; }
-    const safe = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    const re = new RegExp(safe,'ig');
-    const frag = document.createDocumentFragment();
-    results.forEach(r=>{
-      const div = document.createElement('div');
-      div.className = 'search-item';
-      const primarySnippet = esc(r.text).replace(re, m=>`<span class="highlight">${m}</span>`);
-      div.innerHTML = `<strong>${esc(r.book)} ${r.chapter}:${r.verseKey}</strong><div style="margin-top:6px">${primarySnippet}</div><small style="display:block;margin-top:6px;color:#666">Click to open</small>`;
-      div.onclick = ()=> {
-        const params = new URLSearchParams();
-        params.set('version', current.version);
-        params.set('bookIndex', r.bookIndex);
-        params.set('chapter', r.chapter);
-        params.set('verse', r.verseKey);
-        window.open('read.html?' + params.toString(), '_blank');
-      };
-      frag.appendChild(div);
-    });
-    searchResults.appendChild(frag);
-  };
-
-  jumpGo.onclick = function(){
-    if(!current.version){ showNotice('Select primary version'); return; }
-    if(bookSelect.value !== "") current.book = Number(bookSelect.value);
-    if(chapterSelect.value !== "") current.chapter = Number(chapterSelect.value);
-    const rangeInput = (verseRange.value || '').trim();
-    const viDropdown = verseSelect.value !== '' ? Number(verseSelect.value) : null;
-    const params = new URLSearchParams();
-    params.set('version', current.version);
-    params.set('bookIndex', current.book);
-    params.set('chapter', current.chapter + 1);
-    if(rangeInput) params.set('verse', rangeInput);
-    else if(viDropdown !== null) params.set('verse', viDropdown + 1);
-    window.open('read.html?' + params.toString(), '_blank');
-  };
-
-  // initial placeholder
-  versesContainer.innerHTML = "<div style='padding:12px'>Choose PRIMARY version and click Open or use Jump/Search to open read.html.</div>";
 })();
 </script>
 </body>
