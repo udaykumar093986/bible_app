@@ -40,11 +40,12 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
 .jump-header{padding:14px 16px;background:var(--soft);cursor:pointer;font-weight:700;color:var(--accent);user-select:none}
 .jump-body{display:none;padding:14px;background:#fff}
 .jump-body select{min-width:140px;margin-right:8px;padding:10px;border-radius:8px;border:1px solid var(--border)}
+.jump-body input.range{min-width:160px;padding:10px;border-radius:8px;border:1px solid var(--border);margin-right:8px}
 
 /* reader */
 .reader{background:white;border-radius:12px;border:1px solid var(--border);padding:18px;margin-bottom:20px}
 .ref{font-size:22px;font-weight:700;color:var(--accent);margin-bottom:16px}
-.verse-block{padding:14px;background:#f8fbff;border-radius:12px;border:1px solid var(--border);margin-bottom:14px;transition:0.25s}
+.verse-block{padding:14px;background:#f8fbff;border-radius:12px;border:1px solid var(--border);margin-bottom:14px;transition:0.25s;cursor:pointer}
 .verse-num{font-size:13px;font-weight:700;color:#345;margin-bottom:6px}
 .verse-primary{font-family:"Noto Serif",serif;font-size:18px;line-height:1.75;color:#111}
 .verse-parallel{margin-top:10px;padding-left:14px;border-left:3px solid var(--accent);font-family:"Noto Serif",serif;font-size:17px;color:#2a3c55}
@@ -95,7 +96,9 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
     <div class="jump-body" id="jumpBody" aria-hidden="true">
       <select id="bookSelect" aria-label="Book"><option value="">Book</option></select>
       <select id="chapterSelect" aria-label="Chapter"><option value="">Chapter</option></select>
+      <!-- verseSelect dropdown remains for single verse; the new input 'verseRange' accepts range like 7-8 -->
       <select id="verseSelect" aria-label="Verse"><option value="">Verse</option></select>
+      <input id="verseRange" class="range" placeholder="Verse or range (e.g. 7 or 7-8)" aria-label="Verse or range" />
       <button id="jumpGo">Go</button>
     </div>
   </div>
@@ -113,8 +116,7 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
 
 <script>
 /* Final inline JS - supports both JSON shapes.
-   If your repo JSON uses object -> chapter -> verse (like the Telugu upload),
-   this code will normalize it to a uniform shape for rendering & search.
+   Changes included: combined-verse support, chapter swipe navigation, deep-link open to read.html on verse click.
 */
 
 (async function(){
@@ -142,6 +144,7 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
   const bookSelect = document.getElementById("bookSelect");
   const chapterSelect = document.getElementById("chapterSelect");
   const verseSelect = document.getElementById("verseSelect");
+  const verseRange = document.getElementById("verseRange");
   const jumpGo = document.getElementById("jumpGo");
   const currentRef = document.getElementById("currentRef");
   const versesContainer = document.getElementById("versesContainer");
@@ -182,19 +185,15 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
 
     // Detect object keyed by book name and numeric chapter keys
     const keys = Object.keys(json || {});
-    // simple check: if keys contain numeric chapter keys? We'll assume top-level keys are book names
     const books = [];
     for(const bookName of keys){
       const bookObj = json[bookName];
       if(!bookObj) continue;
-      // bookObj could be { "chapters": {...} } or directly chapters mapping
       let chaptersArr = [];
       if(bookObj.chapters && typeof bookObj.chapters === 'object'){
-        // chapters may be array or object
         if(Array.isArray(bookObj.chapters)){
           chaptersArr = bookObj.chapters.map(c => Array.isArray(c) ? c : Object.values(c || {}));
         } else {
-          // object mapping "1": { "1":"text"... }
           const chKeys = Object.keys(bookObj.chapters).sort((a,b)=>Number(a)-Number(b));
           for(const ck of chKeys){
             const ch = bookObj.chapters[ck];
@@ -204,13 +203,11 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
           }
         }
       } else if(typeof bookObj === 'object'){
-        // assume bookObj has numeric keys: "1", "2", ...
         const chKeys = Object.keys(bookObj).sort((a,b)=>Number(a)-Number(b));
         for(const ck of chKeys){
           const ch = bookObj[ck];
           if(Array.isArray(ch)) chaptersArr.push(ch);
           else if(typeof ch === 'object'){
-            // verse keys: { "1":"text", "2":"text" }
             const verseKeys = Object.keys(ch).sort((a,b)=>Number(a)-Number(b));
             chaptersArr.push(verseKeys.map(vk => ch[vk]));
           } else {
@@ -218,7 +215,6 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
           }
         }
       } else {
-        // fallback
         chaptersArr = [];
       }
       books.push({ name: bookName, chapters: chaptersArr });
@@ -254,7 +250,29 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
     searchIndexCache[label] = idx;
   }
 
-  // Render chapter or single verse
+  // Utility: parse verse input (single or range), returns {startIndex,endIndex} 0-based
+  function parseVerseSpecifier(input, chapterLength){
+    if(!input) return null;
+    const s = input.trim();
+    // range like 7-8 or 7 - 8
+    const m = s.match(/^(\d+)\s*-\s*(\d+)$/);
+    if(m){
+      const a = Math.max(1, Number(m[1]));
+      const b = Math.max(1, Number(m[2]));
+      const start = Math.min(a,b) - 1;
+      const end = Math.max(a,b) - 1;
+      return { start: Math.max(0, Math.min(start, chapterLength-1)), end: Math.max(0, Math.min(end, chapterLength-1)) };
+    }
+    // single number
+    const n = Number(s);
+    if(!isNaN(n) && n >= 1){
+      const idx = Math.max(0, Math.min(n-1, chapterLength-1));
+      return { start: idx, end: idx };
+    }
+    return null;
+  }
+
+  // Render chapter or single verse / range
   function renderChapter(){
     if(!current.version || !bibleNormCache[current.version]){ versesContainer.innerHTML = "<div style='padding:12px'>Select a version and open.</div>"; currentRef.textContent = ""; return; }
     const bookObj = bibleNormCache[current.version].books[current.book];
@@ -265,34 +283,81 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
       parallelChap = pb ? (pb.chapters[current.chapter] || []) : null;
     }
 
+    // If singleVerseMode and index is set -> show that verse
     if(current.singleVerseMode && Number.isInteger(current.singleVerseIndex)){
       const i = current.singleVerseIndex;
       const prim = esc(primaryChap[i] || "");
       const par = parallelChap ? esc(parallelChap[i] || "") : "";
       currentRef.textContent = `${bookObj.name} ${current.chapter + 1}:${i + 1}`;
-      versesContainer.innerHTML = `<div class="verse-block active-verse" id="v-${i}">
+      versesContainer.innerHTML = `<div class="verse-block active-verse" id="v-${i}" data-vi="${i}">
         <div class="verse-num">Verse ${i+1}</div>
         <div class="verse-primary">${prim}</div>
         ${ par ? `<div class="verse-parallel">${par}</div>` : "" }
       </div>`;
+      // make clickable to open read.html
+      const el = versesContainer.querySelector('.verse-block');
+      if(el) el.onclick = () => openReadPage(current.version, current.book, current.chapter, i);
       return;
     }
 
+    // If verseRange input exists, parse and render combined
+    const book = bibleNormCache[current.version].books[current.book];
+    const chapLen = primaryChap.length;
+    const rangeSpec = parseVerseSpecifier(verseRange.value || "", chapLen);
+
+    if(rangeSpec){
+      const {start, end} = rangeSpec;
+      currentRef.textContent = `${bookObj.name} ${current.chapter + 1} — Verses ${start+1}${start!==end?('-'+(end+1)):''}`;
+      // Combined text (join with a space)
+      const combined = primaryChap.slice(start, end+1).join(" ");
+      const parCombined = parallelChap ? (parallelChap.slice(start, end+1).join(" ")) : "";
+      versesContainer.innerHTML = `<div class="verse-block active-verse" id="v-range" data-vi-range="${start}-${end}">
+        <div class="verse-num">Verse ${start+1}${start!==end?(' - '+(end+1)):''}</div>
+        <div class="verse-primary">${esc(combined)}</div>
+        ${ parCombined ? `<div class="verse-parallel">${esc(parCombined)}</div>` : "" }
+      </div>`;
+      // click opens read.html with verse=start (opens at start verse)
+      const el = document.getElementById('v-range');
+      if(el) el.onclick = () => openReadPage(current.version, current.book, current.chapter, start);
+      return;
+    }
+
+    // Default: render full chapter with each verse clickable
     currentRef.textContent = `${bookObj.name} ${current.chapter + 1}` + (current.parallel ? ` — ${current.parallel}` : "");
     let html = "";
     for(let i=0;i<primaryChap.length;i++){
       const prim = esc(primaryChap[i]);
       const par = parallelChap ? esc(parallelChap[i] || "") : "";
-      html += `<div class="verse-block" id="v-${i}">
+      // each verse-block has data attributes for book/chapter/verse index and is clickable
+      html += `<div class="verse-block" id="v-${i}" data-vi="${i}">
         <div class="verse-num">Verse ${i+1}</div>
         <div class="verse-primary">${prim}</div>
         ${ par ? `<div class="verse-parallel">${par}</div>` : "" }
       </div>`;
     }
     versesContainer.innerHTML = html || "<div style='padding:12px'>No verses</div>";
+
+    // Attach click handlers for deep link read page
+    document.querySelectorAll('.verse-block').forEach(el=>{
+      const viAttr = el.getAttribute('data-vi');
+      if(viAttr===null) return;
+      const vi = Number(viAttr);
+      el.onclick = () => openReadPage(current.version, current.book, current.chapter, vi);
+    });
   }
 
-  // Search run
+  // Open read.html with deep-link params
+  function openReadPage(versionLabel, bookIndex, chapterIndex, verseIndex){
+    const params = new URLSearchParams();
+    params.set('version', versionLabel);
+    params.set('bookIndex', bookIndex);
+    params.set('chapter', chapterIndex + 1);
+    if(verseIndex !== undefined && verseIndex !== null) params.set('verse', verseIndex + 1);
+    // open same tab
+    window.location.href = 'read.html?' + params.toString();
+  }
+
+  // Search run (unchanged)
   async function runSearch(){
     const q = (searchBox.value || "").trim().toLowerCase();
     searchResults.innerHTML = ""; searchInfo.textContent = "";
@@ -339,7 +404,7 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
     searchResults.appendChild(frag);
   }
 
-  // Build TTS queue depending on mode
+  // Build TTS queue depending on mode (unchanged)
   let ttsQueue = [];
   function buildTTSQueue(){
     ttsQueue = [];
@@ -417,25 +482,47 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
 
   parallelSelect.onchange = async function(){ const lbl = this.value || null; current.parallel = lbl; if(lbl) try{ await fetchAndNormalize(lbl); showNotice(lbl + " loaded (parallel)", 700); } catch(e){} };
 
-  openBtn.onclick = async function(){ if(!current.version){ showNotice("Select primary version"); return; } current.book = 0; current.chapter = 0; current.singleVerseMode = false; current.singleVerseIndex = null; await fetchAndNormalize(current.version); if(current.parallel) await fetchAndNormalize(current.parallel); renderChapter(); };
+  openBtn.onclick = async function(){ if(!current.version){ showNotice("Select primary version"); return; } current.book = 0; current.chapter = 0; current.singleVerseMode = false; current.singleVerseIndex = null; verseRange.value = ""; await fetchAndNormalize(current.version); if(current.parallel) await fetchAndNormalize(current.parallel); renderChapter(); };
 
   searchBtn.onclick = runSearch;
   searchBox.onkeydown = e => { if(e.key === "Enter") runSearch(); };
 
-  bookSelect.onchange = function(){ current.book = Number(this.value || 0); current.chapter = 0; // populate chapters
+  bookSelect.onchange = function(){ current.book = Number(this.value || 0); current.chapter = 0; current.singleVerseMode = false; current.singleVerseIndex = null; verseRange.value = ""; // populate chapters
     if(!current.version) return; const chapters = bibleNormCache[current.version].books[current.book].chapters.length; chapterSelect.innerHTML = "<option value=''>Chapter</option>"; for(let c=1;c<=chapters;c++) chapterSelect.appendChild(new Option(c, c-1)); verseSelect.innerHTML = "<option value=''>Verse</option>";
   };
-  chapterSelect.onchange = function(){ current.chapter = Number(this.value || 0); // populate verses
-    if(!current.version) return; const verses = bibleNormCache[current.version].books[current.book].chapters[current.chapter].length; verseSelect.innerHTML = "<option value=''>Verse</option>"; for(let v=1; v<=verses; v++) verseSelect.appendChild(new Option(v, v-1)); };
+  chapterSelect.onchange = function(){ current.chapter = Number(this.value || 0); current.singleVerseMode = false; current.singleVerseIndex = null; verseRange.value = ""; // populate verses
+    if(!current.version) return; const verses = bibleNormCache[current.version].books[current.book].chapters[current.chapter].length; verseSelect.innerHTML = "<option value=''>Verse</option>"; for(let v=1; v<=verses; v++) verseSelect.appendChild(new Option(v, v-1)); renderChapter(); };
 
   jumpGo.onclick = function(){
     if(!current.version) return;
     if(bookSelect.value !== "") current.book = Number(bookSelect.value);
     if(chapterSelect.value !== "") current.chapter = Number(chapterSelect.value);
-    const vi = (verseSelect.value !== "") ? Number(verseSelect.value) : null;
-    if(vi !== null){ current.singleVerseMode = true; current.singleVerseIndex = vi; } else { current.singleVerseMode = false; current.singleVerseIndex = null; }
+    // priority: verseRange input (allows ranges), else verseSelect dropdown
+    const rangeInput = (verseRange.value || "").trim();
+    const viDropdown = (verseSelect.value !== "") ? Number(verseSelect.value) : null;
+    if(rangeInput){
+      const chapLen = bibleNormCache[current.version].books[current.book].chapters[current.chapter].length;
+      const parsed = parseVerseSpecifier(rangeInput, chapLen);
+      if(parsed){
+        current.singleVerseMode = false;
+        current.singleVerseIndex = null;
+        // set verseRange value remains as provided
+      } else {
+        showNotice("Invalid verse or range");
+        return;
+      }
+    } else if(viDropdown !== null){
+      current.singleVerseMode = true;
+      current.singleVerseIndex = viDropdown;
+      verseRange.value = "";
+    } else {
+      current.singleVerseMode = false;
+      current.singleVerseIndex = null;
+      verseRange.value = "";
+    }
     renderChapter();
-    if(vi !== null){ setTimeout(()=>{ const el = document.getElementById("v-" + vi); if(el){ el.classList.add("active-verse"); el.scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(()=> el.classList.remove("active-verse"), 3000); } }, 200); }
+    if(current.singleVerseMode && current.singleVerseIndex !== null){ setTimeout(()=>{ const el = document.getElementById("v-" + current.singleVerseIndex); if(el){ el.classList.add("active-verse"); el.scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(()=> el.classList.remove("active-verse"), 3000); } }, 200); }
+    if(!current.singleVerseMode && (verseRange.value || "").trim()){ setTimeout(()=>{ const el = document.getElementById("v-range"); if(el){ el.classList.add("active-verse"); el.scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(()=> el.classList.remove("active-verse"), 3000); } }, 200); }
   };
 
   // expose openResult for search items
@@ -448,8 +535,50 @@ button{border:0;background:var(--accent);color:#fff;padding:10px 16px;border-rad
     setTimeout(()=>{ const el = document.getElementById("v-" + vi); if(el){ el.classList.add("active-verse"); el.scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(()=> el.classList.remove("active-verse"), 3000); } }, 200);
   };
 
+  // Swipe / keyboard navigation for chapters (new)
+  let touchStartX = 0, touchEndX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; });
+  document.addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; handleSwipe(); });
+  function handleSwipe(){
+    const dx = touchEndX - touchStartX;
+    if(Math.abs(dx) < 60) return;
+    if(dx > 0) goToPreviousChapter();
+    else goToNextChapter();
+  }
+  function goToNextChapter(){
+    const bookObj = bibleNormCache[current.version].books[current.book];
+    if(!bookObj) return;
+    if(current.chapter + 1 < bookObj.chapters.length){
+      current.chapter++;
+      // reset verse inputs/state
+      current.singleVerseMode = false; current.singleVerseIndex = null; verseRange.value = "";
+      renderChapter();
+      // update UI selects
+      chapterSelect.value = current.chapter;
+      showNotice("Chapter " + (current.chapter+1));
+    } else {
+      showNotice("No next chapter");
+    }
+  }
+  function goToPreviousChapter(){
+    if(current.chapter - 1 >= 0){
+      current.chapter--;
+      current.singleVerseMode = false; current.singleVerseIndex = null; verseRange.value = "";
+      renderChapter();
+      chapterSelect.value = current.chapter;
+      showNotice("Chapter " + (current.chapter+1));
+    } else {
+      showNotice("No previous chapter");
+    }
+  }
+  // desktop keyboard
+  document.addEventListener('keydown', e => {
+    if(e.key === 'ArrowRight') goToNextChapter();
+    if(e.key === 'ArrowLeft') goToPreviousChapter();
+  });
+
   // initial placeholder
-  versesContainer.innerHTML = "<div style='padding:12px'>Select PRIMARY version and click Open (optionally choose PARALLEL). Use Search, Jump or TTS to navigate.</div>";
+  versesContainer.innerHTML = "<div style='padding:12px'>Select PRIMARY version and click Open (optionally choose PARALLEL). Use Search, Jump or TTS to navigate. Click any verse to open read.html.</div>";
 
 })(); // IIFE end
   if ("serviceWorker" in navigator) {
