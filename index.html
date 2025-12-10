@@ -2,100 +2,80 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Bible Reader</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css" />
-
+<link href="style.css" rel="stylesheet">
 </head>
-<body>
 
+<body>
 <header class="header">
-  <div class="brand">📚 HOME</div>
+  <div class="brand" id="goHome">📚 HOME</div>
 
   <nav class="tabbar">
-    <div class="tab active" id="tab-home" data-tab="home">📚 HOME</div>
-    <div class="tab" id="tab-read" data-tab="read">📖 READ</div>
-    <div class="tab" id="tab-search" data-tab="search">🔎 SEARCH</div>
+    <div class="tab active" data-tab="home">📚 HOME</div>
+    <div class="tab" data-tab="read">📖 READ</div>
+    <div class="tab" data-tab="search">🔎 SEARCH</div>
   </nav>
 </header>
 
-<main class="container" id="app" style="padding-bottom:92px">
+<main class="container" id="app" style="padding-bottom:90px">
 
   <!-- HOME -->
   <section id="pane-home" class="card pane show">
+    <h3>Select Versions</h3>
 
-    <div style="font-weight:800;color:#083a5e;margin-bottom:12px">Compare two versions</div>
+    <div class="home-row">
+      <select id="versionA" class="select">
+        <option value="">Select Version A</option>
+      </select>
 
-    <div class="card" style="padding:12px;max-width:960px;margin:0 auto 12px">
-
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <label style="min-width:110px;font-weight:700;color:#334">Version A</label>
-        <select id="homeA" class="select">
-          <option value="">Version A</option>
-        </select>
-
-        <label style="min-width:40px;font-weight:700;color:#334">Version B</label>
-        <select id="homeB" class="select">
-          <option value="">NONE</option>
-        </select>
-      </div>
-
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px">
-        <label style="min-width:110px;font-weight:700;color:#334">Passage</label>
-
-        <select id="homeBook" class="select"><option value="">Book</option></select>
-        <select id="homeChapter" class="select"><option value="">Chapter</option></select>
-        <select id="homeVerse" class="select"><option value="">Verse</option></select>
-
-        <input id="homeRange" class="select" placeholder="Optional range (7-8)" style="min-width:160px" />
-
-        <div style="flex:1"></div>
-        <button id="homeOpen" class="btn">OPEN in READ</button>
-      </div>
-
+      <select id="versionB" class="select">
+        <option value="">Select Version B (Optional)</option>
+      </select>
     </div>
 
-    <div id="parallelInfo" class="card" style="padding:12px;max-width:960px;margin:0 auto;color:#666">
-      Select both versions for parallel view.
+    <h3>Select Passage</h3>
+
+    <div class="home-row">
+      <select id="homeBook" class="select"><option value="">Book</option></select>
+      <select id="homeChapter" class="select"><option value="">Chapter</option></select>
+      <select id="homeVerse" class="select"><option value="">Verse</option></select>
+      <input id="homeRange" class="select" placeholder="Range (2-5)">
+      <button id="homeOpen" class="btn">OPEN</button>
     </div>
 
+    <div id="parallelInfo" style="color:#666;margin-top:10px;">
+      Select one or two versions and click OPEN.
+    </div>
   </section>
 
   <!-- READ -->
   <section id="pane-read" class="card pane" style="display:none">
+    <button id="backHome" class="small-btn">⬅ Back</button>
 
     <div class="reader-top">
-      <button id="backHome" class="small-btn">⬅ Back</button>
-
       <button id="play" class="small-btn">▶ Play</button>
       <button id="pause" class="small-btn">⏸ Pause</button>
       <button id="resume" class="small-btn">⏯ Resume</button>
       <button id="stop" class="small-btn">⏹ Stop</button>
     </div>
 
-    <div class="nav-row" id="readNav" style="display:none">
-      <button id="prevVerse" class="small-btn">◀ Prev Verse</button>
-      <button id="nextVerse" class="small-btn">Next Verse ▶</button>
+    <h2 id="readRef"></h2>
+    <div id="readVerses"></div>
+
+    <div class="nav-row">
       <button id="prevChapter" class="small-btn">◀ Prev Chapter</button>
       <button id="nextChapter" class="small-btn">Next Chapter ▶</button>
     </div>
-
-    <div id="readRef" class="reader-ref"></div>
-    <div id="readVerses"></div>
-
   </section>
 
   <!-- SEARCH -->
   <section id="pane-search" class="card pane" style="display:none">
-
-    <input id="searchBox" placeholder="Search… (press Enter)" class="select" style="width:100%;margin-bottom:12px" />
-
-    <div id="searchInfo" style="margin-bottom:10px;color:#666"></div>
+    <input id="searchBox" placeholder="Search (Enter)" class="select" style="width:100%">
+    <div id="searchInfo"></div>
     <div id="searchResults"></div>
-
   </section>
+
 </main>
 
 <nav id="bottomNav" class="bottom-nav">
@@ -104,9 +84,6 @@
   <div class="bottom-item" data-tab="search">🔎<div>Search</div></div>
 </nav>
 
-<div id="notice" class="notice"></div>
-
 <script src="app.js"></script>
-
 </body>
 </html>
