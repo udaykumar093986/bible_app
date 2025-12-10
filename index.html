@@ -6,15 +6,15 @@
 <title>Bible Reader</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
-
 <link rel="stylesheet" href="style.css" />
-</head>
 
+</head>
 <body>
 
 <header class="header">
   <div class="brand">📚 HOME</div>
-  <nav class="tabbar" role="navigation" aria-label="Top tabs">
+
+  <nav class="tabbar">
     <div class="tab active" id="tab-home" data-tab="home">📚 HOME</div>
     <div class="tab" id="tab-read" data-tab="read">📖 READ</div>
     <div class="tab" id="tab-search" data-tab="search">🔎 SEARCH</div>
@@ -24,45 +24,55 @@
 <main class="container" id="app" style="padding-bottom:92px">
 
   <!-- HOME -->
-  <section id="pane-home" class="card pane show" aria-label="Home">
+  <section id="pane-home" class="card pane show">
+
     <div style="font-weight:800;color:#083a5e;margin-bottom:12px">Compare two versions</div>
 
     <div class="card" style="padding:12px;max-width:960px;margin:0 auto 12px">
+
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <label style="min-width:110px;font-weight:700;color:#334">Version A</label>
-        <select id="homeA" class="select"><option value="">Version A</option></select>
+        <select id="homeA" class="select">
+          <option value="">Version A</option>
+        </select>
 
         <label style="min-width:40px;font-weight:700;color:#334">Version B</label>
-        <select id="homeB" class="select"><option value="">Version B</option></select>
+        <select id="homeB" class="select">
+          <option value="">NONE</option>
+        </select>
       </div>
 
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px">
         <label style="min-width:110px;font-weight:700;color:#334">Passage</label>
+
         <select id="homeBook" class="select"><option value="">Book</option></select>
         <select id="homeChapter" class="select"><option value="">Chapter</option></select>
         <select id="homeVerse" class="select"><option value="">Verse</option></select>
 
-        <input id="homeRange" class="select" placeholder="Optional range (e.g. 7-8)" style="min-width:160px" />
+        <input id="homeRange" class="select" placeholder="Optional range (7-8)" style="min-width:160px" />
 
         <div style="flex:1"></div>
         <button id="homeOpen" class="btn">OPEN in READ</button>
       </div>
+
     </div>
 
     <div id="parallelInfo" class="card" style="padding:12px;max-width:960px;margin:0 auto;color:#666">
-      Select both versions, then click OPEN.
+      Select both versions for parallel view.
     </div>
+
   </section>
 
   <!-- READ -->
-  <section id="pane-read" class="card pane" aria-label="Read" style="display:none">
-    <div class="reader-top" style="align-items:center;gap:8px">
+  <section id="pane-read" class="card pane" style="display:none">
+
+    <div class="reader-top">
+      <button id="backHome" class="small-btn">⬅ Back</button>
+
       <button id="play" class="small-btn">▶ Play</button>
       <button id="pause" class="small-btn">⏸ Pause</button>
       <button id="resume" class="small-btn">⏯ Resume</button>
       <button id="stop" class="small-btn">⏹ Stop</button>
-
-      <div style="flex:1"></div>
     </div>
 
     <div class="nav-row" id="readNav" style="display:none">
@@ -73,30 +83,30 @@
     </div>
 
     <div id="readRef" class="reader-ref"></div>
-    <div id="readVerses" tabindex="0"></div>
+    <div id="readVerses"></div>
+
   </section>
 
   <!-- SEARCH -->
-  <section id="pane-search" class="card pane" aria-label="Search" style="display:none">
-    <div style="margin-bottom:10px">
-      <input id="searchBox" placeholder="Search primary version (press Enter)…"
-             style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border)" />
-    </div>
+  <section id="pane-search" class="card pane" style="display:none">
 
-    <div id="searchInfo" style="margin-bottom:8px;color:#666"></div>
+    <input id="searchBox" placeholder="Search… (press Enter)" class="select" style="width:100%;margin-bottom:12px" />
+
+    <div id="searchInfo" style="margin-bottom:10px;color:#666"></div>
     <div id="searchResults"></div>
-  </section>
 
+  </section>
 </main>
 
 <nav id="bottomNav" class="bottom-nav">
-  <div class="bottom-item active" data-tab="home">📚<div style="font-size:11px">Home</div></div>
-  <div class="bottom-item" data-tab="read">📖<div style="font-size:11px">Read</div></div>
-  <div class="bottom-item" data-tab="search">🔎<div style="font-size:11px">Search</div></div>
+  <div class="bottom-item active" data-tab="home">📚<div>Home</div></div>
+  <div class="bottom-item" data-tab="read">📖<div>Read</div></div>
+  <div class="bottom-item" data-tab="search">🔎<div>Search</div></div>
 </nav>
 
-<div id="notice" class="notice" role="status" aria-live="polite"></div>
+<div id="notice" class="notice"></div>
 
 <script src="app.js"></script>
+
 </body>
 </html>
