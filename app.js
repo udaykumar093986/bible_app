@@ -469,13 +469,91 @@
   stopBtn.addEventListener("click", () => speechSynthesis.cancel());
 
   // SEARCH — FIXED & FULLY WORKING
-  // SEARCH — MULTI VERSION SEARCH (A + B)
-searchBox.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(searchBox.value.trim().toLowerCase()); }); async function doSearch(q) { searchResults.innerHTML = ""; searchInfo.textContent = ""; if (!q) return; if (!state.versionA) { searchInfo.textContent = "Select Version A first"; activateTab("home"); return; } await fetchAndNormalize(state.versionA); const idx = searchIndexCache[state.versionA]; const results = idx.filter((r) => r.low.includes(q)).slice(0, 250); searchInfo.textContent = Found ${results.length}; if (!results.length) { searchResults.innerHTML = <div style="padding:8px;color:#666">No results</div>; return; } const safe = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); const re = new RegExp(safe, "ig"); const frag = document.createDocumentFragment(); results.forEach((r) => { const div = document.createElement("div"); div.className = "search-item"; const highlighted = esc(r.text).replace(re, (m) => <span class="highlight">${m}</span>); div.innerHTML = <strong>${esc(r.book)} ${r.chapter}:${r.verseKey}</strong> <div style="margin-top:6px">${highlighted}</div> <small style="color:#666">Click to open</small> ; div.addEventListener("click", async () => { state.bookIndex = r.bookIndex; state.chapterIndex = r.chapterIndex; state.verseKey = r.verseKey; await fetchAndNormalize(state.versionA); activateTab("read"); renderRead(); updateUrl(); }); frag.appendChild(div); }); searchResults.appendChild(frag); }
+  searchBox.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      doSearch((searchBox.value || "").trim().toLowerCase());
+    }
+  });
 
+  async function doSearch(q) {
+    searchResults.innerHTML = "";
+    searchInfo.textContent = "";
 
+    if (!q) return;
+
+    if (!state.versionA) {
+      searchInfo.textContent = "Select Version A first";
+      activateTab("home");
+      return;
+    }
+
+    await fetchAndNormalize(state.versionA);
+
+    const index = searchIndexCache[state.versionA];
+    if (!index || index.length === 0) {
+      searchInfo.textContent = "No results";
+      return;
+    }
+
+    const results = index.filter(r => r.low.includes(q)).slice(0, 250);
+    searchInfo.textContent = `Found ${results.length}`;
+
+    if (results.length === 0) {
+      searchResults.innerHTML =
+        `<div style="padding:8px;color:#666">No results found</div>`;
+      return;
+    }
+
+    const safe = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(safe, "ig");
+
+    const frag = document.createDocumentFragment();
+
+    results.forEach(r => {
+      const div = document.createElement("div");
+      div.className = "search-item";
+
+      const highlighted = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
+
+      div.innerHTML = `
+        <strong>${esc(r.book)} ${r.chapter}:${r.verseKey}</strong>
+        <div style="margin-top:6px">${highlighted}</div>
+        <small style="color:#666">Click to open</small>
+      `;
+
+      div.addEventListener("click", async () => {
+        state.bookIndex = r.bookIndex;
+        state.chapterIndex = r.chapterIndex;
+        state.verseKey = r.verseKey;
+
+        await fetchAndNormalize(state.versionA);
+        activateTab("read");
+        renderRead();
+        updateUrl();
+      });
+
+      frag.appendChild(div);
+    });
+
+    searchResults.appendChild(frag);
+    activateTab("search");
+  }
 
   // URL Update
-  function updateUrl() { const p = new URLSearchParams(); if (state.versionA) p.set("versionA", state.versionA); if (state.versionB) p.set("versionB", state.versionB); p.set("bookIndex", state.bookIndex); p.set("chapter", state.chapterIndex + 1); if (state.verseKey) p.set("verse", state.verseKey); p.set("view", state.view); history.replaceState({}, "", "?" + p.toString()); }
+  function updateUrl() {
+    const p = new URLSearchParams();
+
+    if (state.versionA) p.set("versionA", state.versionA);
+    if (state.versionB) p.set("versionB", state.versionB);
+
+    p.set("bookIndex", state.bookIndex);
+    p.set("chapter", state.chapterIndex + 1);
+    if (state.verseKey) p.set("verse", state.verseKey);
+
+    p.set("view", state.view);
+
+    history.replaceState({}, "", "?" + p.toString());
+  }
 
   // SWIPE NAVIGATION + MOUSE DRAG
   (function attachSwipe() {
@@ -600,4 +678,35 @@ searchBox.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(s
   });
 
   // Initial Load
-  async function initialLoad() { populateVersions(); loadVersions(); const params = new URLSearchParams(location.search); const vA = params.get("versionA") || state.versionA; const vB = params.get("versionB") || state.versionB; if (vA) { state.versionA = vA; homeA.value = vA; await populateBooksA(vA); await fetchAndNormalize(vA); } if (vB) { state.versionB = vB; homeB.value = vB; await fetchAndNormalize(vB); } state.bookIndex = Number(params.get("bookIndex") || 0); state.chapterIndex = Number(params.get("chapter") || 1) - 1; state.verseKey = params.get("verse") || null; activateTab(params.get("view") || "home"); } await initialLoad(); })();
+  async function initialLoad() {
+    populateVersions();
+    loadVersions();
+
+    const p = new URLSearchParams(location.search);
+
+    const vA = p.get("versionA") || state.versionA;
+    const vB = p.get("versionB") || state.versionB;
+
+    if (vA) {
+      state.versionA = vA;
+      homeA.value = vA;
+      await populateBooksA(vA);
+      await fetchAndNormalize(vA);
+    }
+
+    if (vB) {
+      state.versionB = vB;
+      homeB.value = vB;
+      await fetchAndNormalize(vB);
+    }
+
+    state.bookIndex = Number(p.get("bookIndex") || 0);
+    state.chapterIndex = Number(p.get("chapter") || 1) - 1;
+    state.verseKey = p.get("verse") || null;
+
+    activateTab(p.get("view") || state.view);
+  }
+
+  initialLoad();
+
+})();
