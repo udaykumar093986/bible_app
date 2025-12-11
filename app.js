@@ -450,45 +450,54 @@
   // --------------------
   // SEARCH (primary version A)
   // --------------------
-  searchBox.addEventListener("keydown", e => {
-        if (e.key === "Enter") doSearch(searchBox.value.trim().toLowerCase());
+ document.addEventListener("DOMContentLoaded", () => {
+  const sb = document.getElementById("searchBox");
+  if (sb) {
+    sb.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        const q = sb.value.trim().toLowerCase();
+        doSearch(q);
+      }
+    };
+  }
+});
+
+async function doSearch(q) {
+    if (!q) return;
+
+    if (!state.versionA) {
+        alert("Select Version A");
+        return;
+    }
+
+    await loadVersion(state.versionA);
+    const index = searchIndexCache[state.versionA];
+
+    const results = index.filter(r => r.low.includes(q)).slice(0, 200);
+
+    searchInfo.textContent = `Found ${results.length}`;
+    searchResults.innerHTML = "";
+
+    results.forEach(r => {
+        const item = document.createElement("div");
+        item.className = "search-item";
+        item.innerHTML = `<strong>${r.book} ${r.chapter}:${r.verseKey}</strong><div>${esc(r.text)}</div>`;
+        item.addEventListener("click", () => openSearchResult(r));
+        searchResults.appendChild(item);
     });
 
-    async function doSearch(q) {
-        if (!q) return;
+    showView("search");
+}
 
-        if (!state.versionA) {
-            alert("Select Version A");
-            return;
-        }
+function openSearchResult(r) {
+    state.bookIndex = r.bookIndex;
+    state.chapterIndex = r.chapterIndex;
+    state.verseKey = r.verseKey;
 
-        await loadVersion(state.versionA);
-        const index = searchIndexCache[state.versionA];
+    showView("read");
+    renderRead();
+}
 
-        const results = index.filter(r => r.low.includes(q)).slice(0, 200);
-
-        searchInfo.textContent = `Found ${results.length}`;
-        searchResults.innerHTML = "";
-
-        results.forEach(r => {
-            const item = document.createElement("div");
-            item.className = "search-item";
-            item.innerHTML = `<strong>${r.book} ${r.chapter}:${r.verseKey}</strong><div>${esc(r.text)}</div>`;
-            item.addEventListener("click", () => openSearchResult(r));
-            searchResults.appendChild(item);
-        });
-
-        showView("search");
-    }
-
-    function openSearchResult(r) {
-        state.bookIndex = r.bookIndex;
-        state.chapterIndex = r.chapterIndex;
-        state.verseKey = r.verseKey;
-
-        showView("read");
-        renderRead();
-    }
 
   // --------------------
   // URL handling (push/replace) and initial load
