@@ -44,6 +44,14 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
   z-index: 9999;
 }
 
+.active-verse {
+  background: #fff7d6;
+  border-left: 4px solid #ffb300;
+  padding-left: 8px;
+  transition: background 0.4s ease;
+}
+
+
 
 @media(max-width:720px){
   .tabbar{display:none}
