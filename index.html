@@ -1,112 +1,136 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-<title>Bible Reader</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>✝️ Bible Reader</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css" />
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
 
+  <!-- Theme color for mobile -->
+  <meta name="theme-color" content="#ffffff">
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<header class="header">
-  <div class="brand">✝️ BIBLE READER</div>
+  <!-- Top header (desktop primary navigation) -->
+  <header class="top-header">
+    <div class="top-left">
+      <div class="brand">Bible Reader</div>
+    </div>
 
-  <nav class="tabbar">
-    <div class="tab active" id="tab-home" data-tab="home">📚 HOME</div>
-    <div class="tab" id="tab-read" data-tab="read">📖 READ</div>
-    <div class="tab" id="tab-search" data-tab="search">🔎 SEARCH</div>
+    <nav class="top-tabs" role="navigation" aria-label="Primary">
+      <button id="tab-home" class="tab active" data-tab="home">📕Home</button>
+      <button id="tab-read" class="tab" data-tab="read">📖Read</button>
+      <button id="tab-search" class="tab" data-tab="search">🔎Search</button>
+    </nav>
+
+    <div class="top-actions">
+      <button id="themeToggle" class="icon-btn" title="Toggle theme" aria-label="Toggle theme">🌓</button>
+    </div>
+  </header>
+
+  <main class="app-container">
+
+    <!-- HOME -->
+    <section id="pane-home" class="pane card">
+      <h2 class="section-title">Compare Versions</h2>
+
+      <div class="compare-card">
+        <div class="row">
+          <label class="label-inline">Primary (A)</label>
+          <select id="homeA" class="select"></select>
+
+          <label class="label-inline">Secondary (B)</label>
+          <select id="homeB" class="select"></select>
+        </div>
+
+        <div class="row wrap">
+          <label class="label-inline">Book</label>
+          <select id="homeBook" class="select"></select>
+
+          <label class="label-inline">Chapter</label>
+          <select id="homeChapter" class="select"></select>
+
+          <label class="label-inline">Verse</label>
+          <select id="homeVerse" class="select"></select>
+
+          <input id="homeRange" class="select text" placeholder="Optional range (e.g. 1-3)" />
+          <button id="homeOpen" class="pill primary">Open</button>
+        </div>
+
+        <p class="muted small">Parallel will stack on mobile. Selecting only Version A shows single-column reading.</p>
+      </div>
+    </section>
+
+    <!-- READ -->
+    <section id="pane-read" class="pane card" style="display:none">
+      <div class="reader-top">
+        <div class="reader-controls">
+          <button id="backHome" class="pill">← Back</button>
+
+          <div class="pill-group">
+            <button id="play" class="pill primary">▶ Play</button>
+            <button id="pause" class="pill">⏸ Pause</button>
+            <button id="resume" class="pill">⏯ Resume</button>
+            <button id="stop" class="pill">⏹ Stop</button>
+          </div>
+        </div>
+
+        <div class="chapter-controls">
+          <button id="prevChapter" class="pill">◀ Chapter</button>
+          <button id="nextChapter" class="pill">Chapter ▶</button>
+        </div>
+      </div>
+
+      <div id="readRef" class="reader-ref">Book 1</div>
+      <div id="readVerses" class="reader-verse-list"></div>
+
+      <div id="readNav" class="reader-nav" style="display:none">
+        <button id="prevVerse" class="pill">◀ Prev Verse</button>
+        <button id="nextVerse" class="pill">Next Verse ▶</button>
+      </div>
+    </section>
+
+    <!-- SEARCH -->
+    <section id="pane-search" class="pane card" style="display:none">
+      <div class="search-top">
+        <input id="searchBox" placeholder="Search… (press Enter)" class="select text wide" />
+      </div>
+
+      <div id="searchInfo" class="muted small"></div>
+      <div id="searchResults" class="search-results"></div>
+    </section>
+
+  </main>
+
+  <!-- Bottom nav (mobile) -->
+  <nav id="bottomNav" class="bottom-nav" aria-hidden="false">
+    <div class="bottom-item active" data-tab="home">Home</div>
+    <div class="bottom-item" data-tab="read">Read</div>
+    <div class="bottom-item" data-tab="search">Search</div>
   </nav>
-</header>
 
-<main class="container" id="app" style="padding-bottom:92px">
+  <!-- Notification -->
+  <div id="notice" class="notice" aria-live="polite"></div>
 
-  <!-- HOME -->
-  <section id="pane-home" class="card pane show">
+  <!-- Hook to your existing app.js -->
+  <script src="app.js"></script>
 
-    <div style="font-weight:800;color:#083a5e;margin-bottom:12px">Compare two versions</div>
-
-    <div class="card" style="padding:12px;max-width:960px;margin:0 auto 12px">
-
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <label style="min-width:110px;font-weight:700;color:#334">Version A</label>
-        <select id="homeA" class="select">
-          <option value="">Version A</option>
-        </select>
-
-        <label style="min-width:40px;font-weight:700;color:#334">Version B</label>
-        <select id="homeB" class="select">
-          <option value="">NONE</option>
-        </select>
-      </div>
-
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px">
-        <label style="min-width:110px;font-weight:700;color:#334">Books</label>
-
-        <select id="homeBook" class="select"><option value="">Book</option></select>
-        <select id="homeChapter" class="select"><option value="">Chapter</option></select>
-        <select id="homeVerse" class="select"><option value="">Verse</option></select>
-
-        <input id="homeRange" class="select" placeholder="Optional range (7-8)" style="min-width:160px" />
-
-        <div style="flex:1"></div>
-        <button id="homeOpen" class="btn">GO</button>
-      </div>
-
-    </div>
-
-    <div id="parallelInfo" class="card" style="padding:12px;max-width:960px;margin:0 auto;color:#666">
-      Select both versions for parallel view.
-    </div>
-
-  </section>
-
-  <!-- READ -->
-  <section id="pane-read" class="card pane" style="display:none">
-
-    <div class="reader-top">
-      <button id="backHome" class="small-btn">⬅ Back</button>
-
-      <button id="play" class="small-btn">▶ Play</button>
-      <button id="pause" class="small-btn">⏸ Pause</button>
-      <button id="resume" class="small-btn">⏯ Resume</button>
-      <button id="stop" class="small-btn">⏹ Stop</button>
-    </div>
-
-    <div class="nav-row" id="readNav" style="display:none">
-      <button id="prevVerse" class="small-btn">◀ Prev Verse</button>
-      <button id="nextVerse" class="small-btn">Next Verse ▶</button>
-      <button id="prevChapter" class="small-btn">◀ Prev Chapter</button>
-      <button id="nextChapter" class="small-btn">Next Chapter ▶</button>
-    </div>
-
-    <div id="readRef" class="reader-ref"></div>
-    <div id="readVerses"></div>
-
-  </section>
-
-  <!-- SEARCH -->
-  <section id="pane-search" class="card pane" style="display:none">
-
-    <input id="searchBox" placeholder="Search… (press Enter)" class="select" style="width:100%;margin-bottom:12px" />
-
-    <div id="searchInfo" style="margin-bottom:10px;color:#666"></div>
-    <div id="searchResults"></div>
-
-  </section>
-</main>
-
-<nav id="bottomNav" class="bottom-nav">
-  <div class="bottom-item active" data-tab="home">📚<div>Home</div></div>
-  <div class="bottom-item" data-tab="read">📖<div>Read</div></div>
-  <div class="bottom-item" data-tab="search">🔎<div>Search</div></div>
-</nav>
-
-<div id="notice" class="notice"></div>
-
-<script src="app.js"></script>
-
+  <!-- Small inline helper (optional): set initial options for selects that app.js expects -->
+  <script>
+    // Provide minimal default markup values so JS can populate correctly.
+    document.addEventListener('DOMContentLoaded', () => {
+      // create default option placeholders if not present (app.js will replace)
+      ['homeA','homeB','homeBook','homeChapter','homeVerse'].forEach(id=>{
+        if(!document.getElementById(id).children.length){
+          const s = document.getElementById(id);
+          if(s) s.innerHTML = '<option value="">'+(s === document.getElementById('homeA') ? 'Version A' : 'Select')+'</option>';
+        }
+      });
+    });
+  </script>
 </body>
 </html>
