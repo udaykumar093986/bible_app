@@ -305,31 +305,37 @@
   }
 
   function renderCombined(idx, chapA, chapB, paragraphRenderer){
-    const va = chapA[idx] || null;
-    const vb = (chapB && chapB[idx]) ? chapB[idx] : null;
-    const verseNum = va ? va.key : (vb ? vb.key : String(idx+1));
-    const block = document.createElement('div'); block.className = 'verse-block';
+  const va = chapA[idx] || null;
+  const vb = (chapB && chapB[idx]) ? chapB[idx] : null;
 
-    const header = document.createElement('div'); header.className = 'verse-num'; header.textContent = `Verse ${verseNum}`;
-    block.appendChild(header);
+  const verseNum = va ? va.key : (vb ? vb.key : String(idx + 1));
 
-    const labelA = document.createElement('div'); labelA.className = 'verse-label'; labelA.textContent = state.versionA ? state.versionA.replace('_bible.json','').replace('.json','').toUpperCase() : 'A';
-    block.appendChild(labelA);
+  const block = document.createElement('div');
+  block.className = 'verse-block';
 
-    const contA = document.createElement('div'); contA.className = 'verse-text';
-    paragraphRenderer(contA, va ? va.text : '');
-    block.appendChild(contA);
+  // Verse number only
+  const header = document.createElement('div');
+  header.className = 'verse-num';
+  header.textContent = `Verse ${verseNum}`;
+  block.appendChild(header);
 
-    if(state.versionB){
-      const labelB = document.createElement('div'); labelB.className = 'verse-label'; labelB.textContent = state.versionB.replace('_bible.json','').replace('.json','').toUpperCase();
-      block.appendChild(labelB);
-      const contB = document.createElement('div'); contB.className = 'verse-secondary';
-      paragraphRenderer(contB, vb ? vb.text : '');
-      block.appendChild(contB);
-    }
+  // Version A text only (no label)
+  const contA = document.createElement('div');
+  contA.className = 'verse-text';
+  paragraphRenderer(contA, va ? va.text : '');
+  block.appendChild(contA);
 
-    readVerses.appendChild(block);
+  // Version B text only (still parallel – but without label)
+  if (state.versionB) {
+    const contB = document.createElement('div');
+    contB.className = 'verse-secondary';
+    paragraphRenderer(contB, vb ? vb.text : '');
+    block.appendChild(contB);
   }
+
+  readVerses.appendChild(block);
+}
+
 
   // ---------- Read navigation helpers ----------
   let currentVerseIndex = null;
