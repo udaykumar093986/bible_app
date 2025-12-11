@@ -269,18 +269,23 @@
     readRef.textContent = `${book.name} ${state.chapterIndex + 1}`;
     readVerses.innerHTML = '';
 
-    function renderParagraphs(container, verseText){
-      if(!verseText) return;
-      const raw = String(verseText).replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
-      let parts = raw.split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
-      if(parts.length === 1) parts = raw.split(/\n+/).map(x=>x.trim()).filter(Boolean);
-      parts.forEach(p=>{
-        const pNode = document.createElement('p');
-        pNode.className = 'verse-paragraph';
-        pNode.innerHTML = `<span class="verse-bullet">•</span> ${esc(p)}`;
-        container.appendChild(pNode);
-      });
-    }
+    function paragraphRenderer(container, text) {
+  if (!text) return;
+
+  // Split by blank lines or single line breaks
+  const parts = text
+    .split(/\n\s*\n|\r|\n/)     
+    .map(t => t.trim())
+    .filter(t => t.length);
+
+  parts.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "paragraph";
+    div.textContent = p;   // NO BULLET POINT
+    container.appendChild(div);
+  });
+}
+
 
     // if verseKey specified — exact or range or single
     if(state.verseKey){
