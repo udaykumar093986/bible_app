@@ -2,7 +2,7 @@
 // Assumes uniform JSON format (books -> chapters -> verses, all objects with numeric keys)
 
 (() => {
-  const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bibles@main/";
+  const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bible_app@main/versions/";
   const FILES = [
     "AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json",
     "NIV_bible.json","NKJV_bible.json","NLT_bible.json",
