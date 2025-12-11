@@ -256,36 +256,37 @@
   }
 
   // ---------- Render read pane (paragraph-splitting bullet style) ----------
-  function renderRead(){
-    if(!state.versionA){ readRef.textContent = 'Select Version A'; readVerses.innerHTML = ''; return; }
-    const nA = normCache[state.versionA];
-    if(!nA){ readRef.textContent = 'Loading...'; readVerses.innerHTML = ''; return; }
-    clampIndices();
-    const book = nA.books[state.bookIndex];
-    if(!book){ readRef.textContent = 'No book'; readVerses.innerHTML = ''; return; }
-    const chapA = book.chapters[state.chapterIndex] || [];
-    const chapB = (state.versionB && normCache[state.versionB] && normCache[state.versionB].books[state.bookIndex]) ? normCache[state.versionB].books[state.bookIndex].chapters[state.chapterIndex] || [] : [];
+  function renderCombined(idx, chapA, chapB, paragraphRenderer) {
+  const va = chapA[idx] || null;
+  const vb = (chapB && chapB[idx]) ? chapB[idx] : null;
 
-    readRef.textContent = `${book.name} ${state.chapterIndex + 1}`;
-    readVerses.innerHTML = '';
+  const verseNum = va ? va.key : (vb ? vb.key : String(idx + 1));
 
-    function paragraphRenderer(container, text) {
-  if (!text) return;
+  const block = document.createElement("div");
+  block.className = "verse-block";
 
-  // Split by blank lines or single line breaks
-  const parts = text
-    .split(/\n\s*\n|\r|\n/)     
-    .map(t => t.trim())
-    .filter(t => t.length);
+  // Verse number only
+  const header = document.createElement("div");
+  header.className = "verse-num";
+  header.textContent = `Verse ${verseNum}`;
+  block.appendChild(header);
 
-  parts.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "paragraph";
-    div.textContent = p;   // NO BULLET POINT
-    container.appendChild(div);
-  });
+  // Version A text (plain paragraphs, no bullets)
+  const contA = document.createElement("div");
+  contA.className = "verse-text";
+  paragraphRenderer(contA, va ? va.text : "");
+  block.appendChild(contA);
+
+  // Version B text (if parallel mode)
+  if (state.versionB) {
+    const contB = document.createElement("div");
+    contB.className = "verse-secondary";
+    paragraphRenderer(contB, vb ? vb.text : "");
+    block.appendChild(contB);
+  }
+
+  readVerses.appendChild(block);
 }
-
 
     // if verseKey specified — exact or range or single
     if(state.verseKey){
