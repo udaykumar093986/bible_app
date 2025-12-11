@@ -256,7 +256,18 @@
   }
 
   // ---------- Render read pane (paragraph-splitting bullet style) ----------
-  function renderCombined(idx, chapA, chapB, paragraphRenderer) {
+  function paragraphRenderer(container, text) {
+  if (!text) return;
+  const paragraphs = String(text).split(/\n+/);
+  paragraphs.forEach(line => {
+    const d = document.createElement("div");
+    d.className = "para";
+    d.textContent = line.trim();
+    container.appendChild(d);
+  });
+}
+
+function renderCombined(idx, chapA, chapB) {
   const va = chapA[idx] || null;
   const vb = (chapB && chapB[idx]) ? chapB[idx] : null;
 
@@ -265,19 +276,16 @@
   const block = document.createElement("div");
   block.className = "verse-block";
 
-  // Verse number only
   const header = document.createElement("div");
   header.className = "verse-num";
   header.textContent = `Verse ${verseNum}`;
   block.appendChild(header);
 
-  // Version A text (plain paragraphs, no bullets)
   const contA = document.createElement("div");
   contA.className = "verse-text";
   paragraphRenderer(contA, va ? va.text : "");
   block.appendChild(contA);
 
-  // Version B text (if parallel mode)
   if (state.versionB) {
     const contB = document.createElement("div");
     contB.className = "verse-secondary";
