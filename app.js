@@ -450,41 +450,45 @@
   // --------------------
   // SEARCH (primary version A)
   // --------------------
-  async function doSearch(q){
-    searchResults.innerHTML = ''; searchInfo.textContent = '';
-    if(!q) return;
-    if(!state.versionA){ searchInfo.textContent = 'Select Version A first'; activateTab('home'); return; }
-    await fetchAndNormalize(state.versionA);
-    const idx = searchIndexCache[state.versionA] || buildSearchIndex(state.versionA, normCache[state.versionA]);
-    const results = idx.filter(r => r.low.includes(q)).slice(0, 250);
-    searchInfo.textContent = `Found ${results.length}`;
-    if(!results.length){ searchResults.innerHTML = '<div style="padding:8px;color:#666">No results</div>'; return; }
+  searchBox.addEventListener("keydown", e => {
+        if (e.key === "Enter") doSearch(searchBox.value.trim().toLowerCase());
+    });
 
-    const safe = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    const re = new RegExp(safe,'ig');
+    async function doSearch(q) {
+        if (!q) return;
 
-    const frag = document.createDocumentFragment();
-    results.forEach(r=>{
-      const div = document.createElement('div'); div.className = 'search-item';
-      const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
-      div.innerHTML = `<strong>${esc(r.book)} ${r.chapter}:${r.verseKey}</strong><div style="margin-top:6px">${snippet}</div><small style="display:block;margin-top:6px;color:#666">Click to open</small>`;
-      div.onclick = async ()=>{
-        // Open in reader
-        state.versionA = state.versionA || homeA.value;
+        if (!state.versionA) {
+            alert("Select Version A");
+            return;
+        }
+
+        await loadVersion(state.versionA);
+        const index = searchIndexCache[state.versionA];
+
+        const results = index.filter(r => r.low.includes(q)).slice(0, 200);
+
+        searchInfo.textContent = `Found ${results.length}`;
+        searchResults.innerHTML = "";
+
+        results.forEach(r => {
+            const item = document.createElement("div");
+            item.className = "search-item";
+            item.innerHTML = `<strong>${r.book} ${r.chapter}:${r.verseKey}</strong><div>${esc(r.text)}</div>`;
+            item.addEventListener("click", () => openSearchResult(r));
+            searchResults.appendChild(item);
+        });
+
+        showView("search");
+    }
+
+    function openSearchResult(r) {
         state.bookIndex = r.bookIndex;
         state.chapterIndex = r.chapterIndex;
         state.verseKey = r.verseKey;
-        await fetchAndNormalize(state.versionA);
-        await populateBooksForA(state.versionA); // ensure dropdowns show data
-        activateTab('read'); renderRead(); updateUrl('push');
-      };
-      frag.appendChild(div);
-    });
-    searchResults.appendChild(frag);
-    activateTab('search');
-  }
 
-  searchBox && searchBox.addEventListener('keydown', e => { if(e.key === 'Enter') doSearch((searchBox.value||'').trim().toLowerCase()); });
+        showView("read");
+        renderRead();
+    }
 
   // --------------------
   // URL handling (push/replace) and initial load
