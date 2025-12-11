@@ -256,67 +256,93 @@
   }
 
   // ---------- Render read pane (paragraph-splitting bullet style) ----------
+    // ---------- Render read pane helpers (clean: single paragraphRenderer + renderCombined) ----------
   function paragraphRenderer(container, text) {
-  if (!text) return;
-  const paragraphs = String(text).split(/\n+/);
-  paragraphs.forEach(line => {
-    const d = document.createElement("div");
-    d.className = "para";
-    d.textContent = line.trim();
-    container.appendChild(d);
-  });
-}
-
-function renderCombined(idx, chapA, chapB) {
-  const va = chapA[idx] || null;
-  const vb = (chapB && chapB[idx]) ? chapB[idx] : null;
-
-  const verseNum = va ? va.key : (vb ? vb.key : String(idx + 1));
-
-  const block = document.createElement("div");
-  block.className = "verse-block";
-
-  const header = document.createElement("div");
-  header.className = "verse-num";
-  header.textContent = `Verse ${verseNum}`;
-  block.appendChild(header);
-
-  const contA = document.createElement("div");
-  contA.className = "verse-text";
-  paragraphRenderer(contA, va ? va.text : "");
-  block.appendChild(contA);
-
-  if (state.versionB) {
-    const contB = document.createElement("div");
-    contB.className = "verse-secondary";
-    paragraphRenderer(contB, vb ? vb.text : "");
-    block.appendChild(contB);
+    if (!text) return;
+    // split on blank lines or single newlines — keep paragraphs as plain text (no bullets)
+    const paragraphs = String(text).split(/\n\s*\n|\r\n|\r|\n/).map(p => p.trim()).filter(Boolean);
+    paragraphs.forEach(p => {
+      const d = document.createElement("div");
+      d.className = "para";
+      d.textContent = p;
+      container.appendChild(d);
+    });
   }
 
-  readVerses.appendChild(block);
-}
+  function renderCombined(idx, chapA, chapB) {
+    const va = chapA[idx] || null;
+    const vb = (chapB && chapB[idx]) ? chapB[idx] : null;
+    const verseNum = va ? va.key : (vb ? vb.key : String(idx + 1));
+
+    const block = document.createElement("div");
+    block.className = "verse-block";
+
+    const header = document.createElement("div");
+    header.className = "verse-num";
+    header.textContent = `Verse ${verseNum}`;
+    block.appendChild(header);
+
+    const contA = document.createElement("div");
+    contA.className = "verse-text";
+    paragraphRenderer(contA, va ? va.text : "");
+    block.appendChild(contA);
+
+    if (state.versionB) {
+      const contB = document.createElement("div");
+      contB.className = "verse-secondary";
+      paragraphRenderer(contB, vb ? vb.text : "");
+      block.appendChild(contB);
+    }
+
+    readVerses.appendChild(block);
+  }
+
+  // ---------- Render read (main) ----------
+  function renderRead(){
+    if(!state.versionA){ readRef.textContent = 'Select Version A'; readVerses.innerHTML = ''; return; }
+    const nA = normCache[state.versionA];
+    if(!nA){ readRef.textContent = 'Loading...'; readVerses.innerHTML = ''; return; }
+
+    clampIndices();
+    const book = nA.books[state.bookIndex];
+    if(!book){ readRef.textContent = 'No book'; readVerses.innerHTML = ''; return; }
+
+    const chapA = book.chapters[state.chapterIndex] || [];
+    const chapB = (state.versionB && normCache[state.versionB] && normCache[state.versionB].books[state.bookIndex]) ? normCache[state.versionB].books[state.bookIndex].chapters[state.chapterIndex] || [] : [];
+
+    readRef.textContent = `${book.name} ${state.chapterIndex + 1}`;
+    readVerses.innerHTML = '';
 
     // if verseKey specified — exact or range or single
     if(state.verseKey){
       const exact = chapA.findIndex(v => v.key === state.verseKey);
-      if(exact !== -1){ renderCombined(exact, chapA, chapB, renderParagraphs); showReadNav(true, exact); return; }
+      if(exact !== -1){ renderCombined(exact, chapA, chapB); showReadNav(true, exact); return; }
+
       const m = String(state.verseKey).match(/^(\d+)\s*-\s*(\d+)$/);
       if(m){
         const s = Math.max(0, Number(m[1]) - 1), e = Math.min(chapA.length-1, Number(m[2]) - 1);
-        for(let i=s;i<=e;i++) renderCombined(i, chapA, chapB, renderParagraphs);
-        showReadNav(true, s); return;
+        for(let i=s;i<=e;i++) renderCombined(i, chapA, chapB);
+        showReadNav(true, s);
+        return;
       }
+
       if(/^\d+$/.test(String(state.verseKey))){
         const idx = Math.max(0, Math.min(chapA.length-1, Number(state.verseKey)-1));
-        renderCombined(idx, chapA, chapB, renderParagraphs); showReadNav(true, idx); return;
+        renderCombined(idx, chapA, chapB);
+        showReadNav(true, idx);
+        return;
       }
-      readVerses.innerHTML = '<div style="padding:12px;color:#666">Verse not found</div>'; showReadNav(false); return;
+
+      readVerses.innerHTML = '<div style="padding:12px;color:#666">Verse not found</div>';
+      showReadNav(false);
+      return;
     }
 
     const maxLen = Math.max(chapA.length, chapB.length);
-    for(let i=0;i<maxLen;i++) renderCombined(i, chapA, chapB, renderParagraphs);
+    for(let i=0;i<maxLen;i++) renderCombined(i, chapA, chapB);
     showReadNav(false);
   }
+
 
   function renderCombined(idx, chapA, chapB, paragraphRenderer){
   const va = chapA[idx] || null;
