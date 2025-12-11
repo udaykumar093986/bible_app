@@ -39,6 +39,11 @@ button.btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent
 .bottom-nav.hidden{transform:translateY(100%);opacity:0}
 .bottom-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;padding:6px 8px;border-radius:8px}
 .bottom-item.active{color:var(--accent)}
+#tab-search {
+  pointer-events: auto !important;
+  z-index: 9999;
+}
+
 
 @media(max-width:720px){
   .tabbar{display:none}
