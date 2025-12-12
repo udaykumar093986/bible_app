@@ -81,12 +81,16 @@
     .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
 
   const showNotice = (msg, ms=1400) => {
+    if(!notice) return;
     notice.textContent = msg;
     notice.style.display = 'block';
-    setTimeout(()=> notice.style.display = 'none', ms);
+    setTimeout(()=> {
+      if(notice) notice.style.display = 'none';
+    }, ms);
   };
 
   function scrollToElementWithOffset(el, offset = -90) {
+    if(!el) return;
     const rect = el.getBoundingClientRect();
     const absoluteTop = window.pageYOffset + rect.top;
     window.scrollTo({ top: absoluteTop + offset, behavior: "smooth" });
@@ -96,15 +100,18 @@
      THEME
   --------------------------------*/
   (() => {
-    const saved = localStorage.getItem("theme");
-    if(saved === "dark") document.body.classList.add("dark");
-
+    try {
+      const saved = localStorage.getItem("theme");
+      if(saved === "dark") document.body.classList.add("dark");
+    } catch(e) {}
     if(themeToggle) {
       themeToggle.onclick = () => {
         document.body.classList.toggle("dark");
-        localStorage.setItem("theme", 
-          document.body.classList.contains("dark") ? "dark" : "light"
-        );
+        try {
+          localStorage.setItem("theme",
+            document.body.classList.contains("dark") ? "dark" : "light"
+          );
+        } catch(e) {}
       };
     }
   })();
@@ -136,18 +143,20 @@
      FETCH & NORMALIZE
   --------------------------------*/
   async function fetchAndNormalize(fname) {
+    if(!fname) return null;
     if(normCache[fname]) return normCache[fname];
 
     const url = BASE + fname;
     try {
       const res = await fetch(url);
+      if(!res.ok) throw new Error('Fetch failed ' + res.status);
       const json = await res.json();
       const norm = normalizeUniform(json);
       normCache[fname] = norm;
       buildSearchIndex(fname, norm);
       return norm;
     } catch(e) {
-      console.error("Failed to load", fname);
+      console.error("Failed to load", fname, e);
       showNotice("Error loading " + fname);
       return null;
     }
@@ -160,9 +169,9 @@
     if(searchIndexCache[fname]) return;
 
     const arr = [];
-    norm.books.forEach((b,bi) => {
-      b.chapters.forEach((ch,ci)=>{
-        ch.forEach((v,vi)=>{
+    (norm.books || []).forEach((b,bi) => {
+      (b.chapters || []).forEach((ch,ci) => {
+        (ch || []).forEach((v,vi) => {
           arr.push({
             file: fname,
             bookIndex: bi,
@@ -172,7 +181,7 @@
             chapter: ci+1,
             verseKey: v.key,
             text: v.text,
-            low: v.text.toLowerCase()
+            low: (v.text || "").toLowerCase()
           });
         });
       });
@@ -185,6 +194,7 @@
      POPULATE VERSIONS
   --------------------------------*/
   function populateVersions() {
+    if(!homeA || !homeB) return;
     homeA.innerHTML = "<option value=''>Version A</option>";
     homeB.innerHTML = "<option value=''>NONE</option>";
 
@@ -201,77 +211,79 @@
   --------------------------------*/
   function showView(v) {
     state.view = v;
-    paneHome.style.display = v === "home" ? "block" : "none";
-    paneRead.style.display = v === "read" ? "block" : "none";
-    paneSearch.style.display = v === "search" ? "block" : "none";
+    if(paneHome) paneHome.style.display = v === "home" ? "block" : "none";
+    if(paneRead) paneRead.style.display = v === "read" ? "block" : "none";
+    if(paneSearch) paneSearch.style.display = v === "search" ? "block" : "none";
 
-    tabHome.classList.toggle("active", v==="home");
-    tabRead.classList.toggle("active", v==="read");
-    tabSearch.classList.toggle("active", v==="search");
+    if(tabHome) tabHome.classList.toggle("active", v==="home");
+    if(tabRead) tabRead.classList.toggle("active", v==="read");
+    if(tabSearch) tabSearch.classList.toggle("active", v==="search");
 
     bottomItems.forEach(i =>
       i.classList.toggle("active", i.dataset.tab === v)
     );
 
-    if(v === "search") {
-      searchBox.focus();
+    if(v === "search" && searchBox) {
+      setTimeout(()=> searchBox.focus(), 140);
     }
     if(v === "read") {
       renderRead();
     }
   }
 
-  tabHome.onclick = ()=> showView("home");
-  tabRead.onclick = ()=> showView("read");
-  tabSearch.onclick = ()=> showView("search");
+  if(tabHome) tabHome.onclick = ()=> showView("home");
+  if(tabRead) tabRead.onclick = ()=> showView("read");
+  if(tabSearch) tabSearch.onclick = ()=> showView("search");
 
   bottomItems.forEach(i => i.onclick = () => showView(i.dataset.tab));
 
   /* -------------------------------
      HOME EVENTS
   --------------------------------*/
-  homeA.onchange = async function() {
+  if(homeA) homeA.onchange = async function() {
     state.versionA = this.value;
     if(!this.value) return;
     await populateBooksForA(this.value);
     fetchAndNormalize(this.value);
   };
 
-  homeB.onchange = function() {
+  if(homeB) homeB.onchange = function() {
     state.versionB = this.value || null;
   };
 
   async function populateBooksForA(fname) {
     const n = await fetchAndNormalize(fname);
+    if(!n || !homeBook) return;
     homeBook.innerHTML = "<option value=''>Book</option>";
     n.books.forEach((b,i)=> homeBook.appendChild(new Option(b.name,i)));
 
-    homeChapter.innerHTML = "<option value=''>Chapter</option>";
-    homeVerse.innerHTML = "<option value=''>Verse</option>";
+    if(homeChapter) homeChapter.innerHTML = "<option value=''>Chapter</option>";
+    if(homeVerse) homeVerse.innerHTML = "<option value=''>Verse</option>";
   }
 
-  homeBook.onchange = function() {
+  if(homeBook) homeBook.onchange = function() {
     const idx = Number(this.value);
     const n = normCache[state.versionA];
+    if(!n || !n.books || !homeChapter) return;
     homeChapter.innerHTML = "<option value=''>Chapter</option>";
     n.books[idx].chapters.forEach((_,i)=> homeChapter.appendChild(new Option(i+1,i)));
   };
 
-  homeChapter.onchange = function() {
-    const bi = Number(homeBook.value);
-    const ci = Number(this.value);
+  if(homeChapter) homeChapter.onchange = function() {
+    const bi = Number(homeBook.value || 0);
+    const ci = Number(this.value || 0);
     const n = normCache[state.versionA];
-
+    if(!n || !n.books || !homeVerse) return;
     homeVerse.innerHTML = "<option value=''>Verse</option>";
     n.books[bi].chapters[ci].forEach((_,i)=> homeVerse.appendChild(new Option(i+1,i)));
   };
 
-  homeOpen.onclick = async () => {
-    state.versionA = homeA.value;
-    state.versionB = homeB.value || null;
-    state.bookIndex = Number(homeBook.value || 0);
-    state.chapterIndex = Number(homeChapter.value || 0);
-    state.verseKey = homeVerse.value ? String(Number(homeVerse.value)+1) : null;
+  if(homeOpen) homeOpen.onclick = async () => {
+    state.versionA = homeA ? homeA.value : state.versionA;
+    state.versionB = homeB ? homeB.value || null : state.versionB;
+    state.bookIndex = homeBook ? Number(homeBook.value || 0) : 0;
+    state.chapterIndex = homeChapter ? Number(homeChapter.value || 0) : 0;
+    state.verseKey = homeVerse && homeVerse.value ? String(Number(homeVerse.value)+1) : null;
 
     await fetchAndNormalize(state.versionA);
     if(state.versionB) await fetchAndNormalize(state.versionB);
@@ -283,7 +295,8 @@
      RENDER READ VIEW
   --------------------------------*/
   function paragraphHtml(text) {
-    return text.split(/\n+/).map(p =>
+    if(!text) return "";
+    return String(text).split(/\n+/).map(p =>
       `<div class="para">${esc(p.trim())}</div>`
     ).join("");
   }
@@ -307,22 +320,29 @@
   }
 
   function renderRead() {
+    if(!readVerses) return;
     clearActive();
     readVerses.innerHTML = "";
 
     const nA = normCache[state.versionA];
-    if(!nA) return;
+    if(!nA) {
+      showNotice("Load a version first");
+      return;
+    }
 
     const book = nA.books[state.bookIndex];
-    const chapA = book.chapters[state.chapterIndex];
-    const chapB = (state.versionB && normCache[state.versionB])
-      ? normCache[state.versionB].books[state.bookIndex].chapters[state.chapterIndex]
-      : [];
+    if(!book) {
+      showNotice("Book not found");
+      return;
+    }
 
-    readRef.textContent = `${book.name} ${state.chapterIndex+1}`;
+    const chapA = book.chapters[state.chapterIndex] || [];
+    const chapB = (state.versionB && normCache[state.versionB] && normCache[state.versionB].books[state.bookIndex])
+      ? normCache[state.versionB].books[state.bookIndex].chapters[state.chapterIndex] || [] : [];
 
-    const showFullChapter = (state.verseKey === null);
+    if(readRef) readRef.textContent = `${book.name} ${state.chapterIndex+1}`;
 
+    // Render full chapter
     chapA.forEach((va,idx)=>{
       const vb = chapB[idx];
       const block = document.createElement("div");
@@ -338,29 +358,31 @@
       readVerses.appendChild(block);
     });
 
-    if(showFullChapter) {
-      readNav.style.display = "none";
-
-      // Auto-scroll to Verse 1 with offset
+    // If verseKey not set -> full chapter view -> hide readNav and auto-scroll to first verse
+    if(state.verseKey === null) {
+      if(readNav) readNav.style.display = "none";
       setTimeout(()=>{
-        const first = $("verse-0");
+        const first = $(`verse-0`);
         if(first) scrollToElementWithOffset(first);
-      },150);
+      }, 120);
+      currentVerseIndex = null;
+      return;
+    }
 
+    // Single verse requested — show nav and highlight
+    const idx = chapA.findIndex(v => v.key === state.verseKey);
+    if(idx >= 0) {
+      if(readNav) readNav.style.display = "flex";
+      setTimeout(()=> setActive(idx), 150);
     } else {
-      // Single verse mode
-      const idx = chapA.findIndex(v=>v.key === state.verseKey);
-      if(idx >= 0) {
-        readNav.style.display = "flex";
-        setTimeout(()=> setActive(idx), 150);
-      }
+      if(readNav) readNav.style.display = "none";
     }
   }
 
   /* -------------------------------
      CHAPTER NAVIGATION
   --------------------------------*/
-  prevChapterBtn.onclick = () =>{
+  if(prevChapterBtn) prevChapterBtn.onclick = () =>{
     if(state.chapterIndex > 0) {
       state.chapterIndex--;
       state.verseKey = null;
@@ -368,8 +390,9 @@
     }
   };
 
-  nextChapterBtn.onclick = () =>{
+  if(nextChapterBtn) nextChapterBtn.onclick = () =>{
     const n = normCache[state.versionA];
+    if(!n) return;
     if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length) {
       state.chapterIndex++;
       state.verseKey = null;
@@ -380,7 +403,7 @@
   /* -------------------------------
      VERSE NAVIGATION
   --------------------------------*/
-  prevVerseBtn.onclick = ()=>{
+  if(prevVerseBtn) prevVerseBtn.onclick = ()=>{
     if(currentVerseIndex > 0) {
       const n = normCache[state.versionA];
       const ch = n.books[state.bookIndex].chapters[state.chapterIndex];
@@ -389,8 +412,9 @@
     }
   };
 
-  nextVerseBtn.onclick = ()=>{
+  if(nextVerseBtn) nextVerseBtn.onclick = ()=>{
     const n = normCache[state.versionA];
+    if(!n) return;
     const ch = n.books[state.bookIndex].chapters[state.chapterIndex];
     if(currentVerseIndex + 1 < ch.length) {
       state.verseKey = ch[currentVerseIndex + 1].key;
@@ -398,40 +422,52 @@
     }
   };
 
+  if(backHomeBtn) backHomeBtn.onclick = () => {
+    state.view = "home";
+    state.verseKey = null;
+    currentVerseIndex = null;
+    // Return to top and show home
+    try { window.scrollTo({ top: 0 }); } catch(e) {}
+    showView("home");
+  };
+
   /* -------------------------------
      SEARCH
   --------------------------------*/
   async function doSearch(q) {
+    if(!q || !q.trim()) return;
     q = q.toLowerCase();
-    searchResults.innerHTML = "";
-    searchInfo.textContent = "Searching...";
+    if(searchResults) searchResults.innerHTML = "";
+    if(searchInfo) searchInfo.textContent = "Searching...";
 
     const result = [];
 
     for(const f of FILES) {
-      if(!searchIndexCache[f]) {
-        await fetchAndNormalize(f);
+      try {
+        if(!searchIndexCache[f]) {
+          const n = await fetchAndNormalize(f);
+          if(!n) continue;
+        }
+        const arr = searchIndexCache[f] || [];
+        arr.forEach(r => {
+          if(r.low.includes(q)) result.push(r);
+        });
+      } catch(e) {
+        console.warn("Search file error", f, e);
       }
-      const arr = searchIndexCache[f];
-      arr.forEach(r => {
-        if(r.low.includes(q)) result.push(r);
-      });
     }
 
-    searchInfo.textContent = `Found ${result.length}`;
+    if(searchInfo) searchInfo.textContent = `Found ${result.length}`;
 
     result.forEach(r=>{
       const div = document.createElement("div");
       div.className = "search-item";
 
-      const hl = r.text.replace(
-        new RegExp(q,"ig"),
-        m=>`<mark>${m}</mark>`
-      );
+      const hl = esc(r.text).replace(new RegExp(q,"ig"), m=>`<mark>${m}</mark>`);
 
       div.innerHTML = `
-        <strong>${r.book} ${r.chapter}:${r.verseKey}</strong>
-        <div>${hl}</div>
+        <strong>${esc(r.book)} ${r.chapter}:${r.verseKey} — ${String(r.file).replace(/_bible.json$/,'').toUpperCase()}</strong>
+        <div style="margin-top:6px">${hl}</div>
       `;
 
       div.onclick = async ()=>{
@@ -443,31 +479,46 @@
         showView("read");
       };
 
-      searchResults.appendChild(div);
+      if(searchResults) searchResults.appendChild(div);
     });
   }
 
-  searchBox.onkeydown = e=>{
+  if(searchBox) searchBox.onkeydown = e=>{
     if(e.key === "Enter") doSearch(searchBox.value.trim());
   };
 
   /* -------------------------------
      SWIPE SUPPORT
   --------------------------------*/
-  (() =>{
+  (function attachSwipe() {
+    if(!readVerses) return;
     let startX = 0;
 
     readVerses.addEventListener("touchstart", e=>{
       startX = e.touches[0].clientX;
-    });
+    }, { passive: true });
 
     readVerses.addEventListener("touchend", e=>{
       const dx = e.changedTouches[0].clientX - startX;
-
       if(Math.abs(dx) < 60) return;
+      if(dx < 0) {
+        if(nextChapterBtn) nextChapterBtn.click();
+      } else {
+        if(prevChapterBtn) prevChapterBtn.click();
+      }
+    }, { passive: true });
 
-      if(dx < 0) nextChapterBtn.onclick();
-      else prevChapterBtn.onclick();
+    // mouse drag (desktop)
+    let mouseDown = false, mstart = 0, mcur = 0;
+    readVerses.addEventListener('mousedown', e => { mouseDown = true; mstart = e.clientX; });
+    document.addEventListener('mousemove', e => { if(!mouseDown) return; mcur = e.clientX; });
+    document.addEventListener('mouseup', e => {
+      if(!mouseDown) return; mouseDown = false;
+      const dx = (mcur || e.clientX) - mstart;
+      if(Math.abs(dx) < 100) { mstart = mcur = 0; return; }
+      if(dx < 0) { if(nextChapterBtn) nextChapterBtn.click(); }
+      else { if(prevChapterBtn) prevChapterBtn.click(); }
+      mstart = mcur = 0;
     });
   })();
 
@@ -480,5 +531,8 @@
   }
 
   init();
+
+  // Expose debug helpers if needed
+  window.BibleReader = { state, normCache, searchIndexCache, fetchAndNormalize, renderRead };
 
 })();
