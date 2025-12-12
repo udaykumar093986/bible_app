@@ -66,6 +66,40 @@ body {
   z-index: 40;
   backdrop-filter: blur(6px);
 }
+/* Brand icon beside Bible Reader */
+.brand-icon {
+  width: 34px;
+  height: 34px;
+  margin-right: 10px;
+  border-radius: 8px;
+}
+
+/* Ensure heading stays aligned */
+.top-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Make text vertically centered with icon */
+.top-left .brand {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+/* Mobile optimization */
+@media (max-width: 600px) {
+  .brand-icon {
+    width: 30px;
+    height: 30px;
+    margin-right: 8px;
+  }
+  .top-left .brand {
+    font-size: 20px;
+  }
+}
+
 
 .brand {
   font-weight: 700;
