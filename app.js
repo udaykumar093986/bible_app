@@ -539,35 +539,88 @@
 
   /* ------------------ SEARCH (global) ------------------ */
   async function doSearch(q) {
-    if(!q) return;
-    const qs = q.trim().toLowerCase();
-    searchResults.innerHTML = "";
-    searchInfo.textContent = "Searching...";
-    const matches = [];
+  if (!q || !state.versionA) return;
 
-    // iterate all files; build index on demand
-    for(const f of FILES) {
-      try {
-        if(!searchIndexCache[f]) {
-          const norm = normCache[f] || await fetchAndNormalize(f);
-          if(!norm) continue;
-        }
-        const idx = searchIndexCache[f] || buildSearchIndex(f, normCache[f]);
-        if(!idx) continue;
-        for(const r of idx) {
-          if(r.low.includes(qs)) matches.push(r);
-        }
-      } catch(e) {
-        console.warn("Search error for file", f, e);
+  const qs = q.trim().toLowerCase();
+  searchResults.innerHTML = "";
+  searchInfo.textContent = "Searching...";
+
+  const f = state.versionA; // ONLY SELECTED VERSION
+  const fname = f;
+
+  try {
+    // load if not already loaded
+    if (!searchIndexCache[fname]) {
+      const norm = normCache[fname] || await fetchAndNormalize(fname);
+      if (!norm) {
+        searchInfo.textContent = "Failed to load version";
+        return;
       }
+      buildSearchIndex(fname, norm);
     }
 
-    searchInfo.textContent = `Found ${matches.length}`;
-    if(matches.length === 0) {
+    const idx = searchIndexCache[fname];
+
+    // filter matches
+    const matches = idx.filter(r => r.low.includes(qs));
+
+    searchInfo.textContent = `Found ${matches.length} in ${fname.replace("_bible.json","").toUpperCase()}`;
+
+    if (matches.length === 0) {
       searchResults.innerHTML = `<div style="padding:8px;color:#666">No results</div>`;
       showView("search");
       return;
     }
+
+    // render results
+    const frag = document.createDocumentFragment();
+    const max = Math.min(matches.length, 800);
+    for (let i = 0; i < max; i++) {
+      const r = matches[i];
+      const div = document.createElement("div");
+      div.className = "search-item";
+
+      const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const re = new RegExp(safeQ, "ig");
+      const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
+
+      const versionLabel = fname.replace("_bible.json","").toUpperCase();
+      const refLabel = `${r.book} ${r.chapter}:${r.verseKey} — ${versionLabel}`;
+
+      div.innerHTML = `
+        <strong>${refLabel}</strong>
+        <div style="margin-top:6px">${snippet}</div>
+        <small style="display:block;margin-top:6px;color:#666">Click to open</small>
+      `;
+
+      div.addEventListener("click", async () => {
+        // open clicked verse in reader
+        state.versionA = fname;
+        if (homeA) homeA.value = fname;
+
+        state.bookIndex = r.bookIndex;
+        state.chapterIndex = r.chapterIndex;
+        state.verseKey = r.verseKey;
+
+        await fetchAndNormalize(fname);
+        await populateBooksForA(fname);
+
+        showView("read");
+        renderRead();
+      });
+
+      frag.appendChild(div);
+    }
+
+    searchResults.appendChild(frag);
+    showView("search");
+
+  } catch (err) {
+    console.error("Search failed", err);
+    searchInfo.textContent = "Error during search";
+  }
+}
+
 
     // render results
     const frag = document.createDocumentFragment();
