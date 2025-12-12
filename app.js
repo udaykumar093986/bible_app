@@ -674,9 +674,9 @@
       if(Math.abs(dx) < 60) return;
       const n = normCache[state.versionA]; if(!n) return;
       if(dx < 0) {
-        if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length) { state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl('push'); }
+        if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length) { state.chapterIndex++; state.verseKey = 1; currentVerseIndex = 0; renderRead(); updateUrl('push'); }
       } else {
-        if(state.chapterIndex > 0) { state.chapterIndex--; state.verseKey = null; renderRead(); updateUrl('push'); }
+        if(state.chapterIndex > 0) { state.chapterIndex--; state.verseKey = 1; currentVerseIndex = 0; renderRead(); updateUrl('push'); }
       }
     }, { passive: true });
 
@@ -690,9 +690,9 @@
       if(Math.abs(dx) < 100) { mstart = mcur = 0; return; }
       const n = normCache[state.versionA]; if(!n) return;
       if(dx < 0) {
-        if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length) { state.chapterIndex++; state.verseKey = null; renderRead(); updateUrl('push'); }
+        if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length) { state.chapterIndex++; state.verseKey = 1; currentVerseIndex = 0; renderRead(); updateUrl('push'); }
       } else {
-        if(state.chapterIndex > 0) { state.chapterIndex--; state.verseKey = null; renderRead(); updateUrl('push'); }
+        if(state.chapterIndex > 0) { state.chapterIndex--; state.verseKey = 1; currentVerseIndex = 0; renderRead(); updateUrl('push'); }
       }
       mstart = mcur = 0;
     });
