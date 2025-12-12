@@ -606,34 +606,109 @@
 
   /* ------------------ SWIPE (mobile) + MOUSE DRAG (desktop) ------------------ */
   (function attachSwipe(){
-    if(!readVerses) return;
-    let startX = 0, mouseDown = false, mStart = 0, mCur = 0;
+  if (!readVerses) return;
 
-    readVerses.addEventListener("touchstart", e => { startX = e.touches[0].clientX; }, { passive: true });
-    readVerses.addEventListener("touchend", e => {
-      const dx = e.changedTouches[0].clientX - startX;
-      if(Math.abs(dx) < 60) return;
-      const n = normCache[state.versionA];
-      if(!n) return;
-      if(dx < 0) { if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length) { state.chapterIndex++; state.verseKey = null; currentVerseIndex = null; renderRead(); } }
-      else { if(state.chapterIndex > 0) { state.chapterIndex--; state.verseKey = null; currentVerseIndex = null; renderRead(); } }
-    }, { passive: true });
+  let startX = 0, startY = 0;
+  let mouseDown = false, mStartX = 0, mStartY = 0, mCurX = 0, mCurY = 0;
 
-    // simple mouse drag
-    readVerses.addEventListener("mousedown", e => { mouseDown = true; mStart = e.clientX; });
-    document.addEventListener("mousemove", e => { if(!mouseDown) return; mCur = e.clientX; });
-    document.addEventListener("mouseup", e => {
-      if(!mouseDown) return;
-      mouseDown = false;
-      const dx = (mCur || e.clientX) - mStart;
-      if(Math.abs(dx) < 100) { mStart = mCur = 0; return; }
-      const n = normCache[state.versionA];
-      if(!n) return;
-      if(dx < 0) { if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length) { state.chapterIndex++; state.verseKey = null; currentVerseIndex = null; renderRead(); } }
-      else { if(state.chapterIndex > 0) { state.chapterIndex--; state.verseKey = null; currentVerseIndex = null; renderRead(); } }
-      mStart = mCur = 0;
-    });
-  })();
+  // Sensitivity
+  const MIN_SWIPE_X = 140;       // horizontal distance required
+  const MAX_VERTICAL_DRIFT = 80; // ignore swipe if vertical movement too high
+
+  /* ---------------------------
+     TOUCH SWIPE (MOBILE)
+  --------------------------- */
+  readVerses.addEventListener("touchstart", e => {
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+  }, { passive: true });
+
+  readVerses.addEventListener("touchend", e => {
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX;
+    const dy = Math.abs(t.clientY - startY);
+
+    const n = normCache[state.versionA];
+    if (!n) return;
+
+    // Reject if mostly vertical movement → scrolling
+    if (dy > MAX_VERTICAL_DRIFT) return;
+
+    // Not a large enough swipe
+    if (Math.abs(dx) < MIN_SWIPE_X) return;
+
+    if (dx < 0) {
+      // Next chapter
+      if (state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length) {
+        state.chapterIndex++;
+        state.verseKey = null;
+        currentVerseIndex = null;
+        renderRead();
+      }
+    } else {
+      // Previous chapter
+      if (state.chapterIndex > 0) {
+        state.chapterIndex--;
+        state.verseKey = null;
+        currentVerseIndex = null;
+        renderRead();
+      }
+    }
+  }, { passive: true });
+
+  /* ---------------------------
+     DESKTOP DRAG SWIPE
+  --------------------------- */
+  readVerses.addEventListener("mousedown", e => {
+    mouseDown = true;
+    mStartX = e.clientX;
+    mStartY = e.clientY;
+  });
+
+  document.addEventListener("mousemove", e => {
+    if (!mouseDown) return;
+    mCurX = e.clientX;
+    mCurY = e.clientY;
+  });
+
+  document.addEventListener("mouseup", e => {
+    if (!mouseDown) return;
+    mouseDown = false;
+
+    const dx = (mCurX || e.clientX) - mStartX;
+    const dy = Math.abs((mCurY || e.clientY) - mStartY);
+
+    const n = normCache[state.versionA];
+    if (!n) return;
+
+    // Reject vertical scroll gestures
+    if (dy > MAX_VERTICAL_DRIFT) return;
+
+    // Must drag enough horizontally
+    if (Math.abs(dx) < MIN_SWIPE_X) return;
+
+    if (dx < 0) {
+      // Next chapter
+      if (state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length) {
+        state.chapterIndex++;
+        state.verseKey = null;
+        currentVerseIndex = null;
+        renderRead();
+      }
+    } else {
+      // Previous chapter
+      if (state.chapterIndex > 0) {
+        state.chapterIndex--;
+        state.verseKey = null;
+        currentVerseIndex = null;
+        renderRead();
+      }
+    }
+
+    mStartX = mCurX = mStartY = mCurY = 0;
+  });
+})();
 
   /* ------------------ KEYBOARD NAV ------------------ */
   document.addEventListener("keydown", e => {
