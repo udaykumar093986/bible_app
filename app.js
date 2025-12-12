@@ -10,7 +10,7 @@
   "use strict";
 
   /* ------------------ CONFIG ------------------ */
-  const BASE = "https://raw.githubusercontent.com/udaykumar093986/bible_app/main/versions/";
+  const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bible_app@main/versions/";
   const FILES = [
     "AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json",
     "NIV_bible.json","NKJV_bible.json","NLT_bible.json",
@@ -124,7 +124,7 @@
     if(normCache[fname]) return normCache[fname];
 
     try {
-      const res = await fetch(BASE + fname + "?raw=1");
+      const res = await fetch(BASE + fname);
       if(!res.ok) throw new Error("Fetch failed " + res.status);
       const json = await res.json();
       const norm = normalizeUniform(json);
@@ -538,148 +538,36 @@
   if(stopBtn) stopBtn.addEventListener("click", stopTTS);
 
   /* ------------------ SEARCH (global) ------------------ */
-  /* ------------------ SEARCH (only selected Version A) ------------------ */
-/* ------------------ SEARCH (only selected Version A) ------------------ */
-async function doSearch(q) {
-  if (!q || !state.versionA) return;
+  async function doSearch(q) {
+    if(!q) return;
+    const qs = q.trim().toLowerCase();
+    searchResults.innerHTML = "";
+    searchInfo.textContent = "Searching...";
+    const matches = [];
 
-  const qs = q.trim().toLowerCase();
-  searchResults.innerHTML = "";
-  searchInfo.textContent = "Searching...";
-
-  const fname = state.versionA;
-
-  try {
-    // ensure version is loaded
-    if (!searchIndexCache[fname]) {
-      const norm = normCache[fname] || await fetchAndNormalize(fname);
-      if (!norm) {
-        searchInfo.textContent = "Failed to load version";
-        return;
+    // iterate all files; build index on demand
+    for(const f of FILES) {
+      try {
+        if(!searchIndexCache[f]) {
+          const norm = normCache[f] || await fetchAndNormalize(f);
+          if(!norm) continue;
+        }
+        const idx = searchIndexCache[f] || buildSearchIndex(f, normCache[f]);
+        if(!idx) continue;
+        for(const r of idx) {
+          if(r.low.includes(qs)) matches.push(r);
+        }
+      } catch(e) {
+        console.warn("Search error for file", f, e);
       }
-      buildSearchIndex(fname, norm);
     }
 
-    const idx = searchIndexCache[fname] || [];
-    const matches = idx.filter(r => r.low.includes(qs));
-
-    const versionLabel = fname.replace("_bible.json","").toUpperCase();
-    searchInfo.textContent = `Found ${matches.length} in ${versionLabel}`;
-
-    if (matches.length === 0) {
+    searchInfo.textContent = `Found ${matches.length}`;
+    if(matches.length === 0) {
       searchResults.innerHTML = `<div style="padding:8px;color:#666">No results</div>`;
       showView("search");
       return;
     }
-
-    // limit for performance
-    const frag = document.createDocumentFragment();
-    const max = Math.min(matches.length, 800);
-
-    for (let i = 0; i < max; i++) {
-      const r = matches[i];
-      const div = document.createElement("div");
-      div.className = "search-item";
-
-      // highlight match text
-      const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const re = new RegExp(safeQ, "ig");
-      const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
-
-      const refLabel = `${r.book} ${r.chapter}:${r.verseKey} — ${versionLabel}`;
-
-      div.innerHTML = `
-        <strong>${refLabel}</strong>
-        <div style="margin-top:6px">${snippet}</div>
-        <small style="display:block;margin-top:6px;color:#666">Click to open</small>
-      `;
-
-      div.addEventListener("click", async () => {
-        state.versionA = fname;
-        if (homeA) homeA.value = fname;
-
-        state.bookIndex = r.bookIndex;
-        state.chapterIndex = r.chapterIndex;
-        state.verseKey = r.verseKey;
-
-        await fetchAndNormalize(fname);
-        await populateBooksForA(fname);
-
-        showView("read");
-        renderRead();
-      });
-
-      frag.appendChild(div);
-    }
-
-    searchResults.appendChild(frag);
-    showView("search");
-
-  } catch (err) {
-    console.error("SEARCH ERROR", err);
-    searchInfo.textContent = "Search failed";
-  }
-}
-
-if (searchBox)
-  searchBox.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      const q = searchBox.value || "";
-      if (q.trim()) doSearch(q.trim());
-    }
-  });
-
-
-
-    // render results
-    const frag = document.createDocumentFragment();
-    const max = Math.min(matches.length, 800);
-    for (let i = 0; i < max; i++) {
-      const r = matches[i];
-      const div = document.createElement("div");
-      div.className = "search-item";
-
-      const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const re = new RegExp(safeQ, "ig");
-      const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
-
-      const versionLabel = fname.replace("_bible.json","").toUpperCase();
-      const refLabel = `${r.book} ${r.chapter}:${r.verseKey} — ${versionLabel}`;
-
-      div.innerHTML = `
-        <strong>${refLabel}</strong>
-        <div style="margin-top:6px">${snippet}</div>
-        <small style="display:block;margin-top:6px;color:#666">Click to open</small>
-      `;
-
-      div.addEventListener("click", async () => {
-        // open clicked verse in reader
-        state.versionA = fname;
-        if (homeA) homeA.value = fname;
-
-        state.bookIndex = r.bookIndex;
-        state.chapterIndex = r.chapterIndex;
-        state.verseKey = r.verseKey;
-
-        await fetchAndNormalize(fname);
-        await populateBooksForA(fname);
-
-        showView("read");
-        renderRead();
-      });
-
-      frag.appendChild(div);
-    }
-
-    searchResults.appendChild(frag);
-    showView("search");
-
-  } catch (err) {
-    console.error("Search failed", err);
-    searchInfo.textContent = "Error during search";
-  }
-}
-
 
     // render results
     const frag = document.createDocumentFragment();
