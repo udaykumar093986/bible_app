@@ -297,24 +297,35 @@
     return String(text).split(/\n+/).map(p => `<div class="para">${esc(p.trim())}</div>`).join('');
   }
 
-  function clearVerseHighlights() {
-    const els = document.querySelectorAll('.verse-block.active');
-    els.forEach(el => {
-      el.classList.remove('active');
-      el.style.background = '';
-    });
-  }
+  /* -------------------------------------------
+   VERSE HIGHLIGHT HELPERS (Required by TTS)
+------------------------------------------- */
 
-  function setVerseActive(idx) {
-    clearVerseHighlights();
-    currentVerseIndex = idx;
-    const el = document.getElementById(`verse-${idx}`);
-    if(!el) return;
-    el.classList.add('active');
-    el.style.background = `linear-gradient(90deg, ${HIGHLIGHT_COLOR}33, ${HIGHLIGHT_COLOR}11)`;
-    // scroll into view with offset (so header doesn't cover)
-    scrollToWithOffset(el, -92);
-  }
+function clearVerseHighlights() {
+  document.querySelectorAll(".verse-block").forEach(v => {
+    v.classList.remove("active");
+    v.style.background = "";
+  });
+}
+
+function setVerseActive(idx) {
+  clearVerseHighlights();
+
+  const el = document.getElementById(`verse-${idx}`);
+  if (!el) return;
+
+  // soft yellow highlight
+  el.classList.add("active");
+  el.style.background = "linear-gradient(90deg, #fff6b033, #fff6b011)";
+
+  // safe scrolling offset to prevent header covering verse
+  const headerOffset = 90;
+  const rect = el.getBoundingClientRect();
+  const y = rect.top + window.scrollY - headerOffset;
+
+  window.scrollTo({ top: y, behavior: "smooth" });
+}
+
 
   function renderRead() {
     if(!readVerses) return;
