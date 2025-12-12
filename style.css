@@ -313,6 +313,9 @@ select.select {
   padding-left: 0;
   color: var(--verse-muted);
 }
+.verse-block.active { box-shadow: 0 12px 30px rgba(0,0,0,0.06); transition: background .28s ease, box-shadow .28s ease; }
+.highlight { background: linear-gradient(90deg,#fff19a,#ffd76b); padding:0 4px; border-radius:4px; }
+
 
 /* ---------- Search ---------- */
 .search-results {
