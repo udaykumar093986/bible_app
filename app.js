@@ -124,7 +124,7 @@
     if(normCache[fname]) return normCache[fname];
 
     try {
-      const res = await fetch(BASE + fname);
+      const res = await fetch(BASE + fname + "?raw=1");
       if(!res.ok) throw new Error("Fetch failed " + res.status);
       const json = await res.json();
       const norm = normalizeUniform(json);
