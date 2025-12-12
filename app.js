@@ -450,12 +450,12 @@
   });
 
   if(prevChapterBtn) prevChapterBtn.addEventListener('click', ()=> {
-    if(state.chapterIndex > 0){ state.chapterIndex--; state.verseKey = '1'; currentVerseIndex = 0; renderRead(); updateUrl('push'); }
+    if(state.chapterIndex > 0){ state.chapterIndex--; state.verseKey = null; currentVerseIndex = null; renderRead(); updateUrl('push'); }
   });
 
   if(nextChapterBtn) nextChapterBtn.addEventListener('click', ()=> {
     const n = normCache[state.versionA]; if(!n) return;
-    if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = '1'; currentVerseIndex = 0; renderRead(); updateUrl('push'); }
+    if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){ state.chapterIndex++; state.verseKey = null; currentVerseIndex = null; renderRead(); updateUrl('push'); }
   });
 
   if(backHomeBtn) backHomeBtn.addEventListener('click', ()=> showView('home'));
@@ -618,15 +618,15 @@
         if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length) {
           state.chapterIndex++;
           // ensure view starts from verse 1 on chapter change by swipe
-          state.verseKey = '1';
-          currentVerseIndex = 0;
+          state.verseKey = null;
+          currentVerseIndex = null;
           renderRead(); updateUrl('push');
         }
       } else {
         if(state.chapterIndex > 0){
           state.chapterIndex--;
-          state.verseKey = '1';
-          currentVerseIndex = 0;
+          state.verseKey = null;
+          currentVerseIndex = null;
           renderRead(); updateUrl('push');
         }
       }
@@ -644,15 +644,15 @@
       if(dx < 0){
         if(state.chapterIndex + 1 < n.books[state.bookIndex].chapters.length){
           state.chapterIndex++;
-          state.verseKey = '1';
-          currentVerseIndex = 0;
+          state.verseKey = null;
+          currentVerseIndex = null;
           renderRead(); updateUrl('push');
         }
       } else {
         if(state.chapterIndex > 0){
           state.chapterIndex--;
-          state.verseKey = '1';
-          currentVerseIndex = 0;
+          state.verseKey = null;
+          currentVerseIndex = null;
           renderRead(); updateUrl('push');
         }
       }
