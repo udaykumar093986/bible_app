@@ -538,18 +538,18 @@
   if(stopBtn) stopBtn.addEventListener("click", stopTTS);
 
   /* ------------------ SEARCH (global) ------------------ */
-  async function doSearch(q) {
+  /* ------------------ SEARCH (only selected Version A) ------------------ */
+async function doSearch(q) {
   if (!q || !state.versionA) return;
 
   const qs = q.trim().toLowerCase();
   searchResults.innerHTML = "";
   searchInfo.textContent = "Searching...";
 
-  const f = state.versionA; // ONLY SELECTED VERSION
-  const fname = f;
+  const fname = state.versionA;
 
   try {
-    // load if not already loaded
+    // ensure version is loaded
     if (!searchIndexCache[fname]) {
       const norm = normCache[fname] || await fetchAndNormalize(fname);
       if (!norm) {
@@ -559,18 +559,75 @@
       buildSearchIndex(fname, norm);
     }
 
-    const idx = searchIndexCache[fname];
-
-    // filter matches
+    const idx = searchIndexCache[fname] || [];
     const matches = idx.filter(r => r.low.includes(qs));
 
-    searchInfo.textContent = `Found ${matches.length} in ${fname.replace("_bible.json","").toUpperCase()}`;
+    const versionLabel = fname.replace("_bible.json","").toUpperCase();
+    searchInfo.textContent = `Found ${matches.length} in ${versionLabel}`;
 
     if (matches.length === 0) {
       searchResults.innerHTML = `<div style="padding:8px;color:#666">No results</div>`;
       showView("search");
       return;
     }
+
+    // limit for performance
+    const frag = document.createDocumentFragment();
+    const max = Math.min(matches.length, 800);
+
+    for (let i = 0; i < max; i++) {
+      const r = matches[i];
+      const div = document.createElement("div");
+      div.className = "search-item";
+
+      // highlight text
+      const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const re = new RegExp(safeQ, "ig");
+      const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
+
+      const refLabel = `${r.book} ${r.chapter}:${r.verseKey} — ${versionLabel}`;
+
+      div.innerHTML = `
+        <strong>${refLabel}</strong>
+        <div style="margin-top:6px">${snippet}</div>
+        <small style="display:block;margin-top:6px;color:#666">Click to open</small>
+      `;
+
+      div.addEventListener("click", async () => {
+        state.versionA = fname;
+        if (homeA) homeA.value = fname;
+
+        state.bookIndex = r.bookIndex;
+        state.chapterIndex = r.chapterIndex;
+        state.verseKey = r.verseKey;
+
+        await fetchAndNormalize(fname);
+        await populateBooksForA(fname);
+
+        showView("read");
+        renderRead();
+      });
+
+      frag.appendChild(div);
+    }
+
+    searchResults.appendChild(frag);
+    showView("search");
+
+  } catch (err) {
+    console.error("SEARCH ERROR", err);
+    searchInfo.textContent = "Search failed";
+  }
+}
+
+if (searchBox)
+  searchBox.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const q = searchBox.value || "";
+      if (q.trim()) doSearch(q.trim());
+    }
+  });
+
 
     // render results
     const frag = document.createDocumentFragment();
