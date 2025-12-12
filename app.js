@@ -539,6 +539,7 @@
 
   /* ------------------ SEARCH (global) ------------------ */
   /* ------------------ SEARCH (only selected Version A) ------------------ */
+/* ------------------ SEARCH (only selected Version A) ------------------ */
 async function doSearch(q) {
   if (!q || !state.versionA) return;
 
@@ -580,7 +581,7 @@ async function doSearch(q) {
       const div = document.createElement("div");
       div.className = "search-item";
 
-      // highlight text
+      // highlight match text
       const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const re = new RegExp(safeQ, "ig");
       const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
@@ -627,6 +628,7 @@ if (searchBox)
       if (q.trim()) doSearch(q.trim());
     }
   });
+
 
 
     // render results
