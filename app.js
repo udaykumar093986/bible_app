@@ -452,91 +452,152 @@
   });
 
   // ---------- PLAY / PAUSE / RESUME / STOP (Option A: play full chapter from verse 1) ----------
-  function buildTTSQueueForFullChapter() {
-    ttsQueue = [];
-    if(!state.versionA) return;
-    const n = normCache[state.versionA];
-    if(!n) return;
-    const ch = (n.books[state.bookIndex] && n.books[state.bookIndex].chapters[state.chapterIndex]) || [];
-    for(let i=0;i<ch.length;i++){
-      ttsQueue.push({ text: ch[i].text, idx: i });
-    }
-  }
+ /* -------------------------------------------
+   TTS SYSTEM (Mobile + Desktop Safe)
+------------------------------------------- */
 
-  function speakNext() {
-    if(!ttsQueue.length) {
-      isPlaying = false;
-      currentTTSUtterance = null;
-      currentVerseIndex = null;
-      clearVerseHighlights();
-      return;
-    }
-    const item = ttsQueue.shift();
-    currentVerseIndex = item.idx;
-    // highlight & scroll
-    setVerseActive(currentVerseIndex);
+let isPlaying = false;
+let currentTTSUtterance = null;
 
-    // create utterance
-    try {
-      const u = new SpeechSynthesisUtterance(String(item.text));
-      currentTTSUtterance = u;
-      u.onend = () => {
-        currentTTSUtterance = null;
-        // small delay then next
-        setTimeout(()=> speakNext(), 120);
-      };
-      u.onerror = () => {
-        currentTTSUtterance = null;
-        setTimeout(()=> speakNext(), 120);
-      };
-      speechSynthesis.speak(u);
-    } catch(e) {
-      console.warn('TTS speak error', e);
-      currentTTSUtterance = null;
-      setTimeout(()=> speakNext(), 120);
-    }
+/* Build queue for full chapter (always from verse 1) */
+function buildTTSQueueForFullChapter() {
+  ttsQueue = [];
+  if (!state.versionA) return;
+  const n = normCache[state.versionA];
+  if (!n) return;
+  const ch = (n.books[state.bookIndex] &&
+             n.books[state.bookIndex].chapters[state.chapterIndex]) || [];
+  for (let i = 0; i < ch.length; i++) {
+    ttsQueue.push({ text: ch[i].text, idx: i });
   }
+}
 
-  function startTTSFullChapter() {
-    // Build from verse 1 always (Option A)
-    buildTTSQueueForFullChapter();
-    if(!ttsQueue.length) { showNotice('Nothing to read'); return; }
-    // Ensure we are on read view and chapter rendered
-    if(state.view !== 'read') showView('read');
-    // render chapter (ensures DOM exists)
-    renderRead();
-    // small delay before speaking to allow DOM to render and scroll
-    isPlaying = true;
-    setTimeout(()=> {
-      try { speechSynthesis.cancel(); } catch(e){}
-      speakNext();
-    }, 220);
-  }
-
-  function pauseTTS() {
-    try { speechSynthesis.pause(); } catch(e){}
-  }
-  function resumeTTS() {
-    try { speechSynthesis.resume(); } catch(e){}
-  }
-  function stopTTS() {
-    try {
-      speechSynthesis.cancel();
-    } catch(e){}
-    ttsQueue = [];
+/* Speak next verse */
+function speakNext() {
+  if (!ttsQueue.length) {
     isPlaying = false;
     currentTTSUtterance = null;
     currentVerseIndex = null;
     clearVerseHighlights();
+    return;
   }
 
-  if(playBtn) playBtn.addEventListener('click', ()=> {
-    // Option A behaviour: always read full chapter from verse 1
-    startTTSFullChapter();
-  });
-  if(pauseBtn) pauseBtn.addEventListener('click', ()=> pauseTTS());
-  if(resumeBtn) resumeBtn.addEventListener('click', ()=> resumeTTS());
-  if(stopBtn) stopBtn.addEventListener('click', ()=> stopTTS());
+  const item = ttsQueue.shift();
+  currentVerseIndex = item.idx;
+
+  // Highlight & scroll to verse
+  setVerseActive(currentVerseIndex);
+
+  try {
+    const utter = new SpeechSynthesisUtterance(String(item.text));
+    currentTTSUtterance = utter;
+
+    utter.onend = () => {
+      currentTTSUtterance = null;
+      if (isPlaying) setTimeout(() => speakNext(), 120);
+    };
+
+    utter.onerror = () => {
+      currentTTSUtterance = null;
+      if (isPlaying) setTimeout(() => speakNext(), 120);
+    };
+
+    speechSynthesis.speak(utter);
+
+  } catch (e) {
+    console.warn("TTS error:", e);
+    currentTTSUtterance = null;
+    if (isPlaying) setTimeout(() => speakNext(), 120);
+  }
+}
+
+/* Start full chapter TTS */
+function startTTSFullChapter() {
+  buildTTSQueueForFullChapter();
+  if (!ttsQueue.length) {
+    showNotice("Nothing to read");
+    return;
+  }
+
+  // Ensure reader view
+  if (state.view !== "read") showView("read");
+
+  // Ensure verses exist
+  renderRead();
+
+  // Begin playback
+  isPlaying = true;
+  try { speechSynthesis.cancel(); } catch(e){}
+
+  setTimeout(() => {
+    speakNext();
+  }, 220);
+}
+
+/* Pause TTS */
+function pauseTTS() {
+  try {
+    speechSynthesis.pause();
+  } catch (e) {}
+}
+
+/* SMART RESUME — works on mobile + desktop */
+function smartResumeTTS() {
+  if (!isPlaying) return;
+
+  // Desktop or supported browsers
+  if (speechSynthesis.paused) {
+    try {
+      speechSynthesis.resume();
+      return;
+    } catch (e) {
+      console.warn("Resume failed → fallback restart", e);
+    }
+  }
+
+  // MOBILE FALLBACK:
+  // Chrome/Android often refuses resume → restart SAME verse
+  if (currentVerseIndex !== null) {
+    try { speechSynthesis.cancel(); } catch(e){}
+
+    const n = normCache[state.versionA];
+    if (!n) return;
+
+    const ch = n.books[state.bookIndex].chapters[state.chapterIndex];
+    const item = ch[currentVerseIndex];
+    if (!item) return;
+
+    // Highlight again
+    setVerseActive(currentVerseIndex);
+
+    const u = new SpeechSynthesisUtterance(item.text);
+    currentTTSUtterance = u;
+
+    u.onend = () => {
+      currentTTSUtterance = null;
+      // Continue to next verse
+      speakNext();
+    };
+    speechSynthesis.speak(u);
+  }
+}
+
+/* Stop TTS */
+function stopTTS() {
+  try { speechSynthesis.cancel(); } catch(e){}
+  isPlaying = false;
+  ttsQueue = [];
+  currentVerseIndex = null;
+  currentTTSUtterance = null;
+  clearVerseHighlights();
+}
+
+/* BUTTON EVENTS */
+if (playBtn) playBtn.addEventListener("click", startTTSFullChapter);
+if (pauseBtn) pauseBtn.addEventListener("click", pauseTTS);
+if (resumeBtn) resumeBtn.addEventListener("click", smartResumeTTS);
+if (stopBtn) stopBtn.addEventListener("click", stopTTS);
+
 
   // ---------- SEARCH ----------
   async function doSearch(q) {
