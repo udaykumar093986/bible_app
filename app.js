@@ -538,14 +538,16 @@
   if(stopBtn) stopBtn.addEventListener("click", stopTTS);
 
   /* ------------------ SEARCH (global) ------------------ */
-  async function doSearch(q) {
+ async function doSearch(q) {
+  if (!q || !q.trim()) return;
+
   console.log("🔍 Searching:", q);
 
-  const qs = q.toLowerCase();
+  const qs = q.trim().toLowerCase();
   searchResults.innerHTML = "";
   searchInfo.textContent = "Searching...";
 
-  // --- determine allowed versions ---
+  /* ---------- VERSION FILTER ---------- */
   const filterA = document.getElementById("filterA")?.checked ?? true;
   const filterB = document.getElementById("filterB")?.checked ?? false;
   const filterAll = document.getElementById("filterAll")?.checked ?? false;
@@ -556,7 +558,9 @@
     allowed = [...FILES];
   } else {
     if (filterA && state.versionA) allowed.push(state.versionA);
-    if (filterB && state.versionB) allowed.push(state.versionB);
+    if (filterB && state.versionB && state.versionB !== state.versionA) {
+      allowed.push(state.versionB);
+    }
   }
 
   if (!allowed.length) {
@@ -564,15 +568,14 @@
     return;
   }
 
+  /* ---------- SEARCH ---------- */
   const matches = [];
 
   for (const f of allowed) {
     try {
-      // Load + index if needed
       if (!normCache[f]) {
         await fetchAndNormalize(f);
       }
-
       if (!searchIndexCache[f]) {
         buildSearchIndex(f, normCache[f]);
       }
@@ -581,7 +584,8 @@
       if (!idx) continue;
 
       for (const r of idx) {
-        if (r.low.includes(qs)) {
+        const text = String(r.text || "").toLowerCase();
+        if (text.includes(qs)) {
           matches.push(r);
         }
       }
@@ -594,21 +598,28 @@
   searchInfo.textContent = `Found ${matches.length} result(s)`;
 
   if (!matches.length) {
-    searchResults.innerHTML = `<div style="padding:10px;color:#666">No results</div>`;
+    searchResults.innerHTML =
+      `<div style="padding:10px;color:#666">No results</div>`;
+    showView("search");
     return;
   }
 
-  // --- render results ---
+  /* ---------- RENDER ---------- */
   const frag = document.createDocumentFragment();
   const max = Math.min(matches.length, 500);
+
+  const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(safeQ, "ig");
 
   for (let i = 0; i < max; i++) {
     const r = matches[i];
     const div = document.createElement("div");
     div.className = "search-item";
 
-    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
-    const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
+    const snippet = esc(String(r.text || "")).replace(
+      re,
+      m => `<span class="highlight">${m}</span>`
+    );
 
     const version = r.file.replace("_bible.json", "").toUpperCase();
 
@@ -636,6 +647,7 @@
   }
 
   searchResults.appendChild(frag);
+  showView("search");
 }
 
 
