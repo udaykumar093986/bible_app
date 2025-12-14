@@ -352,111 +352,46 @@ select.select {
 
 
 /* ---------- Search ---------- */
-.search-results {
-  display: flex;
-  flex-direction: column;
-  gap: 10px
-}
-
-.search-item {
-  border-radius: 10px;
-  padding: 12px;
-  border: 1px solid var(--pill-border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
-  cursor: pointer;
-}
-
-.search-item strong {
-  display: block;
-  color: var(--brand);
-  margin-bottom: 6px
-}
-
-.highlight {
-  background: linear-gradient(90deg, #fff19a, #ffd76b);
-  padding: 0 4px;
-  border-radius: 4px
-}
-
-.search-filters {
-  display: flex;
-  gap: 14px;
-  padding: 10px 12px;
-  border-bottom: 1px solid #eee;
-  font-size: 14px;
-}
-
-.search-filters label {
-  cursor: pointer;
-  user-select: none;
-}
-
-.search-item {
-  padding: 12px;
-  border-bottom: 1px solid #eaeaea;
-}
-
-/* ================================
-   FIX SEARCH BAR + FILTERS
-================================ */
-
-#pane-search {
-  padding-top: 0;
-}
-
-/* Fixed header container */
 #searchHeader {
   position: sticky;
-  top: 64px; /* adjust if header height differs */
-  z-index: 20;
-  background: var(--card-bg, #fff);
-  padding: 12px;
-  border-bottom: 1px solid #e5e7eb;
+  top: 0;
+  background: #fff;
+  z-index: 5;
+  padding-bottom: 10px;
 }
 
-/* Search input */
-#searchBox {
-  width: 100%;
-  margin-bottom: 8px;
-}
-
-/* Filters row */
 #searchFilters {
   display: flex;
-  gap: 16px;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
   flex-wrap: wrap;
+}
+
+#searchFilters label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
-  margin-bottom: 6px;
-}
-
-/* Result count text */
-#searchInfo {
-  margin-top: 4px;
-}
-
-/* Scroll area */
-#searchResults {
-  padding: 12px;
-  max-height: calc(100vh - 220px);
-  overflow-y: auto;
-}
-.clear-filters {
-  margin-left: auto;
-  padding: 4px 10px;
-  font-size: 13px;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-  background: #f9fafb;
   cursor: pointer;
 }
 
-.clear-filters:hover {
+/* Clear button – attractive + compact */
+.clear-inline {
+  padding: 4px 14px;
+  font-size: 13px;
+  border-radius: 999px;
+  border: 1px solid #c7d2fe;
   background: #eef2ff;
+  color: #3730a3;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-
-
-
+.clear-inline:hover {
+  background: #e0e7ff;
+  border-color: #a5b4fc;
+}
 
 /* bottom nav for mobile */
 .bottom-nav {
