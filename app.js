@@ -585,7 +585,11 @@ async function doSearch(q) {
     const div = document.createElement("div");
     div.className = "search-item";
     div.innerHTML = `
-      <strong>${r.book} ${r.chapter}:${r.verseKey} — ${r.file.replace("_bible.json","").toUpperCase()}</strong>
+      <strong>
+  ${r.book} ${r.chapter}:${r.verseKey}
+  <span class="version-badge">${version}</span>
+</strong>
+
       <div>${esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`)}</div>
     `;
     frag.appendChild(div);
