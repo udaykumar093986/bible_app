@@ -1,5 +1,5 @@
 /* final merged app.js — Bible Reader (stable production)
-   - Full search across all versions
+   - Full search across all versions (Safe Mode)
    - Auto-scroll & highlight while TTS plays
    - Play / Pause / Resume / Stop with mobile fallback resume
    - Always render full chapter on chapter change / swipe
@@ -10,7 +10,10 @@
   "use strict";
 
   /* ------------------ CONFIG ------------------ */
-  const BASE = "https://cdn.jsdelivr.net/gh/udaykumar093986/bible_app@main/versions/";
+  // CHANGED: Use relative path to force loading from your repo, not CDN cache
+  const BASE = "./versions/";
+  
+  // MATCHES YOUR SCREENSHOT: Uppercase for English, Lowercase for Languages
   const FILES = [
     "AMP_bible.json","CSB_bible.json","ESV_bible.json","KJV_bible.json",
     "NIV_bible.json","NKJV_bible.json","NLT_bible.json",
@@ -133,7 +136,7 @@
       return norm;
     } catch(err) {
       console.error("fetchAndNormalize:", fname, err);
-      showNotice("Failed to load " + fname, 2000);
+      // Removed showNotice here to prevent spamming during search
       return null;
     }
   }
@@ -537,55 +540,83 @@
   if(resumeBtn) resumeBtn.addEventListener("click", smartResumeTTS);
   if(stopBtn) stopBtn.addEventListener("click", stopTTS);
 
-  /* ------------------ SEARCH (global) ------------------ */
+  /* ------------------ SEARCH (Safe & Fast) ------------------ */
+  // UPDATED: This function now handles missing files gracefully
   async function doSearch(q) {
     if(!q) return;
     const qs = q.trim().toLowerCase();
+    
     searchResults.innerHTML = "";
-    searchInfo.textContent = "Searching...";
+    searchInfo.textContent = "Scanning versions...";
+    
     const matches = [];
 
-    // iterate all files; build index on demand
+    // 1. Loop through every file in the list
     for(const f of FILES) {
       try {
-        if(!searchIndexCache[f]) {
-          const norm = normCache[f] || await fetchAndNormalize(f);
-          if(!norm) continue;
+        // Load on demand if not cached
+        if(!normCache[f]) {
+           await fetchAndNormalize(f);
         }
+        
+        // If it failed to load (e.g. 404), skip it
+        if(!normCache[f]) {
+           console.warn("Skipping missing file:", f);
+           continue; 
+        }
+
+        // 2. Search this file
         const idx = searchIndexCache[f] || buildSearchIndex(f, normCache[f]);
-        if(!idx) continue;
-        for(const r of idx) {
-          if(r.low.includes(qs)) matches.push(r);
+        if(idx) {
+          for(const r of idx) {
+            if(r.low.includes(qs)) matches.push(r);
+          }
         }
       } catch(e) {
-        console.warn("Search error for file", f, e);
+        console.warn("Error searching file:", f, e);
       }
     }
 
-    searchInfo.textContent = `Found ${matches.length}`;
+    // 3. Show Results
+    searchInfo.textContent = `Found ${matches.length} results`;
+    
     if(matches.length === 0) {
-      searchResults.innerHTML = `<div style="padding:8px;color:#666">No results</div>`;
+      searchResults.innerHTML = `<div style="padding:15px; text-align:center; color:#666">No results found.</div>`;
       showView("search");
       return;
     }
 
-    // render results
+    // Render top 500 results
+    const max = Math.min(matches.length, 500);
     const frag = document.createDocumentFragment();
-    // limit to 800 results for safety; it's a lot; slice as needed
-    const max = Math.min(matches.length, 800);
-    for(let i=0;i<max;i++){
+
+    for(let i=0; i<max; i++){
       const r = matches[i];
       const div = document.createElement("div");
       div.className = "search-item";
+      
+      // Highlight the match
       const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
-      const re = new RegExp(safeQ, "ig");
-      const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
-      const label = `${esc(r.book)} ${r.chapter}:${r.verseKey} — ${String(r.file).replace(/_bible.json$/,'').toUpperCase()}`;
-      div.innerHTML = `<strong>${label}</strong><div style="margin-top:6px">${snippet}</div><small style="display:block;margin-top:6px;color:#666">Click to open</small>`;
+      const highlightHtml = esc(r.text).replace(new RegExp(safeQ, "ig"), m => `<span class="highlight">${m}</span>`);
+      
+      // Create clean label (e.g. "KJV_bible.json" -> "KJV")
+      const shortName = r.file.replace("_bible.json", "").toUpperCase();
+      
+      div.innerHTML = `
+          <div style="font-weight:bold; color:#2c3e50;">${esc(r.book)} ${r.chapter}:${r.verseKey} <span style="font-size:0.8em; background:#eee; padding:2px 6px; border-radius:4px; margin-left:5px;">${shortName}</span></div>
+          <div style="margin-top:4px; line-height:1.4;">${highlightHtml}</div>
+      `;
+      
       div.addEventListener("click", async ()=>{
-        // open clicked result as Version A
-        state.versionA = r.file; if(homeA) homeA.value = r.file;
-        state.bookIndex = r.bookIndex; state.chapterIndex = r.chapterIndex; state.verseKey = r.verseKey;
+        // Open the version associated with this result
+        state.versionA = r.file; 
+        if(homeA) homeA.value = r.file;
+        
+        // Go to verse
+        state.bookIndex = r.bookIndex; 
+        state.chapterIndex = r.chapterIndex; 
+        state.verseKey = r.verseKey;
+        
         await fetchAndNormalize(state.versionA);
         await populateBooksForA(state.versionA);
         showView("read");
@@ -612,11 +643,11 @@
   let mouseDown = false, mStartX = 0, mStartY = 0, mCurX = 0, mCurY = 0;
 
   // Sensitivity
-  const MIN_SWIPE_X = 140;       // horizontal distance required
+  const MIN_SWIPE_X = 140;        // horizontal distance required
   const MAX_VERTICAL_DRIFT = 80; // ignore swipe if vertical movement too high
 
   /* ---------------------------
-     TOUCH SWIPE (MOBILE)
+      TOUCH SWIPE (MOBILE)
   --------------------------- */
   readVerses.addEventListener("touchstart", e => {
     const t = e.touches[0];
@@ -658,7 +689,7 @@
   }, { passive: true });
 
   /* ---------------------------
-     DESKTOP DRAG SWIPE
+      DESKTOP DRAG SWIPE
   --------------------------- */
   readVerses.addEventListener("mousedown", e => {
     mouseDown = true;
