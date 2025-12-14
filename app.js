@@ -539,44 +539,58 @@
 
   /* ------------------ SEARCH (global) ------------------ */
   async function doSearch(q) {
-  if (!q) return;
+  console.log("🔍 Searching:", q);
 
-  const qs = q.trim().toLowerCase();
+  const qs = q.toLowerCase();
   searchResults.innerHTML = "";
   searchInfo.textContent = "Searching...";
 
-  const useA = document.getElementById("filterA")?.checked;
-  const useB = document.getElementById("filterB")?.checked;
-  const useAll = document.getElementById("filterAll")?.checked;
+  // --- determine allowed versions ---
+  const filterA = document.getElementById("filterA")?.checked ?? true;
+  const filterB = document.getElementById("filterB")?.checked ?? false;
+  const filterAll = document.getElementById("filterAll")?.checked ?? false;
 
-  const allowedFiles = new Set();
+  let allowed = [];
 
-  if (useAll) {
-    FILES.forEach(f => allowedFiles.add(f));
+  if (filterAll) {
+    allowed = [...FILES];
   } else {
-    if (useA && state.versionA) allowedFiles.add(state.versionA);
-    if (useB && state.versionB) allowedFiles.add(state.versionB);
+    if (filterA && state.versionA) allowed.push(state.versionA);
+    if (filterB && state.versionB) allowed.push(state.versionB);
   }
 
-  if (allowedFiles.size === 0) {
+  if (!allowed.length) {
     searchInfo.textContent = "No versions selected";
     return;
   }
 
   const matches = [];
 
-  for (const f of allowedFiles) {
-    if (!searchIndexCache[f]) {
-      const norm = normCache[f] || await fetchAndNormalize(f);
-      if (!norm) continue;
-    }
+  for (const f of allowed) {
+    try {
+      // Load + index if needed
+      if (!normCache[f]) {
+        await fetchAndNormalize(f);
+      }
 
-    const idx = searchIndexCache[f];
-    for (const r of idx) {
-      if (r.low.includes(qs)) matches.push(r);
+      if (!searchIndexCache[f]) {
+        buildSearchIndex(f, normCache[f]);
+      }
+
+      const idx = searchIndexCache[f];
+      if (!idx) continue;
+
+      for (const r of idx) {
+        if (r.low.includes(qs)) {
+          matches.push(r);
+        }
+      }
+    } catch (err) {
+      console.error("Search failed for", f, err);
     }
   }
 
+  console.log("✅ Matches:", matches.length);
   searchInfo.textContent = `Found ${matches.length} result(s)`;
 
   if (!matches.length) {
@@ -584,6 +598,7 @@
     return;
   }
 
+  // --- render results ---
   const frag = document.createDocumentFragment();
   const max = Math.min(matches.length, 500);
 
@@ -592,11 +607,10 @@
     const div = document.createElement("div");
     div.className = "search-item";
 
-    const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(safeQ, "ig");
+    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
     const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
 
-    const version = r.file.replace("_bible.json","").toUpperCase();
+    const version = r.file.replace("_bible.json", "").toUpperCase();
 
     div.innerHTML = `
       <strong>${r.book} ${r.chapter}:${r.verseKey} — ${version}</strong>
@@ -605,7 +619,7 @@
 
     div.onclick = async () => {
       state.versionA = r.file;
-      if (homeA) homeA.value = r.file;
+      homeA.value = r.file;
 
       state.bookIndex = r.bookIndex;
       state.chapterIndex = r.chapterIndex;
@@ -613,6 +627,7 @@
 
       await fetchAndNormalize(r.file);
       await populateBooksForA(r.file);
+
       showView("read");
       renderRead();
     };
@@ -622,6 +637,7 @@
 
   searchResults.appendChild(frag);
 }
+
 
 
   /* ------------------ SWIPE (mobile) + MOUSE DRAG (desktop) ------------------ */
