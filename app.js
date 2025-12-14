@@ -736,5 +736,20 @@ async function doSearch(q) {
   window.BibleReader = {
     state, normCache, searchIndexCache, fetchAndNormalize, renderRead, doSearch
   };
+  // 🔍 Search Enter key binding (MUST be after BibleReader is defined)
+const sb = document.getElementById("searchBox");
+
+if (sb) {
+  sb.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      const q = sb.value.trim();
+      if (!q) return;
+
+      console.log("🔑 Enter pressed, searching:", q);
+      BibleReader.doSearch(q);
+    }
+  });
+}
+
 
 })();
