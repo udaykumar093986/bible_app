@@ -389,6 +389,16 @@ select.select {
   line-height: 1.6;
   color: #334155;
 }
+.version-badge {
+  font-size: 12px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: #e0e7ff;
+  color: #3730a3;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
 
 /* Highlighted words */
 .search-item .highlight {
