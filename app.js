@@ -539,70 +539,90 @@
 
   /* ------------------ SEARCH (global) ------------------ */
   async function doSearch(q) {
-    if(!q) return;
-    const qs = q.trim().toLowerCase();
-    searchResults.innerHTML = "";
-    searchInfo.textContent = "Searching...";
-    const matches = [];
+  if (!q) return;
 
-    // iterate all files; build index on demand
-    for(const f of FILES) {
-      try {
-        if(!searchIndexCache[f]) {
-          const norm = normCache[f] || await fetchAndNormalize(f);
-          if(!norm) continue;
-        }
-        const idx = searchIndexCache[f] || buildSearchIndex(f, normCache[f]);
-        if(!idx) continue;
-        for(const r of idx) {
-          if(r.low.includes(qs)) matches.push(r);
-        }
-      } catch(e) {
-        console.warn("Search error for file", f, e);
-      }
-    }
+  const qs = q.trim().toLowerCase();
+  searchResults.innerHTML = "";
+  searchInfo.textContent = "Searching...";
 
-    searchInfo.textContent = `Found ${matches.length}`;
-    if(matches.length === 0) {
-      searchResults.innerHTML = `<div style="padding:8px;color:#666">No results</div>`;
-      showView("search");
-      return;
-    }
+  const useA = document.getElementById("filterA")?.checked;
+  const useB = document.getElementById("filterB")?.checked;
+  const useAll = document.getElementById("filterAll")?.checked;
 
-    // render results
-    const frag = document.createDocumentFragment();
-    // limit to 800 results for safety; it's a lot; slice as needed
-    const max = Math.min(matches.length, 800);
-    for(let i=0;i<max;i++){
-      const r = matches[i];
-      const div = document.createElement("div");
-      div.className = "search-item";
-      const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
-      const re = new RegExp(safeQ, "ig");
-      const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
-      const label = `${esc(r.book)} ${r.chapter}:${r.verseKey} — ${String(r.file).replace(/_bible.json$/,'').toUpperCase()}`;
-      div.innerHTML = `<strong>${label}</strong><div style="margin-top:6px">${snippet}</div><small style="display:block;margin-top:6px;color:#666">Click to open</small>`;
-      div.addEventListener("click", async ()=>{
-        // open clicked result as Version A
-        state.versionA = r.file; if(homeA) homeA.value = r.file;
-        state.bookIndex = r.bookIndex; state.chapterIndex = r.chapterIndex; state.verseKey = r.verseKey;
-        await fetchAndNormalize(state.versionA);
-        await populateBooksForA(state.versionA);
-        showView("read");
-        renderRead();
-      });
-      frag.appendChild(div);
-    }
-    searchResults.appendChild(frag);
-    showView("search");
-  }
+  const allowedFiles = new Set();
 
-  if(searchBox) searchBox.addEventListener("keydown", e => {
-    if(e.key === "Enter") {
-      const q = searchBox.value || "";
-      if(q.trim()) doSearch(q.trim());
-    }
-  });
+  if (useAll) {
+    FILES.forEach(f => allowedFiles.add(f));
+  } else {
+    if (useA && state.versionA) allowedFiles.add(state.versionA);
+    if (useB && state.versionB) allowedFiles.add(state.versionB);
+  }
+
+  if (allowedFiles.size === 0) {
+    searchInfo.textContent = "No versions selected";
+    return;
+  }
+
+  const matches = [];
+
+  for (const f of allowedFiles) {
+    if (!searchIndexCache[f]) {
+      const norm = normCache[f] || await fetchAndNormalize(f);
+      if (!norm) continue;
+    }
+
+    const idx = searchIndexCache[f];
+    for (const r of idx) {
+      if (r.low.includes(qs)) matches.push(r);
+    }
+  }
+
+  searchInfo.textContent = `Found ${matches.length} result(s)`;
+
+  if (!matches.length) {
+    searchResults.innerHTML = `<div style="padding:10px;color:#666">No results</div>`;
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  const max = Math.min(matches.length, 500);
+
+  for (let i = 0; i < max; i++) {
+    const r = matches[i];
+    const div = document.createElement("div");
+    div.className = "search-item";
+
+    const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(safeQ, "ig");
+    const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
+
+    const version = r.file.replace("_bible.json","").toUpperCase();
+
+    div.innerHTML = `
+      <strong>${r.book} ${r.chapter}:${r.verseKey} — ${version}</strong>
+      <div style="margin-top:6px">${snippet}</div>
+    `;
+
+    div.onclick = async () => {
+      state.versionA = r.file;
+      if (homeA) homeA.value = r.file;
+
+      state.bookIndex = r.bookIndex;
+      state.chapterIndex = r.chapterIndex;
+      state.verseKey = r.verseKey;
+
+      await fetchAndNormalize(r.file);
+      await populateBooksForA(r.file);
+      showView("read");
+      renderRead();
+    };
+
+    frag.appendChild(div);
+  }
+
+  searchResults.appendChild(frag);
+}
+
 
   /* ------------------ SWIPE (mobile) + MOUSE DRAG (desktop) ------------------ */
   (function attachSwipe(){
