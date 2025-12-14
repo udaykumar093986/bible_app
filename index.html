@@ -94,20 +94,27 @@
 
     <!-- SEARCH -->
     <section id="pane-search" class="pane card" style="display:none">
-      <div class="search-top">
-        <input id="searchBox" placeholder="Search… (press Enter)" class="select text wide" />
-      </div>
 
-      <div id="searchInfo" class="muted small"></div>
-      <div id="searchResults" class="search-results"></div>
+  <!-- FIXED SEARCH HEADER -->
+  <div id="searchHeader">
+    <input id="searchBox"
+           placeholder="Search… (press Enter)"
+           class="select text wide" />
 
-      <div id="searchFilters" class="search-filters">
-        <label><input type="checkbox" id="filterA" checked /> Primary (A)</label>
-        <label><input type="checkbox" id="filterB" /> Secondary (B)</label>
-        <label><input type="checkbox" id="filterAll" /> All Versions</label>
-      </div>
+    <div id="searchFilters">
+      <label><input type="checkbox" id="filterA" checked /> Primary (A)</label>
+      <label><input type="checkbox" id="filterB" /> Secondary (B)</label>
+      <label><input type="checkbox" id="filterAll" /> All Versions</label>
+    </div>
 
-    </section>
+    <div id="searchInfo" class="muted small"></div>
+  </div>
+
+  <!-- SCROLLABLE RESULTS -->
+  <div id="searchResults" class="search-results"></div>
+
+</section>
+
   </main>
 
   <!-- Bottom nav (mobile) -->
