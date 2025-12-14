@@ -120,23 +120,35 @@
 
   /* ------------------ FETCH & CACHING ------------------ */
   async function fetchAndNormalize(fname) {
-    if(!fname) return null;
-    if(normCache[fname]) return normCache[fname];
+  if (normCache[fname]) return normCache[fname];
 
-    try {
-      const res = await fetch(BASE + fname);
-      if(!res.ok) throw new Error("Fetch failed " + res.status);
-      const json = await res.json();
-      const norm = normalizeUniform(json);
-      normCache[fname] = norm;
-      buildSearchIndex(fname, norm);
-      return norm;
-    } catch(err) {
-      console.error("fetchAndNormalize:", fname, err);
-      showNotice("Failed to load " + fname, 2000);
-      return null;
-    }
-  }
+  const url = BASE + fname;
+  console.log("🔍 FETCHING:", url);
+
+  try {
+    const res = await fetch(url);
+    console.log("📡 STATUS:", fname, res.status);
+
+    if (!res.ok) {
+      throw new Error("HTTP " + res.status);
+    }
+
+    const json = await res.json();
+    console.log("✅ JSON LOADED:", fname);
+
+    const norm = normalizeUniform(json);
+    normCache[fname] = norm;
+    buildSearchIndex(fname, norm);
+
+    console.log("📘 INDEXED:", fname);
+    return norm;
+
+  } catch (err) {
+    console.error("❌ FAILED:", fname, err.message);
+    return null;
+  }
+}
+
 
   /* ------------------ SEARCH INDEX (on-demand) ------------------ */
   function buildSearchIndex(fname, norm) {
