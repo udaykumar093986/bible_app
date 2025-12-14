@@ -440,6 +440,20 @@ select.select {
   max-height: calc(100vh - 220px);
   overflow-y: auto;
 }
+.clear-filters {
+  margin-left: auto;
+  padding: 4px 10px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  cursor: pointer;
+}
+
+.clear-filters:hover {
+  background: #eef2ff;
+}
+
 
 
 
