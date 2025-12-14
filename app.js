@@ -539,70 +539,92 @@
 
   /* ------------------ SEARCH (global) ------------------ */
   async function doSearch(q) {
-    if(!q) return;
-    const qs = q.trim().toLowerCase();
-    searchResults.innerHTML = "";
-    searchInfo.textContent = "Searching...";
-    const matches = [];
+  if (!q) return;
 
-    // iterate all files; build index on demand
-    for(const f of FILES) {
-      try {
-        if(!searchIndexCache[f]) {
-          const norm = normCache[f] || await fetchAndNormalize(f);
-          if(!norm) continue;
-        }
-        const idx = searchIndexCache[f] || buildSearchIndex(f, normCache[f]);
-        if(!idx) continue;
-        for(const r of idx) {
-          if(r.low.includes(qs)) matches.push(r);
-        }
-      } catch(e) {
-        console.warn("Search error for file", f, e);
-      }
-    }
+  const qs = q.trim().toLowerCase();
+  searchResults.innerHTML = "";
+  searchInfo.textContent = "Searching all versions...";
 
-    searchInfo.textContent = `Found ${matches.length}`;
-    if(matches.length === 0) {
-      searchResults.innerHTML = `<div style="padding:8px;color:#666">No results</div>`;
-      showView("search");
-      return;
-    }
+  const matches = [];
 
-    // render results
-    const frag = document.createDocumentFragment();
-    // limit to 800 results for safety; it's a lot; slice as needed
-    const max = Math.min(matches.length, 800);
-    for(let i=0;i<max;i++){
-      const r = matches[i];
-      const div = document.createElement("div");
-      div.className = "search-item";
-      const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
-      const re = new RegExp(safeQ, "ig");
-      const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
-      const label = `${esc(r.book)} ${r.chapter}:${r.verseKey} — ${String(r.file).replace(/_bible.json$/,'').toUpperCase()}`;
-      div.innerHTML = `<strong>${label}</strong><div style="margin-top:6px">${snippet}</div><small style="display:block;margin-top:6px;color:#666">Click to open</small>`;
-      div.addEventListener("click", async ()=>{
-        // open clicked result as Version A
-        state.versionA = r.file; if(homeA) homeA.value = r.file;
-        state.bookIndex = r.bookIndex; state.chapterIndex = r.chapterIndex; state.verseKey = r.verseKey;
-        await fetchAndNormalize(state.versionA);
-        await populateBooksForA(state.versionA);
-        showView("read");
-        renderRead();
-      });
-      frag.appendChild(div);
-    }
-    searchResults.appendChild(frag);
-    showView("search");
-  }
+  for (const f of FILES) {
+    try {
+      let norm = normCache[f];
 
-  if(searchBox) searchBox.addEventListener("keydown", e => {
-    if(e.key === "Enter") {
-      const q = searchBox.value || "";
-      if(q.trim()) doSearch(q.trim());
-    }
-  });
+      if (!norm) {
+        norm = await fetchAndNormalize(f);
+        if (!norm) continue;
+      }
+
+      if (!searchIndexCache[f]) {
+        buildSearchIndex(f, norm);
+      }
+
+      const idx = searchIndexCache[f];
+      if (!idx) continue;
+
+      for (const r of idx) {
+        if (r.low.includes(qs)) {
+          matches.push(r);
+        }
+      }
+    } catch (e) {
+      console.warn("Search error:", f, e);
+    }
+  }
+
+  searchInfo.textContent = `Found ${matches.length} results (all versions)`;
+
+  if (matches.length === 0) {
+    searchResults.innerHTML = `<div style="padding:8px;color:#666">No results</div>`;
+    showView("search");
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  const max = Math.min(matches.length, 800);
+
+  for (let i = 0; i < max; i++) {
+    const r = matches[i];
+    const div = document.createElement("div");
+    div.className = "search-item";
+
+    const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(safeQ, "ig");
+    const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
+
+    const label =
+      `${esc(r.book)} ${r.chapter}:${r.verseKey} — ` +
+      `${r.file.replace(/_bible.json$/,'').toUpperCase()}`;
+
+    div.innerHTML = `
+      <strong>${label}</strong>
+      <div style="margin-top:6px">${snippet}</div>
+      <small style="color:#666">Tap to open</small>
+    `;
+
+    div.addEventListener("click", async () => {
+      state.versionA = r.file;
+      if (homeA) homeA.value = r.file;
+
+      state.bookIndex = r.bookIndex;
+      state.chapterIndex = r.chapterIndex;
+      state.verseKey = r.verseKey;
+
+      await fetchAndNormalize(r.file);
+      await populateBooksForA(r.file);
+
+      showView("read");
+      renderRead();
+    });
+
+    frag.appendChild(div);
+  }
+
+  searchResults.appendChild(frag);
+  showView("search");
+}
+
 
   /* ------------------ SWIPE (mobile) + MOUSE DRAG (desktop) ------------------ */
   (function attachSwipe(){
