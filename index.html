@@ -97,24 +97,41 @@
 
   <!-- FIXED SEARCH HEADER -->
   <div id="searchHeader">
+
     <input id="searchBox"
            placeholder="Search… (press Enter)"
            class="select text wide" />
 
     <div id="searchFilters">
-      <label><input type="checkbox" id="filterA" checked /> Primary (A)</label>
-      <label><input type="checkbox" id="filterB" /> Secondary (B)</label>
-      <label><input type="checkbox" id="filterAll" /> All Versions</label>
+      <label>
+        <input type="checkbox" id="filterA" checked />
+        Primary (A)
+      </label>
+
+      <label>
+        <input type="checkbox" id="filterB" />
+        Secondary (B)
+      </label>
+
+      <label>
+        <input type="checkbox" id="filterAll" />
+        All Versions
+      </label>
+
+      <!-- ✅ Clear button INLINE -->
+      <button id="clearFiltersBtn" class="clear-inline">
+        Clear
+      </button>
     </div>
 
     <div id="searchInfo" class="muted small"></div>
   </div>
-      <button id="clearFiltersBtn" class="clear-filters">Clear</button>
 
   <!-- SCROLLABLE RESULTS -->
   <div id="searchResults" class="search-results"></div>
 
 </section>
+
 
   </main>
 
