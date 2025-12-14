@@ -352,6 +352,60 @@ select.select {
 
 
 /* ---------- Search ---------- */
+/* ---------------- SEARCH RESULTS ---------------- */
+
+.search-results {
+  padding: 12px 0;
+}
+
+/* Each result card */
+.search-item {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.search-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+
+/* Book + verse line */
+.search-item strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #1e293b;
+}
+
+/* Verse text */
+.search-item div {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #334155;
+}
+
+/* Highlighted words */
+.search-item .highlight {
+  background: #fde68a;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-weight: 600;
+}
+
+/* Results count text */
+#searchInfo {
+  margin-top: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #64748b;
+}
+
 #searchHeader {
   position: sticky;
   top: 0;
