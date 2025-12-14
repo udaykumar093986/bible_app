@@ -539,131 +539,70 @@
 
   /* ------------------ SEARCH (global) ------------------ */
   async function doSearch(q) {
-  if (!q) return;
+    if(!q) return;
+    const qs = q.trim().toLowerCase();
+    searchResults.innerHTML = "";
+    searchInfo.textContent = "Searching...";
+    const matches = [];
 
-  const qs = q.trim().toLowerCase();
-  searchResults.innerHTML = "";
-  searchInfo.textContent = "Searching selected versions...";
+    // iterate all files; build index on demand
+    for(const f of FILES) {
+      try {
+        if(!searchIndexCache[f]) {
+          const norm = normCache[f] || await fetchAndNormalize(f);
+          if(!norm) continue;
+        }
+        const idx = searchIndexCache[f] || buildSearchIndex(f, normCache[f]);
+        if(!idx) continue;
+        for(const r of idx) {
+          if(r.low.includes(qs)) matches.push(r);
+        }
+      } catch(e) {
+        console.warn("Search error for file", f, e);
+      }
+    }
 
-  // ✅ Determine active versions (A & B)
-  const activeVersions = [];
-  if (state.versionA) activeVersions.push(state.versionA);
-  if (state.versionB && state.versionB !== state.versionA) {
-    activeVersions.push(state.versionB);
-  }
+    searchInfo.textContent = `Found ${matches.length}`;
+    if(matches.length === 0) {
+      searchResults.innerHTML = `<div style="padding:8px;color:#666">No results</div>`;
+      showView("search");
+      return;
+    }
 
-  if (activeVersions.length === 0) {
-    searchInfo.textContent = "Select Bible version(s)";
-    return;
-  }
+    // render results
+    const frag = document.createDocumentFragment();
+    // limit to 800 results for safety; it's a lot; slice as needed
+    const max = Math.min(matches.length, 800);
+    for(let i=0;i<max;i++){
+      const r = matches[i];
+      const div = document.createElement("div");
+      div.className = "search-item";
+      const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+      const re = new RegExp(safeQ, "ig");
+      const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
+      const label = `${esc(r.book)} ${r.chapter}:${r.verseKey} — ${String(r.file).replace(/_bible.json$/,'').toUpperCase()}`;
+      div.innerHTML = `<strong>${label}</strong><div style="margin-top:6px">${snippet}</div><small style="display:block;margin-top:6px;color:#666">Click to open</small>`;
+      div.addEventListener("click", async ()=>{
+        // open clicked result as Version A
+        state.versionA = r.file; if(homeA) homeA.value = r.file;
+        state.bookIndex = r.bookIndex; state.chapterIndex = r.chapterIndex; state.verseKey = r.verseKey;
+        await fetchAndNormalize(state.versionA);
+        await populateBooksForA(state.versionA);
+        showView("read");
+        renderRead();
+      });
+      frag.appendChild(div);
+    }
+    searchResults.appendChild(frag);
+    showView("search");
+  }
 
-  // book|chapter|verse → [{version,text}]
-  const grouped = {};
-
-  for (const f of activeVersions) {
-    let norm = normCache[f];
-    if (!norm) {
-      norm = await fetchAndNormalize(f);
-      if (!norm) continue;
-    }
-
-    if (!searchIndexCache[f]) {
-      buildSearchIndex(f, norm);
-    }
-
-    const idx = searchIndexCache[f];
-    for (const r of idx) {
-      if (!r.low.includes(qs)) continue;
-
-      const key = `${r.book}|${r.chapter}|${r.verseKey}`;
-      if (!grouped[key]) {
-        grouped[key] = {
-          book: r.book,
-          chapter: r.chapter,
-          verse: r.verseKey,
-          items: []
-        };
-      }
-
-      grouped[key].items.push({
-        version: f.replace(/_bible.json$/, "").toUpperCase(),
-        file: f,
-        text: r.text,
-        bookIndex: r.bookIndex,
-        chapterIndex: r.chapterIndex,
-        verseKey: r.verseKey
-      });
-    }
-  }
-
-  const groups = Object.values(grouped);
-  searchInfo.textContent = `Found ${groups.length} verses`;
-
-  if (!groups.length) {
-    searchResults.innerHTML =
-      `<div style="padding:10px;color:#666">No results</div>`;
-    showView("search");
-    return;
-  }
-
-  const frag = document.createDocumentFragment();
-  const max = Math.min(groups.length, 300);
-
-  for (let i = 0; i < max; i++) {
-    const g = groups[i];
-    const card = document.createElement("div");
-    card.className = "search-item";
-
-    let html = `
-      <div style="font-weight:600;margin-bottom:6px">
-        ${esc(g.book)} ${g.chapter}:${g.verse}
-      </div>
-    `;
-
-    const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(safeQ, "ig");
-
-    for (const it of g.items) {
-      const snippet = esc(it.text).replace(
-        re,
-        m => `<span class="highlight">${m}</span>`
-      );
-
-      html += `
-        <div style="margin:6px 0">
-          <span style="font-size:12px;color:#888">${it.version}</span>
-          <div>${snippet}</div>
-        </div>
-      `;
-    }
-
-    html += `<small style="color:#666">Tap to open</small>`;
-    card.innerHTML = html;
-
-    // Open verse (Version A preferred)
-    const openItem = g.items[0];
-    card.addEventListener("click", async () => {
-      state.versionA = openItem.file;
-      if (homeA) homeA.value = openItem.file;
-
-      state.bookIndex = openItem.bookIndex;
-      state.chapterIndex = openItem.chapterIndex;
-      state.verseKey = openItem.verseKey;
-
-      await fetchAndNormalize(openItem.file);
-      await populateBooksForA(openItem.file);
-
-      showView("read");
-      renderRead();
-    });
-
-    frag.appendChild(card);
-  }
-
-  searchResults.appendChild(frag);
-  showView("search");
-}
-
+  if(searchBox) searchBox.addEventListener("keydown", e => {
+    if(e.key === "Enter") {
+      const q = searchBox.value || "";
+      if(q.trim()) doSearch(q.trim());
+    }
+  });
 
   /* ------------------ SWIPE (mobile) + MOUSE DRAG (desktop) ------------------ */
   (function attachSwipe(){
