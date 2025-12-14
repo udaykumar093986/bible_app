@@ -396,6 +396,52 @@ select.select {
   border-bottom: 1px solid #eaeaea;
 }
 
+/* ================================
+   FIX SEARCH BAR + FILTERS
+================================ */
+
+#pane-search {
+  padding-top: 0;
+}
+
+/* Fixed header container */
+#searchHeader {
+  position: sticky;
+  top: 64px; /* adjust if header height differs */
+  z-index: 20;
+  background: var(--card-bg, #fff);
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Search input */
+#searchBox {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+/* Filters row */
+#searchFilters {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+/* Result count text */
+#searchInfo {
+  margin-top: 4px;
+}
+
+/* Scroll area */
+#searchResults {
+  padding: 12px;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+
+
 
 
 /* bottom nav for mobile */
@@ -525,4 +571,14 @@ button:focus {
   background: linear-gradient(90deg, #fff19a, #ffd76b);
   padding: 0 4px;
   border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  #searchHeader {
+    top: 56px; /* mobile header height */
+  }
+
+  #searchFilters {
+    gap: 10px;
+  }
 }
