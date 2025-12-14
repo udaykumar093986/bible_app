@@ -750,6 +750,25 @@ if (sb) {
     }
   });
 }
+  const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+
+if (clearFiltersBtn) {
+  clearFiltersBtn.addEventListener("click", () => {
+    const a = document.getElementById("filterA");
+    const b = document.getElementById("filterB");
+    const all = document.getElementById("filterAll");
+
+    if (a) a.checked = true;     // default
+    if (b) b.checked = false;
+    if (all) all.checked = false;
+
+    searchInfo.textContent = "Filters cleared";
+
+    // optional: clear results but keep text
+    searchResults.innerHTML = "";
+  });
+}
+
 
 
 })();
