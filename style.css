@@ -378,6 +378,25 @@ select.select {
   border-radius: 4px
 }
 
+.search-filters {
+  display: flex;
+  gap: 14px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.search-filters label {
+  cursor: pointer;
+  user-select: none;
+}
+
+.search-item {
+  padding: 12px;
+  border-bottom: 1px solid #eaeaea;
+}
+
+
 
 /* bottom nav for mobile */
 .bottom-nav {
