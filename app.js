@@ -538,139 +538,63 @@
   if(stopBtn) stopBtn.addEventListener("click", stopTTS);
 
   /* ------------------ SEARCH (global) ------------------ */
- async function doSearch(q) {
+async function doSearch(q) {
   if (!q || !q.trim()) return;
-   // 🔑 FORCE SYNC dropdown → state
-if (!state.versionA && homeA?.value) {
-  state.versionA = homeA.value;
-}
-if (!state.versionB && homeB?.value) {
-  state.versionB = homeB.value;
-}
-  console.log("🔍 Searching:", q);
+
+  // 🔑 Sync dropdown → state
+  if (!state.versionA && homeA?.value) state.versionA = homeA.value;
+  if (!state.versionB && homeB?.value) state.versionB = homeB.value;
 
   const qs = q.trim().toLowerCase();
   searchResults.innerHTML = "";
   searchInfo.textContent = "Searching...";
 
-  /* ---------- VERSION FILTER ---------- */
-  const filterAEl = document.getElementById("filterA");
-  const filterBEl = document.getElementById("filterB");
-  const filterAllEl = document.getElementById("filterAll");
-
-  const filterA = filterAEl ? filterAEl.checked : true;
-  const filterB = filterBEl ? filterBEl.checked : true;
-  const filterAll = filterAllEl ? filterAllEl.checked : false;
-
-  let allowed = [];
-
-  if (filterAll) {
-    allowed = [...FILES];
+  const allowed = [];
+  if (document.getElementById("filterAll")?.checked) {
+    allowed.push(...FILES);
   } else {
-    if (filterA && state.versionA) allowed.push(state.versionA);
-    if (filterB && state.versionB && state.versionB !== state.versionA) {
+    if (document.getElementById("filterA")?.checked && state.versionA)
+      allowed.push(state.versionA);
+    if (document.getElementById("filterB")?.checked && state.versionB)
       allowed.push(state.versionB);
-    }
   }
 
-  // 🔐 FINAL SAFETY FALLBACK (IMPORTANT)
-  if (!allowed.length) {
-    if (state.versionA) allowed.push(state.versionA);
-    if (state.versionB && state.versionB !== state.versionA) {
-      allowed.push(state.versionB);
-    }
-  }
-
-  if (!allowed.length) {
-    searchInfo.textContent = "No versions selected";
-    return;
-  }
-
-  console.log("📘 Searching versions:", allowed);
-
-  /* ---------- SEARCH ---------- */
   const matches = [];
 
   for (const f of allowed) {
-    try {
-      // Ensure JSON is loaded
-      if (!normCache[f]) {
-        await fetchAndNormalize(f);
-      }
+    if (!normCache[f]) await fetchAndNormalize(f);
+    if (!searchIndexCache[f]) buildSearchIndex(f, normCache[f]);
 
-      // Ensure index exists
-      if (!searchIndexCache[f]) {
-        buildSearchIndex(f, normCache[f]);
-      }
-
-      const idx = searchIndexCache[f];
-      if (!idx) continue;
-
-      for (const r of idx) {
-        if (r.low && r.low.includes(qs)) {
-          matches.push(r);
-        }
-      }
-    } catch (err) {
-      console.error("❌ Search failed for", f, err);
+    for (const r of searchIndexCache[f]) {
+      if (r.low.includes(qs)) matches.push(r);
     }
   }
 
-  console.log("✅ Matches:", matches.length);
   searchInfo.textContent = `Found ${matches.length} result(s)`;
 
   if (!matches.length) {
-    searchResults.innerHTML =
-      `<div style="padding:10px;color:#666">No results</div>`;
+    searchResults.innerHTML = `<div style="padding:10px;color:#666">No results</div>`;
     showView("search");
     return;
   }
 
-  /* ---------- RENDER ---------- */
   const frag = document.createDocumentFragment();
-  const max = Math.min(matches.length, 500);
+  const re = new RegExp(qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
 
-  const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const re = new RegExp(safeQ, "ig");
-
-  for (let i = 0; i < max; i++) {
-    const r = matches[i];
+  matches.slice(0, 300).forEach(r => {
     const div = document.createElement("div");
     div.className = "search-item";
-
-    const snippet = esc(String(r.text || "")).replace(
-      re,
-      m => `<span class="highlight">${m}</span>`
-    );
-
-    const version = r.file.replace("_bible.json", "").toUpperCase();
-
     div.innerHTML = `
-      <strong>${r.book} ${r.chapter}:${r.verseKey} — ${version}</strong>
-      <div style="margin-top:6px">${snippet}</div>
+      <strong>${r.book} ${r.chapter}:${r.verseKey} — ${r.file.replace("_bible.json","").toUpperCase()}</strong>
+      <div>${esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`)}</div>
     `;
-
-    div.onclick = async () => {
-      state.versionA = r.file;
-      if (homeA) homeA.value = r.file;
-
-      state.bookIndex = r.bookIndex;
-      state.chapterIndex = r.chapterIndex;
-      state.verseKey = r.verseKey;
-
-      await fetchAndNormalize(r.file);
-      await populateBooksForA(r.file);
-
-      showView("read");
-      renderRead();
-    };
-
     frag.appendChild(div);
-  }
+  });
 
   searchResults.appendChild(frag);
   showView("search");
 }
+
 
 
 
