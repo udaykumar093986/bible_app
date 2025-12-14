@@ -556,44 +556,35 @@ async function doSearch(q) {
 
   const qs = q.trim().toLowerCase();
   searchResults.innerHTML = "";
-  searchInfo.textContent = "Searching all versions…";
+  searchInfo.textContent = "Searching all versions...";
 
-  let matches = [];
+  let allMatches = [];
 
   for (const fname of FILES) {
-    try {
-      // Load version only when needed
-      if (!searchIndexCache[fname]) {
-        const norm = normCache[fname] || await fetchAndNormalize(fname);
-        if (!norm) continue;
-        buildSearchIndex(fname, norm);
-      }
-
-      const idx = searchIndexCache[fname] || [];
-      for (const r of idx) {
-        if (r.low.includes(qs)) {
-          matches.push(r);
-        }
-      }
-    } catch (e) {
-      console.warn("Search skipped:", fname, e);
+    if (!searchIndexCache[fname]) {
+      const norm = normCache[fname] || await fetchAndNormalize(fname);
+      if (!norm) continue;
+      buildSearchIndex(fname, norm);
     }
+
+    const idx = searchIndexCache[fname] || [];
+    const matches = idx.filter(v => v.low.includes(qs));
+    allMatches.push(...matches);
   }
 
-  searchInfo.textContent = `Found ${matches.length} results (all versions)`;
+  searchInfo.textContent = `Found ${allMatches.length} results (all versions)`;
 
-  if (matches.length === 0) {
-    searchResults.innerHTML =
-      `<div style="padding:8px;color:#666">No results</div>`;
+  if (allMatches.length === 0) {
+    searchResults.innerHTML = `<div style="padding:8px;color:#666">No results</div>`;
     showView("search");
     return;
   }
 
   const frag = document.createDocumentFragment();
-  const max = Math.min(matches.length, 500); // safety limit
+  const max = Math.min(allMatches.length, 800);
 
   for (let i = 0; i < max; i++) {
-    const r = matches[i];
+    const r = allMatches[i];
     const div = document.createElement("div");
     div.className = "search-item";
 
@@ -601,13 +592,13 @@ async function doSearch(q) {
     const re = new RegExp(safeQ, "ig");
     const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
 
-    const versionLabel = r.file.replace("_bible.json", "").toUpperCase();
-    const refLabel = `${r.book} ${r.chapter}:${r.verseKey} — ${versionLabel}`;
+    const versionLabel = r.file.replace("_bible.json","").toUpperCase();
+    const ref = `${r.book} ${r.chapter}:${r.verseKey} — ${versionLabel}`;
 
     div.innerHTML = `
-      <strong>${refLabel}</strong>
+      <strong>${ref}</strong>
       <div style="margin-top:6px">${snippet}</div>
-      <small style="display:block;margin-top:6px;color:#666">Tap to open</small>
+      <small style="color:#666">Tap to open</small>
     `;
 
     div.addEventListener("click", async () => {
@@ -630,15 +621,6 @@ async function doSearch(q) {
 
   searchResults.appendChild(frag);
   showView("search");
-}
-
-if (searchBox) {
-  searchBox.addEventListener("keydown", e => {
-    if (e.key === "Enter") {
-      const q = searchBox.value || "";
-      if (q.trim()) doSearch(q.trim());
-    }
-  });
 }
 
   /* ------------------ SWIPE (mobile) + MOUSE DRAG (desktop) ------------------ */
