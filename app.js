@@ -540,7 +540,13 @@
   /* ------------------ SEARCH (global) ------------------ */
  async function doSearch(q) {
   if (!q || !q.trim()) return;
-
+   // 🔑 FORCE SYNC dropdown → state
+if (!state.versionA && homeA?.value) {
+  state.versionA = homeA.value;
+}
+if (!state.versionB && homeB?.value) {
+  state.versionB = homeB.value;
+}
   console.log("🔍 Searching:", q);
 
   const qs = q.trim().toLowerCase();
