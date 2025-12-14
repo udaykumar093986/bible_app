@@ -1,5 +1,12 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target" : { "namespace": "android_app", "package_name": "com.bible.reader.app",
-               "sha256_cert_fingerprints": ["02:E5:DA:77:C0:B3:90:4F:8C:26:AB:BD:66:6D:36:20:6E:AB:CB:DD:8F:4E:4D:CA:6C:3E:B9:95:E8:AB:B3:AB"] }
-}]
+    [{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.bible.reader.app",
+        "sha256_cert_fingerprints": [
+          "02:E5:DA:77:C0:B3:90:4F:8C:26:AB:BD:66:6D:36:20:6E:AB:CB:DD:8F:4E:4D:CA:6C:3E:B9:95:E8:AB:B3:AB",
+          "3A:8B:FE:85:09:DF:71:C9:AC:17:77:0D:D7:75:0A:40:56:69:03:BF:76:71:79:9E:B9:1F:8B:7B:65:5C:BA:F9"
+        ]
+      }
+    }]
+    
