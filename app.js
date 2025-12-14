@@ -175,6 +175,28 @@
     });
   }
   populateVersions();
+  const searchVersionFilter = $("searchVersionFilter");
+
+function populateSearchFilter() {
+  if (!searchVersionFilter) return;
+
+  searchVersionFilter.innerHTML = "";
+
+  if (state.versionA) {
+    const labelA = state.versionA.replace("_bible.json", "").toUpperCase();
+    searchVersionFilter.appendChild(
+      new Option(labelA, state.versionA, true, true)
+    );
+  }
+
+  if (state.versionB && state.versionB !== state.versionA) {
+    const labelB = state.versionB.replace("_bible.json", "").toUpperCase();
+    searchVersionFilter.appendChild(
+      new Option(labelB, state.versionB, true, true)
+    );
+  }
+}
+
 
   /* ------------------ TAB + BOTTOM NAV ------------------ */
   function showView(v) {
@@ -539,70 +561,110 @@
 
   /* ------------------ SEARCH (global) ------------------ */
   async function doSearch(q) {
-    if(!q) return;
-    const qs = q.trim().toLowerCase();
-    searchResults.innerHTML = "";
-    searchInfo.textContent = "Searching...";
-    const matches = [];
+  if (!q) return;
 
-    // iterate all files; build index on demand
-    for(const f of FILES) {
-      try {
-        if(!searchIndexCache[f]) {
-          const norm = normCache[f] || await fetchAndNormalize(f);
-          if(!norm) continue;
-        }
-        const idx = searchIndexCache[f] || buildSearchIndex(f, normCache[f]);
-        if(!idx) continue;
-        for(const r of idx) {
-          if(r.low.includes(qs)) matches.push(r);
-        }
-      } catch(e) {
-        console.warn("Search error for file", f, e);
-      }
-    }
+  const qs = q.trim().toLowerCase();
+  searchResults.innerHTML = "";
+  searchInfo.textContent = "Searching...";
 
-    searchInfo.textContent = `Found ${matches.length}`;
-    if(matches.length === 0) {
-      searchResults.innerHTML = `<div style="padding:8px;color:#666">No results</div>`;
-      showView("search");
-      return;
-    }
+  const selectedVersions = [...(searchVersionFilter?.selectedOptions || [])]
+    .map(o => o.value);
 
-    // render results
-    const frag = document.createDocumentFragment();
-    // limit to 800 results for safety; it's a lot; slice as needed
-    const max = Math.min(matches.length, 800);
-    for(let i=0;i<max;i++){
-      const r = matches[i];
-      const div = document.createElement("div");
-      div.className = "search-item";
-      const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
-      const re = new RegExp(safeQ, "ig");
-      const snippet = esc(r.text).replace(re, m => `<span class="highlight">${m}</span>`);
-      const label = `${esc(r.book)} ${r.chapter}:${r.verseKey} — ${String(r.file).replace(/_bible.json$/,'').toUpperCase()}`;
-      div.innerHTML = `<strong>${label}</strong><div style="margin-top:6px">${snippet}</div><small style="display:block;margin-top:6px;color:#666">Click to open</small>`;
-      div.addEventListener("click", async ()=>{
-        // open clicked result as Version A
-        state.versionA = r.file; if(homeA) homeA.value = r.file;
-        state.bookIndex = r.bookIndex; state.chapterIndex = r.chapterIndex; state.verseKey = r.verseKey;
-        await fetchAndNormalize(state.versionA);
-        await populateBooksForA(state.versionA);
-        showView("read");
-        renderRead();
-      });
-      frag.appendChild(div);
-    }
-    searchResults.appendChild(frag);
-    showView("search");
-  }
+  if (!selectedVersions.length) {
+    searchInfo.textContent = "Select version(s) to search";
+    return;
+  }
 
-  if(searchBox) searchBox.addEventListener("keydown", e => {
-    if(e.key === "Enter") {
-      const q = searchBox.value || "";
-      if(q.trim()) doSearch(q.trim());
-    }
-  });
+  const grouped = {};
+
+  for (const f of selectedVersions) {
+    let norm = normCache[f];
+    if (!norm) {
+      norm = await fetchAndNormalize(f);
+      if (!norm) continue;
+    }
+
+    if (!searchIndexCache[f]) buildSearchIndex(f, norm);
+
+    for (const r of searchIndexCache[f]) {
+      if (!r.low.includes(qs)) continue;
+
+      const key = `${r.book}|${r.chapter}|${r.verseKey}`;
+      if (!grouped[key]) {
+        grouped[key] = {
+          book: r.book,
+          chapter: r.chapter,
+          verse: r.verseKey,
+          items: []
+        };
+      }
+
+      grouped[key].items.push({
+        version: f.replace("_bible.json", "").toUpperCase(),
+        file: f,
+        text: r.text,
+        bookIndex: r.bookIndex,
+        chapterIndex: r.chapterIndex,
+        verseKey: r.verseKey
+      });
+    }
+  }
+
+  const groups = Object.values(grouped);
+  searchInfo.textContent = `Found ${groups.length} verses`;
+
+  if (!groups.length) {
+    searchResults.innerHTML =
+      `<div style="padding:10px;color:#666">No results</div>`;
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(safeQ, "ig");
+
+  for (const g of groups.slice(0, 300)) {
+    const div = document.createElement("div");
+    div.className = "search-item";
+
+    let html = `<strong>${esc(g.book)} ${g.chapter}:${g.verse}</strong>`;
+
+    for (const it of g.items) {
+      const snippet = esc(it.text).replace(
+        re,
+        m => `<span class="highlight">${m}</span>`
+      );
+
+      html += `
+        <div style="margin-top:6px">
+          <span style="font-size:12px;color:#888">${it.version}</span>
+          <div>${snippet}</div>
+        </div>
+      `;
+    }
+
+    div.innerHTML = html;
+
+    const open = g.items[0];
+    div.addEventListener("click", async () => {
+      state.versionA = open.file;
+      if (homeA) homeA.value = open.file;
+      state.bookIndex = open.bookIndex;
+      state.chapterIndex = open.chapterIndex;
+      state.verseKey = open.verseKey;
+      await fetchAndNormalize(open.file);
+      await populateBooksForA(open.file);
+      showView("read");
+      renderRead();
+    });
+
+    frag.appendChild(div);
+  }
+
+  searchResults.appendChild(frag);
+  showView("search");
+}
+
 
   /* ------------------ SWIPE (mobile) + MOUSE DRAG (desktop) ------------------ */
   (function attachSwipe(){
