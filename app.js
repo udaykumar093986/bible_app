@@ -548,9 +548,13 @@
   searchInfo.textContent = "Searching...";
 
   /* ---------- VERSION FILTER ---------- */
-  const filterA = document.getElementById("filterA")?.checked ?? true;
-  const filterB = document.getElementById("filterB")?.checked ?? false;
-  const filterAll = document.getElementById("filterAll")?.checked ?? false;
+  const filterAEl = document.getElementById("filterA");
+  const filterBEl = document.getElementById("filterB");
+  const filterAllEl = document.getElementById("filterAll");
+
+  const filterA = filterAEl ? filterAEl.checked : true;
+  const filterB = filterBEl ? filterBEl.checked : true;
+  const filterAll = filterAllEl ? filterAllEl.checked : false;
 
   let allowed = [];
 
@@ -563,19 +567,32 @@
     }
   }
 
+  // 🔐 FINAL SAFETY FALLBACK (IMPORTANT)
+  if (!allowed.length) {
+    if (state.versionA) allowed.push(state.versionA);
+    if (state.versionB && state.versionB !== state.versionA) {
+      allowed.push(state.versionB);
+    }
+  }
+
   if (!allowed.length) {
     searchInfo.textContent = "No versions selected";
     return;
   }
+
+  console.log("📘 Searching versions:", allowed);
 
   /* ---------- SEARCH ---------- */
   const matches = [];
 
   for (const f of allowed) {
     try {
+      // Ensure JSON is loaded
       if (!normCache[f]) {
         await fetchAndNormalize(f);
       }
+
+      // Ensure index exists
       if (!searchIndexCache[f]) {
         buildSearchIndex(f, normCache[f]);
       }
@@ -584,13 +601,12 @@
       if (!idx) continue;
 
       for (const r of idx) {
-        const text = String(r.text || "").toLowerCase();
-        if (text.includes(qs)) {
+        if (r.low && r.low.includes(qs)) {
           matches.push(r);
         }
       }
     } catch (err) {
-      console.error("Search failed for", f, err);
+      console.error("❌ Search failed for", f, err);
     }
   }
 
@@ -630,7 +646,7 @@
 
     div.onclick = async () => {
       state.versionA = r.file;
-      homeA.value = r.file;
+      if (homeA) homeA.value = r.file;
 
       state.bookIndex = r.bookIndex;
       state.chapterIndex = r.chapterIndex;
@@ -649,6 +665,7 @@
   searchResults.appendChild(frag);
   showView("search");
 }
+
 
 
 
