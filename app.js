@@ -545,9 +545,7 @@
   searchResults.innerHTML = "";
   searchInfo.textContent = "Searching selected versions...";
 
-  const matches = [];
-
-  // ✅ Determine active versions
+  // ✅ Determine active versions (A & B)
   const activeVersions = [];
   if (state.versionA) activeVersions.push(state.versionA);
   if (state.versionB && state.versionB !== state.versionA) {
@@ -555,91 +553,111 @@
   }
 
   if (activeVersions.length === 0) {
-    searchInfo.textContent = "Select at least one Bible version";
+    searchInfo.textContent = "Select Bible version(s)";
     return;
   }
 
-  // ✅ Search ONLY selected versions
+  // book|chapter|verse → [{version,text}]
+  const grouped = {};
+
   for (const f of activeVersions) {
-    try {
-      let norm = normCache[f];
+    let norm = normCache[f];
+    if (!norm) {
+      norm = await fetchAndNormalize(f);
+      if (!norm) continue;
+    }
 
-      if (!norm) {
-        norm = await fetchAndNormalize(f);
-        if (!norm) continue;
+    if (!searchIndexCache[f]) {
+      buildSearchIndex(f, norm);
+    }
+
+    const idx = searchIndexCache[f];
+    for (const r of idx) {
+      if (!r.low.includes(qs)) continue;
+
+      const key = `${r.book}|${r.chapter}|${r.verseKey}`;
+      if (!grouped[key]) {
+        grouped[key] = {
+          book: r.book,
+          chapter: r.chapter,
+          verse: r.verseKey,
+          items: []
+        };
       }
 
-      if (!searchIndexCache[f]) {
-        buildSearchIndex(f, norm);
-      }
-
-      const idx = searchIndexCache[f];
-      if (!idx) continue;
-
-      for (const r of idx) {
-        if (r.low.includes(qs)) {
-          matches.push(r);
-        }
-      }
-
-    } catch (e) {
-      console.warn("Search error:", f, e);
+      grouped[key].items.push({
+        version: f.replace(/_bible.json$/, "").toUpperCase(),
+        file: f,
+        text: r.text,
+        bookIndex: r.bookIndex,
+        chapterIndex: r.chapterIndex,
+        verseKey: r.verseKey
+      });
     }
   }
 
-  searchInfo.textContent = `Found ${matches.length} results`;
+  const groups = Object.values(grouped);
+  searchInfo.textContent = `Found ${groups.length} verses`;
 
-  if (matches.length === 0) {
+  if (!groups.length) {
     searchResults.innerHTML =
-      `<div style="padding:8px;color:#666">No results</div>`;
+      `<div style="padding:10px;color:#666">No results</div>`;
     showView("search");
     return;
   }
 
-  // ✅ Render results
   const frag = document.createDocumentFragment();
-  const max = Math.min(matches.length, 800);
+  const max = Math.min(groups.length, 300);
 
   for (let i = 0; i < max; i++) {
-    const r = matches[i];
-    const div = document.createElement("div");
-    div.className = "search-item";
+    const g = groups[i];
+    const card = document.createElement("div");
+    card.className = "search-item";
+
+    let html = `
+      <div style="font-weight:600;margin-bottom:6px">
+        ${esc(g.book)} ${g.chapter}:${g.verse}
+      </div>
+    `;
 
     const safeQ = qs.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const re = new RegExp(safeQ, "ig");
-    const snippet = esc(r.text).replace(
-      re,
-      m => `<span class="highlight">${m}</span>`
-    );
 
-    const versionLabel =
-      r.file.replace(/_bible.json$/, "").toUpperCase();
+    for (const it of g.items) {
+      const snippet = esc(it.text).replace(
+        re,
+        m => `<span class="highlight">${m}</span>`
+      );
 
-    const label =
-      `${esc(r.book)} ${r.chapter}:${r.verseKey} — ${versionLabel}`;
+      html += `
+        <div style="margin:6px 0">
+          <span style="font-size:12px;color:#888">${it.version}</span>
+          <div>${snippet}</div>
+        </div>
+      `;
+    }
 
-    div.innerHTML = `
-      <strong>${label}</strong>
-      <div style="margin-top:6px">${snippet}</div>
-      <small style="color:#666">Tap to open</small>
-    `;
+    html += `<small style="color:#666">Tap to open</small>`;
+    card.innerHTML = html;
 
-    div.addEventListener("click", async () => {
-      state.versionA = r.file;
-      if (homeA) homeA.value = r.file;
+    // Open verse (Version A preferred)
+    const openItem = g.items[0];
+    card.addEventListener("click", async () => {
+      state.versionA = openItem.file;
+      if (homeA) homeA.value = openItem.file;
 
-      state.bookIndex = r.bookIndex;
-      state.chapterIndex = r.chapterIndex;
-      state.verseKey = r.verseKey;
+      state.bookIndex = openItem.bookIndex;
+      state.chapterIndex = openItem.chapterIndex;
+      state.verseKey = openItem.verseKey;
 
-      await fetchAndNormalize(r.file);
-      await populateBooksForA(r.file);
+      await fetchAndNormalize(openItem.file);
+      await populateBooksForA(openItem.file);
 
       showView("read");
       renderRead();
     });
 
-    frag.appendChild(div);
+    frag.appendChild(card);
   }
 
   searchResults.appendChild(frag);
